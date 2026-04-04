@@ -32,7 +32,7 @@
       wx:for="{{tasks}}"
       wx:key="taskId">
       <view class="task-header">
-        <view class="task-type-badge">{{item.taskType === 'daily' ? '📅' : (item.taskType === 'weekly' ? '📆' : (item.taskType === 'monthly' ? '🗓️' : '♾️')}}</view>
+        <view class="task-type-badge">{{item.taskTypeBadge}}</view>
         <view class="task-title">{{item.title}}</view>
         <view class="task-reward">🪙 +{{item.coinReward}}</view>
       </view>

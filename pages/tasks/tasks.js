@@ -141,7 +141,19 @@ Page({
       })
 
       if (res.result.success) {
-        this.setData({ tasks: res.result.tasks })
+        const tasks = res.result.tasks.map(task => {
+          const badgeMap = {
+            'daily': '📅',
+            'weekly': '📆',
+            'monthly': '🗓️',
+            'permanent': '♾️'
+          }
+          return {
+            ...task,
+            taskTypeBadge: badgeMap[task.taskType] || '📅'
+          }
+        })
+        this.setData({ tasks })
       } else {
         showToast(res.result.error || '加载失败')
       }
@@ -165,7 +177,19 @@ Page({
         !task.targetChildId || task.targetChildId === currentChild.childId
       )
 
-      this.setData({ tasks: childTasks })
+      const badgeMap = {
+        'daily': '📅',
+        'weekly': '📆',
+        'monthly': '🗓️',
+        'permanent': '♾️'
+      }
+
+      const tasks = childTasks.map(task => ({
+        ...task,
+        taskTypeBadge: badgeMap[task.taskType] || '📅'
+      }))
+
+      this.setData({ tasks })
     } catch (err) {
       console.error('[任务管理] 加载本地任务失败:', err)
       showToast('加载失败')
