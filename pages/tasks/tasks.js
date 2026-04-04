@@ -14,6 +14,8 @@ Page({
     editingTask: null,
     currentFamily: null,  // 当前家庭
     currentChild: null,   // 当前儿童
+    taskTypeOptions: ['每日任务', '每周任务', '每月任务', '无期限任务'],
+    taskTypeIndex: 3,  // 默认选择"无期限任务"
     formData: {
       title: '',
       description: '',
@@ -184,11 +186,12 @@ Page({
     this.setData({
       showAddModal: true,
       editingTask: null,
+      taskTypeIndex: 3,  // 默认选择"无期限任务"
       formData: {
         title: '',
         description: '',
         coinReward: 10,
-        taskType: 'daily',
+        taskType: 'permanent',
         weekStart: this.formatDate(today),
         weekEnd: this.formatDate(weekEnd),
         monthStart: today.toISOString().substring(0, 7),
@@ -209,9 +212,14 @@ Page({
     const task = this.data.tasks.find(t => t.taskId === taskid)
 
     if (task) {
+      // 计算任务类型索引
+      const taskTypes = ['daily', 'weekly', 'monthly', 'permanent']
+      const taskTypeIndex = taskTypes.indexOf(task.taskType)
+
       this.setData({
         showAddModal: true,
         editingTask: task,
+        taskTypeIndex: taskTypeIndex >= 0 ? taskTypeIndex : 3,
         formData: {
           title: task.title,
           description: task.description,
@@ -314,9 +322,11 @@ Page({
    * 任务类型切换
    */
   onTaskTypeChange(e) {
+    const index = parseInt(e.detail.value)
     const taskTypes = ['daily', 'weekly', 'monthly', 'permanent']
-    const taskType = taskTypes[e.detail.value]
+    const taskType = taskTypes[index]
     this.setData({
+      taskTypeIndex: index,
       'formData.taskType': taskType
     })
   },
