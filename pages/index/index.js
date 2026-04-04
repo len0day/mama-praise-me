@@ -263,6 +263,9 @@ Page({
             completed = allCompletions.some(c =>
               c.taskId === task.taskId && c.completedMonth === currentMonth
             )
+          } else if (task.taskType === 'permanent') {
+            // 无期限任务：始终显示为未完成，可以重复完成
+            completed = false
           }
 
           return {

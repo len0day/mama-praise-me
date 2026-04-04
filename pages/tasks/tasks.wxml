@@ -32,7 +32,7 @@
       wx:for="{{tasks}}"
       wx:key="taskId">
       <view class="task-header">
-        <view class="task-type-badge">{{item.taskType === 'daily' ? '📅' : (item.taskType === 'weekly' ? '📆' : '🗓️')}}</view>
+        <view class="task-type-badge">{{item.taskType === 'daily' ? '📅' : (item.taskType === 'weekly' ? '📆' : (item.taskType === 'monthly' ? '🗓️' : '♾️')}}</view>
         <view class="task-title">{{item.title}}</view>
         <view class="task-reward">🪙 +{{item.coinReward}}</view>
       </view>
@@ -114,9 +114,9 @@
       <!-- 任务类型 -->
       <view class="form-group">
         <view class="form-label">{{i18n.tasks.taskType || '任务类型'}}</view>
-        <picker mode="selector" range="{{['每日任务', '每周任务', '每月任务']}}" value="{{formData.taskType === 'daily' ? 0 : (formData.taskType === 'weekly' ? 1 : 2)}}" bindchange="onTaskTypeChange">
+        <picker mode="selector" range="{{['每日任务', '每周任务', '每月任务', '无期限任务']}}" value="{{formData.taskType === 'daily' ? 0 : (formData.taskType === 'weekly' ? 1 : (formData.taskType === 'monthly' ? 2 : 3))}}" bindchange="onTaskTypeChange">
           <view class="form-picker">
-            {{formData.taskType === 'daily' ? '每日任务' : (formData.taskType === 'weekly' ? '每周任务' : '每月任务')}}
+            {{formData.taskType === 'daily' ? '每日任务' : (formData.taskType === 'weekly' ? '每周任务' : (formData.taskType === 'monthly' ? '每月任务' : '无期限任务'))}}
           </view>
         </picker>
       </view>

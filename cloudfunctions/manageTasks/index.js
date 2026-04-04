@@ -143,7 +143,7 @@ exports.main = async (event, context) => {
         title: title,
         description: description || '',
         coinReward: coinReward || 0,
-        taskType: taskType || 'daily',  // daily, weekly, monthly
+        taskType: taskType || 'permanent',  // daily, weekly, monthly, permanent
         weekStart: weekStart || null,
         weekEnd: weekEnd || null,
         monthStart: monthStart || null,
@@ -342,6 +342,9 @@ exports.main = async (event, context) => {
         alreadyCompleted = completedRes.data.some(c => c.completedWeek === currentWeek)
       } else if (task.taskType === 'monthly') {
         alreadyCompleted = completedRes.data.some(c => c.completedMonth === currentMonth)
+      } else if (task.taskType === 'permanent') {
+        // 无期限任务：可以重复完成，不需要检查
+        alreadyCompleted = false
       }
 
       if (alreadyCompleted) {

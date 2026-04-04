@@ -18,7 +18,7 @@ Page({
       title: '',
       description: '',
       coinReward: 10,
-      taskType: 'daily',
+      taskType: 'permanent',
       weekStart: '',
       weekEnd: '',
       monthStart: '',
@@ -314,7 +314,8 @@ Page({
    * 任务类型切换
    */
   onTaskTypeChange(e) {
-    const taskType = e.detail.value
+    const taskTypes = ['daily', 'weekly', 'monthly', 'permanent']
+    const taskType = taskTypes[e.detail.value]
     this.setData({
       'formData.taskType': taskType
     })
@@ -492,7 +493,8 @@ Page({
     const types = {
       'daily': '每日任务',
       'weekly': '每周任务',
-      'monthly': '每月任务'
+      'monthly': '每月任务',
+      'permanent': '无期限任务'
     }
     return types[type] || type
   },
