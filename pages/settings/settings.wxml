@@ -16,7 +16,7 @@
   <!-- 当前孩子信息 -->
   <view class="child-card" wx:if="{{currentChild}}">
     <view class="child-avatar">
-      <image wx:if="{{currentChild.avatar && (currentChild.avatar.indexOf('http') === 0 || currentChild.avatar.indexOf('cloud://') === 0)}}" src="{{currentChild.avatar}}" mode="aspectFill" />
+      <image wx:if="{{currentChild.avatar}}" src="{{currentChild.avatar}}" mode="aspectFill" />
       <text wx:else>{{currentChild.name.substring(0, 1)}}</text>
     </view>
     <view class="child-info">

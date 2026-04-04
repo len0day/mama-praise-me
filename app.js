@@ -230,9 +230,38 @@ App({
   saveSettingsToStorage() {
     try {
       wx.setStorageSync('appSettings', this.globalData.settings)
-      console.log('[妈妈表扬我] ✓ 设置已保存')
+      console.log('[妈妈表扬我] ✓ 设置已保存到本地')
+
+      // 如果已登录，同步到云端
+      if (this.globalData.useCloudStorage && this.globalData.currentUserOpenid) {
+        this.syncSettingsToCloud()
+      }
     } catch (e) {
       console.error('[妈妈表扬我] 保存设置失败:', e)
+    }
+  },
+
+  /**
+   * 同步设置到云端
+   */
+  async syncSettingsToCloud() {
+    if (!this.globalData.useCloudStorage || !this.globalData.currentUserOpenid) {
+      return
+    }
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'updateUserSettings',
+        data: {
+          settings: this.globalData.settings
+        }
+      })
+
+      if (res.result.success) {
+        console.log('[妈妈表扬我] ✓ 设置已同步到云端')
+      }
+    } catch (err) {
+      console.error('[妈妈表扬我] 同步设置到云端失败:', err)
     }
   },
 

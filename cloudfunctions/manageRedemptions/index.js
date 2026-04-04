@@ -30,10 +30,25 @@ exports.main = async (event, context) => {
   try {
     // 获取兑换记录（包含完整奖品信息）
     if (action === 'getRedemptions') {
-      const { childId, status, limit = 50, skip = 0 } = data || {}
+      const { childId, familyId, status, limit = 50, skip = 0 } = data || {}
 
-      const whereCondition = {
-        openid: OPENID
+      console.log('[manageRedemptions] getRedemptions called with familyId:', familyId, 'childId:', childId)
+
+      // 必须提供 familyId
+      if (!familyId) {
+        return {
+          success: false,
+          error: '缺少家庭ID'
+        }
+      }
+
+      let redemptions = []
+
+      console.log('[manageRedemptions] 查询条件 - familyId:', familyId, 'childId:', childId, 'status:', status)
+
+      // 1. 先查询按 familyId 的记录（新系统）
+      let whereCondition = {
+        familyId: familyId
       }
 
       if (childId) {
@@ -44,6 +59,8 @@ exports.main = async (event, context) => {
         whereCondition.status = status
       }
 
+      console.log('[manageRedemptions] 新系统查询条件:', JSON.stringify(whereCondition))
+
       const res = await db.collection('redemptions')
         .where(whereCondition)
         .orderBy('redeemedAt', 'desc')
@@ -51,9 +68,55 @@ exports.main = async (event, context) => {
         .skip(skip)
         .get()
 
+      redemptions = res.data
+
+      console.log('[manageRedemptions] 新系统查询结果数量:', res.data.length)
+      console.log('[manageRedemptions] 新系统查询结果:', JSON.stringify(res.data.map(r => ({
+        _id: r._id,
+        redemptionId: r.redemptionId,
+        prizeId: r.prizeId,
+        prizeName: r.prizeName,
+        prizeImage: r.prizeImage,
+        coinCost: r.coinCost,
+        status: r.status,
+        childId: r.childId,
+        familyId: r.familyId
+      }))))
+
+      // 2. 如果新系统没有数据，兼容查询旧系统（基于 openid）
+      if (redemptions.length === 0) {
+        console.log('[manageRedemptions] 新系统无数据，查询旧系统兼容记录')
+        console.log('[manageRedemptions] 旧系统查询 - openid:', OPENID, 'childId:', childId)
+
+        whereCondition = {
+          openid: OPENID
+        }
+
+        if (childId) {
+          whereCondition.childId = childId
+        }
+
+        if (status) {
+          whereCondition.status = status
+        }
+
+        console.log('[manageRedemptions] 旧系统查询条件:', JSON.stringify(whereCondition))
+
+        const oldRes = await db.collection('redemptions')
+          .where(whereCondition)
+          .orderBy('redeemedAt', 'desc')
+          .limit(limit)
+          .skip(skip)
+          .get()
+
+        console.log('[manageRedemptions] 旧系统查询结果数量:', oldRes.data.length)
+        console.log('[manageRedemptions] 旧系统查询结果:', JSON.stringify(oldRes.data))
+        redemptions = oldRes.data
+      }
+
       // 为每个兑换记录补充奖品的完整信息
       const redemptionsWithPrizeInfo = await Promise.all(
-        res.data.map(async (redemption) => {
+        redemptions.map(async (redemption) => {
           // 如果已经有图片，直接返回
           if (redemption.prizeImage) {
             return redemption
@@ -63,7 +126,7 @@ exports.main = async (event, context) => {
           try {
             const prizeRes = await db.collection('prizes')
               .where({
-                openid: OPENID,
+                familyId: familyId,
                 prizeId: redemption.prizeId
               })
               .get()
@@ -374,15 +437,17 @@ exports.main = async (event, context) => {
     if (action === 'usePrize') {
       const { redemptionId } = data
 
-      // 获取兑换记录
-      const res = await db.collection('redemptions')
+      console.log('[manageRedemptions] usePrize - redemptionId:', redemptionId)
+
+      // 获取兑换记录（先尝试新系统 familyId，再尝试旧系统 openid）
+      let res = await db.collection('redemptions')
         .where({
-          openid: OPENID,
           redemptionId: redemptionId
         })
         .get()
 
       if (res.data.length === 0) {
+        console.error('[manageRedemptions] usePrize - 兑换记录不存在')
         return {
           success: false,
           error: '兑换记录不存在'
@@ -390,6 +455,7 @@ exports.main = async (event, context) => {
       }
 
       const redemption = res.data[0]
+      console.log('[manageRedemptions] usePrize - 找到兑换记录:', JSON.stringify(redemption))
 
       // 检查是否已使用
       if (redemption.usedAt) {
@@ -399,18 +465,18 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 检查是否已确认
-      if (redemption.status !== 'completed') {
+      // 检查状态：pending 或 completed 都可以使用
+      // pending: 待家长确认，completed: 已确认
+      if (redemption.status !== 'pending' && redemption.status !== 'completed') {
         return {
           success: false,
-          error: '奖品尚未确认'
+          error: '奖品状态异常'
         }
       }
 
       // 更新使用时间
-      await db.collection('redemptions')
+      const updateRes = await db.collection('redemptions')
         .where({
-          openid: OPENID,
           redemptionId: redemptionId
         })
         .update({
@@ -418,6 +484,18 @@ exports.main = async (event, context) => {
             usedAt: new Date()
           }
         })
+
+      console.log('[manageRedemptions] usePrize - 更新结果:', updateRes.stats)
+
+      if (updateRes.stats.updated === 0) {
+        console.error('[manageRedemptions] usePrize - 更新失败，没有记录被修改')
+        return {
+          success: false,
+          error: '更新失败'
+        }
+      }
+
+      console.log('[manageRedemptions] usePrize - 奖品使用成功')
 
       return {
         success: true

@@ -91,7 +91,10 @@
       <!-- 儿童列表 -->
       <view class="children-list" wx:if="{{familyChildren.length > 0}}">
         <view class="child-item" wx:for="{{familyChildren}}" wx:key="childId">
-          <view class="child-avatar">{{item.name.substring(0, 1)}}</view>
+          <view class="child-avatar">
+            <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" />
+            <text wx:else>{{item.name.substring(0, 1)}}</text>
+          </view>
           <view class="child-info">
             <view class="child-name">{{item.name}}</view>
             <view class="child-coins">{{item.familyCoins}} 金币</view>
@@ -127,7 +130,10 @@
             wx:for="{{myChildren}}"
             wx:for-item="myChild"
             wx:key="childId">
-            <view class="child-avatar-small">{{myChild.name.substring(0, 1)}}</view>
+            <view class="child-avatar-small">
+              <image wx:if="{{myChild.avatar}}" src="{{myChild.avatar}}" mode="aspectFill" />
+              <text wx:else>{{myChild.name.substring(0, 1)}}</text>
+            </view>
             <view class="child-name-small">{{myChild.name}}</view>
             <button
               class="add-child-btn"
@@ -325,7 +331,10 @@
         <view class="form-group">
           <view class="form-label">儿童</view>
           <view class="child-display">
-            <view class="child-avatar-small">{{assigningChild.name.substring(0, 1)}}</view>
+            <view class="child-avatar-small">
+              <image wx:if="{{assigningChild.avatar}}" src="{{assigningChild.avatar}}" mode="aspectFill" />
+              <text wx:else>{{assigningChild.name.substring(0, 1)}}</text>
+            </view>
             <view class="child-name-small">{{assigningChild.name}}</view>
           </view>
         </view>

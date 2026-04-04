@@ -42,10 +42,19 @@ Page({
     const currentChild = app.getCurrentChild()
 
     // 补充家庭信息和金币余额
-    if (currentChild && currentChild.familyId) {
+    if (currentChild) {
+      // 确保 child 有 familyId 字段
+      const childWithFamilyId = {
+        ...currentChild,
+        familyId: currentChild.familyId || app.getCurrentFamilyId()
+      }
       // 加载家庭名称和金币余额
-      const enrichedChild = await this.enrichChildInfo(currentChild)
+      const enrichedChild = await this.enrichChildInfo(childWithFamilyId)
+      console.log('[首页] enrichedChild:', enrichedChild)
+      console.log('[首页] enrichedChild.familyName:', enrichedChild.familyName)
+      console.log('[首页] enrichedChild.familyCoins:', enrichedChild.familyCoins)
       this.setData({ currentChild: enrichedChild, needFamily: false })
+      console.log('[首页] setData completed')
     } else {
       this.setData({ currentChild, needFamily: false })
     }
@@ -65,11 +74,20 @@ Page({
       console.log('[首页] 当前家庭ID:', currentFamilyId)
       console.log('[首页] 儿童家庭ID:', child.familyId)
 
+      // 确保 child 有 familyId
+      const childWithFamilyId = {
+        ...child,
+        familyId: child.familyId || currentFamilyId
+      }
+
       // 如果儿童的家庭ID和当前家庭ID不一致，不显示
-      if (currentFamilyId && child.familyId !== currentFamilyId) {
+      if (currentFamilyId && childWithFamilyId.familyId !== currentFamilyId) {
         console.warn('[首页] 儿童不属于当前家庭')
         return child
       }
+
+      // 使用带 familyId 的 child
+      child = childWithFamilyId
 
       let familyName = '家庭'
       let familyCoins = 0
@@ -138,46 +156,39 @@ Page({
    * 加载数据
    */
   async loadData() {
-    // 获取当前孩子（会自动选择逻辑）
+    // 获取当前家庭和孩子
+    const currentFamilyId = app.getCurrentFamilyId()
     const currentChild = app.getCurrentChild()
 
-    if (!currentChild) {
-      // 没有孩子，显示空状态
+    if (!currentFamilyId || !currentChild) {
+      // 没有家庭或孩子，显示空状态
       this.setData({
         tasks: [],
         todayCompletions: [],
+        currentFamilyId: null,
         currentChild: null,
         isLoading: false
       })
       return
     }
 
-    this.setData({ currentChild, isLoading: true })
+    // 只设置 currentFamilyId，不覆盖 currentChild（因为它可能已经包含了 familyName 和 familyCoins）
+    this.setData({ currentFamilyId, isLoading: true })
 
     // 未登录：从本地加载数据
     if (!app.globalData.useCloudStorage) {
-      this.loadDataFromLocal(currentChild)
+      this.loadDataFromLocal(currentFamilyId, currentChild)
       return
     }
 
     // 已登录：从云端加载数据
-    await this.loadDataFromCloud(currentChild)
+    await this.loadDataFromCloud(currentFamilyId, currentChild)
   },
 
   /**
    * 从本地加载数据
    */
-  loadDataFromLocal(currentChild) {
-    const currentFamilyId = app.getCurrentFamilyId()
-    if (!currentFamilyId) {
-      this.setData({
-        tasks: [],
-        todayCompletions: [],
-        isLoading: false
-      })
-      return
-    }
-
+  loadDataFromLocal(currentFamilyId, currentChild) {
     const localTasks = wx.getStorageSync(`localTasks_${currentFamilyId}`) || []
     const localCompletions = wx.getStorageSync(`localCompletions_${currentFamilyId}`) || []
 
@@ -191,13 +202,35 @@ Page({
       comp.childId === currentChild.childId
     )
 
-    // 检查今日完成状态
+    // 检查完成状态（根据任务类型）
     const today = new Date().toISOString().split('T')[0]
+    const currentWeek = this.getWeekIdentifier(today)
+    const currentMonth = this.getMonthIdentifier(today)
+
     const tasks = childTasks.map(task => {
-      const completedToday = childCompletions.some(c =>
-        c.taskId === task.taskId && c.completedDate === today
-      )
-      return { ...task, completed: completedToday }
+      let completed = false
+
+      if (task.taskType === 'daily') {
+        // 每日任务：检查今天是否完成
+        completed = childCompletions.some(c =>
+          c.taskId === task.taskId && c.completedDate === today
+        )
+      } else if (task.taskType === 'weekly') {
+        // 每周任务：检查本周是否完成
+        completed = childCompletions.some(c =>
+          c.taskId === task.taskId && this.getWeekIdentifier(c.completedDate) === currentWeek
+        )
+      } else if (task.taskType === 'monthly') {
+        // 每月任务：检查本月是否完成
+        completed = childCompletions.some(c =>
+          c.taskId === task.taskId && this.getMonthIdentifier(c.completedDate) === currentMonth
+        )
+      } else if (task.taskType === 'permanent') {
+        // 无期限任务：始终显示为未完成，可以重复完成
+        completed = false
+      }
+
+      return { ...task, completed: completed }
     })
 
     const todayCompletions = childCompletions.filter(c => c.completedDate === today)
@@ -212,7 +245,7 @@ Page({
   /**
    * 从云端加载数据
    */
-  async loadDataFromCloud(currentChild) {
+  async loadDataFromCloud(currentFamilyId, currentChild) {
     try {
       // 获取任务列表和所有完成记录
       const [tasksRes, completionsRes] = await Promise.all([
@@ -322,6 +355,42 @@ Page({
       return
     }
 
+    // 查找任务
+    const task = this.data.tasks.find(t => t.taskId === taskid)
+    if (!task) {
+      showToast('任务不存在')
+      return
+    }
+
+    // 检查任务是否已完成
+    if (task.completed) {
+      // 根据任务类型显示不同的提示
+      if (task.taskType === 'daily') {
+        showToast('今日任务已完成')
+      } else if (task.taskType === 'weekly') {
+        showToast('本周任务已完成')
+      } else if (task.taskType === 'monthly') {
+        showToast('本月任务已完成')
+      } else if (task.taskType === 'permanent') {
+        // 永久任务可以重复完成，不提示已完成
+        const confirm = await showConfirm('确定完成任务吗？')
+        if (!confirm) return
+
+        showLoading('处理中...')
+
+        // 未登录：保存到本地
+        if (!app.globalData.useCloudStorage) {
+          this.completeTaskToLocal(taskid)
+          return
+        }
+
+        // 已登录：保存到云端
+        await this.completeTaskToCloud(taskid)
+        return
+      }
+      return
+    }
+
     const confirm = await showConfirm('确定完成任务吗？')
     if (!confirm) return
 
@@ -356,9 +425,25 @@ Page({
         return
       }
 
-      // 保存完成记录到本地
+      // 检查是否已完成（永久任务除外）
       const storageKey = `localCompletions_${currentFamilyId}`
       const completions = wx.getStorageSync(storageKey) || []
+      const today = new Date().toISOString().split('T')[0]
+
+      if (task.taskType !== 'permanent') {
+        const alreadyCompleted = completions.some(c =>
+          c.taskId === taskId &&
+          c.childId === this.data.currentChild.childId &&
+          c.completedDate === today
+        )
+        if (alreadyCompleted) {
+          hideLoading()
+          showToast('任务今天已完成')
+          return
+        }
+      }
+
+      // 保存完成记录到本地
       const completion = {
         completionId: `completion_${Date.now()}`,
         taskId: taskId,
@@ -367,7 +452,7 @@ Page({
         childName: this.data.currentChild.name,
         coinEarned: task.coinReward,
         completedAt: new Date().toISOString(),
-        completedDate: new Date().toISOString().split('T')[0]
+        completedDate: today
       }
       completions.push(completion)
       wx.setStorageSync(storageKey, completions)
@@ -404,7 +489,8 @@ Page({
           action: 'completeTask',
           data: {
             taskId: taskId,
-            childId: this.data.currentChild.childId
+            childId: this.data.currentChild.childId,
+            familyId: this.data.currentFamilyId
           }
         }
       })
@@ -434,25 +520,33 @@ Page({
     if (!this.data.currentChild) return
 
     try {
-      const res = await wx.cloud.callFunction({
-        name: 'manageChildren',
-        data: {
-          action: 'getChild',
-          data: { childId: this.data.currentChild.childId }
-        }
-      })
+      let child = this.data.currentChild
 
-      if (res.result.success) {
-        // 更新全局数据
-        const index = app.globalData.children.findIndex(
-          c => c.childId === res.result.child.childId
-        )
-        if (index !== -1) {
-          app.globalData.children[index] = res.result.child
-        }
+      // 已登录：从云端获取最新孩子数据
+      if (app.globalData.useCloudStorage) {
+        const res = await wx.cloud.callFunction({
+          name: 'manageChildren',
+          data: {
+            action: 'getChild',
+            data: { childId: this.data.currentChild.childId }
+          }
+        })
 
-        this.setData({ currentChild: res.result.child })
+        if (res.result.success) {
+          child = res.result.child
+          // 更新全局数据
+          const index = app.globalData.children.findIndex(
+            c => c.childId === child.childId
+          )
+          if (index !== -1) {
+            app.globalData.children[index] = child
+          }
+        }
       }
+
+      // 补充家庭信息和金币余额
+      const enrichedChild = await this.enrichChildInfo(child)
+      this.setData({ currentChild: enrichedChild })
     } catch (err) {
       console.error('[首页] 刷新孩子数据失败:', err)
     }

@@ -54,7 +54,10 @@
 
             <view class="child-list">
               <view class="child-item" wx:for="{{familyChildren}}" wx:key="childId" wx:for-item="child">
-                <view class="child-avatar">{{child.name.substring(0, 1)}}</view>
+                <view class="child-avatar">
+                  <image wx:if="{{child.avatar}}" src="{{child.avatar}}" mode="aspectFill" />
+                  <text wx:else>{{child.name.substring(0, 1)}}</text>
+                </view>
                 <view class="child-info">
                   <view class="child-name">{{child.name}}</view>
                   <view class="child-coins">🪙 {{child.familyCoins}}</view>

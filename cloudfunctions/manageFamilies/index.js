@@ -812,6 +812,8 @@ exports.main = async (event, context) => {
       const childIds = childrenRes.data.map(c => c.childId)
       let coinsMap = {}
 
+      console.log('[manageFamilies] getFamilyChildren - childIds:', childIds)
+
       if (childIds.length > 0) {
         const coinsRes = await db.collection('family_coin_balances')
           .where({
@@ -819,10 +821,18 @@ exports.main = async (event, context) => {
           })
           .get()
 
+        console.log('[manageFamilies] getFamilyChildren - 金币记录:', coinsRes.data.length)
+        console.log('[manageFamilies] getFamilyChildren - 金币记录详情:', coinsRes.data.map(r => ({
+          childId: r.childId,
+          balance: r.balance
+        })))
+
         // 建立 childId -> balance 的映射
         coinsRes.data.forEach(record => {
           coinsMap[record.childId] = record.balance
         })
+
+        console.log('[manageFamilies] getFamilyChildren - coinsMap:', coinsMap)
       }
 
       // 为每个儿童添加 familyCoins 字段
@@ -830,6 +840,12 @@ exports.main = async (event, context) => {
         ...child,
         familyCoins: coinsMap[child.childId] || 0
       }))
+
+      console.log('[manageFamilies] getFamilyChildren - enrichedChildren:', enrichedChildren.map(c => ({
+        name: c.name,
+        childId: c.childId,
+        familyCoins: c.familyCoins
+      })))
 
       return {
         success: true,

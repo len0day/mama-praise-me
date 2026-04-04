@@ -5,7 +5,8 @@
   <!-- 当前孩子信息 -->
   <view class="child-info" wx:if="{{currentChild}}">
     <view class="child-avatar">
-      <text>{{currentChild.name.substring(0, 1)}}</text>
+      <image wx:if="{{currentChild.avatar}}" src="{{currentChild.avatar}}" mode="aspectFill" />
+      <text wx:else>{{currentChild.name.substring(0, 1)}}</text>
     </view>
     <view class="child-details">
       <view class="child-name">{{currentChild.name}}</view>
@@ -30,49 +31,51 @@
     <!-- 奖品列表 -->
     <view class="prizes-list" wx:if="{{!isLoading}}">
       <view
-        class="prize-item {{redemption.usedAt ? 'used' : ''}}"
+        class="prize-item {{item.usedAt ? 'used' : ''}}"
         wx:for="{{redemptions}}"
-        wx:key="redemptionId">
+        wx:key="_id">
         <view class="prize-card">
           <!-- 奖品图片 -->
           <view class="prize-image">
             <image
-              wx:if="{{redemption.prizeImage}}"
-              src="{{redemption.prizeImage}}"
+              wx:if="{{item.prizeImage}}"
+              src="{{item.prizeImage}}"
               mode="aspectFill" />
             <text wx:else class="placeholder-icon">🎁</text>
           </view>
 
           <!-- 奖品信息 -->
           <view class="prize-info">
-            <view class="prize-name">{{redemption.prizeName}}</view>
+            <view class="prize-name">{{item.prizeName}}</view>
+
             <view class="prize-meta">
-              <text class="redeem-time">兑换于 {{formatTime(redemption.redeemedAt)}}</text>
+              <text class="coin-cost">🪙 {{item.coinCost}} 金币</text>
+              <text class="redeem-time">兑换于 {{item.formattedRedeemedAt}}</text>
             </view>
 
-            <!-- 使用状态 -->
-            <view class="use-status pending" wx:if="{{redemption.status === 'pending'}}">
-              <text class="status-icon">⏳</text>
-              <text class="status-text">{{i18n.redemptions.pending || '待兑换'}}</text>
-            </view>
-            <view class="use-status" wx:elif="{{redemption.usedAt}}">
-              <text class="status-icon">✓</text>
-              <text class="status-text">{{i18n.redemptions.used || '已使用'}}</text>
-              <text class="use-time">{{formatTime(redemption.usedAt)}}</text>
-            </view>
-            <view class="use-status ready" wx:else>
-              <text class="status-icon">🎁</text>
-              <text class="status-text">{{i18n.redemptions.notUsed || '待使用'}}</text>
+            <!-- 使用状态和按钮行 -->
+            <view class="status-action-row">
+              <!-- 使用状态 -->
+              <view class="use-status" wx:if="{{item.usedAt}}">
+                <text class="status-icon">✓</text>
+                <text class="status-text">{{i18n.redemptions.used || '已使用'}}</text>
+                <text class="use-time">{{item.formattedUsedAt}}</text>
+              </view>
+              <view class="use-status ready" wx:else>
+                <text class="status-icon">🎁</text>
+                <text class="status-text">{{i18n.redemptions.notUsed || '待使用'}}</text>
+              </view>
+
+              <!-- 使用按钮 -->
+              <button
+                class="use-btn-inline"
+                wx:if="{{!item.usedAt}}"
+                data-redemptionid="{{item.redemptionId}}"
+                bindtap="usePrize">
+                {{i18n.redemptions.use || '使用'}}
+              </button>
             </view>
           </view>
-
-          <!-- 使用按钮 -->
-          <button
-            class="use-btn"
-            data-redemptionid="{{redemption.redemptionId}}"
-            bindtap="usePrize">
-            {{i18n.redemptions.use || '使用'}}
-          </button>
         </view>
       </view>
 

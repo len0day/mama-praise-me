@@ -14,7 +14,8 @@
   <!-- 当前孩子信息 -->
   <view class="child-info" wx:if="{{currentChild && !needFamily}}">
     <view class="child-avatar">
-      <text>{{currentChild.name.substring(0, 1)}}</text>
+      <image wx:if="{{currentChild.avatar}}" src="{{currentChild.avatar}}" mode="aspectFill" />
+      <text wx:else>{{currentChild.name.substring(0, 1)}}</text>
     </view>
     <view class="child-details">
       <view class="child-name">{{currentChild.name}} - {{currentChild.familyName || '家庭'}}</view>

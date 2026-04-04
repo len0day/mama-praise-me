@@ -166,7 +166,7 @@
   <!-- 家长模式密码弹窗 -->
   <parent-password-modal
     show="{{showPasswordModal}}"
-    isFirstTime="{{!app.hasParentPassword()}}"
+    isFirstTime="{{isFirstTime}}"
     bindsuccess="onPasswordSuccess"
     bindcancel="onPasswordCancel"
     bindclose="onPasswordClose" />

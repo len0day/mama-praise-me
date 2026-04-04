@@ -371,7 +371,7 @@ exports.main = async (event, context) => {
       })
 
       // 增加金币（使用 manageFamilyCoins，按家庭隔离）
-      const coinsRes = await wx.cloud.callFunction({
+      const coinsRes = await cloud.callFunction({
         name: 'manageFamilyCoins',
         data: {
           action: 'addCoins',

@@ -239,6 +239,8 @@ exports.main = async (event, context) => {
     if (action === 'redeemPrize') {
       const { prizeId, childId, familyId } = data
 
+      console.log('[managePrizes] redeemPrize - prizeId:', prizeId, 'childId:', childId, 'familyId:', familyId)
+
       if (!childId || !familyId) {
         return {
           success: false,
@@ -253,6 +255,8 @@ exports.main = async (event, context) => {
           isActive: true
         })
         .get()
+
+      console.log('[managePrizes] 奖品查询结果:', prizeRes.data.length)
 
       if (prizeRes.data.length === 0) {
         return {
@@ -272,7 +276,7 @@ exports.main = async (event, context) => {
       }
 
       // 获取儿童在该家庭的金币余额
-      const coinsRes = await wx.cloud.callFunction({
+      const coinsRes = await cloud.callFunction({
         name: 'manageFamilyCoins',
         data: {
           action: 'getChildCoinsInFamily',
@@ -310,7 +314,7 @@ exports.main = async (event, context) => {
       }
 
       // 扣除金币（按家庭隔离）
-      const deductRes = await wx.cloud.callFunction({
+      const deductRes = await cloud.callFunction({
         name: 'manageFamilyCoins',
         data: {
           action: 'deductCoins',
@@ -346,24 +350,31 @@ exports.main = async (event, context) => {
 
       // 创建兑换记录
       const redemptionId = generateRedemptionId()
+      const redemptionData = {
+        redemptionId: redemptionId,
+        prizeId: prizeId,
+        prizeName: prize.name,
+        prizeImage: prize.image,
+        childId: childId,
+        familyId: familyId,
+        coinCost: prize.coinCost,
+        status: 'pending',
+        redeemedAt: new Date(),
+        createdAt: new Date()
+      }
+
+      console.log('[managePrizes] 创建兑换记录:', JSON.stringify(redemptionData))
+
       await db.collection('redemptions').add({
-        data: {
-          redemptionId: redemptionId,
-          prizeId: prizeId,
-          prizeName: prize.name,
-          prizeImage: prize.image,
-          childId: childId,
-          familyId: familyId,
-          coinCost: prize.coinCost,
-          status: 'pending',
-          redeemedAt: new Date(),
-          createdAt: new Date()
-        }
+        data: redemptionData
       })
+
+      console.log('[managePrizes] 兑换记录创建成功, redemptionId:', redemptionId)
 
       return {
         success: true,
-        newBalance: deductRes.result.newBalance
+        newBalance: deductRes.result.newBalance,
+        redemptionId: redemptionId
       }
     }
 

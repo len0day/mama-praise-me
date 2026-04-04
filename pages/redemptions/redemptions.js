@@ -18,7 +18,10 @@ Page({
   },
 
   onShow() {
-    this.setData({ currentChild: app.getCurrentChild() })
+    const child = app.getCurrentChild()
+    console.log('[奖品仓库] onShow - currentChild:', child)
+    console.log('[奖品仓库] onShow - currentChild.name:', child ? child.name : 'null')
+    this.setData({ currentChild: child })
     this.loadRedemptions()
   },
 
@@ -36,7 +39,9 @@ Page({
           useConfirm: t('redemptions.useConfirm'),
           usedAt: t('redemptions.usedAt'),
           noPrizes: t('redemptions.noPrizes'),
-          useSuccess: t('redemptions.useSuccess')
+          useSuccess: t('redemptions.useSuccess'),
+          pending: t('redemptions.pending'),
+          use: t('redemptions.use')
         },
         common: {
           noChild: t('children.noChildren'),
@@ -48,9 +53,11 @@ Page({
 
   async loadRedemptions() {
     const currentChildId = app.globalData.currentChildId
+    const currentFamilyId = app.getCurrentFamilyId()
     console.log('[奖品仓库] currentChildId:', currentChildId)
+    console.log('[奖品仓库] currentFamilyId:', currentFamilyId)
 
-    if (!currentChildId) {
+    if (!currentChildId || !currentFamilyId) {
       this.setData({ redemptions: [] })
       return
     }
@@ -63,7 +70,10 @@ Page({
         name: 'manageRedemptions',
         data: {
           action: 'getRedemptions',
-          data: { childId: currentChildId }  // 不指定 status，获取所有
+          data: {
+            childId: currentChildId,
+            familyId: currentFamilyId  // ✅ 添加 familyId 参数
+          }
         }
       })
 
@@ -72,9 +82,23 @@ Page({
       if (res.result.success) {
         const redemptions = res.result.redemptions || []
         console.log('[奖品仓库] 兑换记录数量:', redemptions.length)
+        console.log('[奖品仓库] 兑换记录详情:', redemptions.map(r => ({
+          redemptionId: r.redemptionId,
+          _id: r._id,
+          prizeName: r.prizeName,
+          prizeImage: r.prizeImage,
+          coinCost: r.coinCost,
+          status: r.status
+        })))
+
+        // 为每条记录添加 redemptionId（如果不存在则使用 _id）
+        const redemptionsWithId = redemptions.map(r => ({
+          ...r,
+          redemptionId: r.redemptionId || r._id
+        }))
 
         // 过滤掉已取消的，只显示 pending 和 completed
-        const validRedemptions = redemptions.filter(r => r.status !== 'cancelled')
+        const validRedemptions = redemptionsWithId.filter(r => r.status !== 'cancelled')
 
         // 按状态和时间排序：pending和未使用的在前，已使用的在后
         const sortedRedemptions = validRedemptions.sort((a, b) => {
@@ -90,7 +114,13 @@ Page({
           return new Date(b.redeemedAt) - new Date(a.redeemedAt)
         })
 
-        console.log('[奖品仓库] 排序后:', sortedRedemptions)
+        console.log('[奖品仓库] 排序后:', sortedRedemptions.map(r => ({
+          redemptionId: r.redemptionId,
+          prizeName: r.prizeName,
+          hasPrizeImage: !!r.prizeImage,
+          coinCost: r.coinCost,
+          status: r.status
+        })))
 
         // 打印每个兑换记录的详细信息
         sortedRedemptions.forEach((r, index) => {
@@ -102,7 +132,31 @@ Page({
           })
         })
 
-        this.setData({ redemptions: sortedRedemptions })
+        // 预处理数据：格式化时间
+        const processedRedemptions = sortedRedemptions.map(r => ({
+          ...r,
+          formattedRedeemedAt: this.formatTime(r.redeemedAt),
+          formattedUsedAt: r.usedAt ? this.formatTime(r.usedAt) : ''
+        }))
+
+        this.setData({ redemptions: processedRedemptions })
+
+        // 打印最终的数据结构
+        console.log('[奖品仓库] setData 后的 redemptions:', this.data.redemptions.map(r => ({
+          redemptionId: r.redemptionId,
+          prizeName: r.prizeName,
+          prizeImage: r.prizeImage,
+          coinCost: r.coinCost,
+          status: r.status,
+          redeemedAt: r.redeemedAt,
+          formattedRedeemedAt: r.formattedRedeemedAt
+        })))
+
+        // 打印 i18n 数据
+        console.log('[奖品仓库] i18n 数据:', this.data.i18n)
+
+        // 检查 currentChild
+        console.log('[奖品仓库] currentChild:', this.data.currentChild)
       } else {
         console.error('[奖品仓库] 获取失败:', res.result.error)
         showToast(res.result.error || '获取失败')

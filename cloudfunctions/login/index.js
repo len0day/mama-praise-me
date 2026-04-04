@@ -52,6 +52,12 @@ exports.main = async (event, context) => {
           gender: userInfo.gender || 0,
           totalDownloads: 0, // 总下载次数
           lastDownloadTime: null, // 最后下载时间
+          settings: {
+            parentPassword: null,  // 家长密码
+            theme: 'light',
+            fontSize: 'medium',
+            locale: 'zh-CN'
+          },
           createdAt: db.serverDate(),
           updatedAt: db.serverDate()
         }
@@ -69,6 +75,12 @@ exports.main = async (event, context) => {
         gender: userInfo.gender || 0,
         totalDownloads: 0,
         lastDownloadTime: null,
+        settings: {
+          parentPassword: null,
+          theme: 'light',
+          fontSize: 'medium',
+          locale: 'zh-CN'
+        },
         createdAt: new Date(), // 使用当前时间作为近似值
         updatedAt: new Date()
       }
@@ -106,6 +118,12 @@ exports.main = async (event, context) => {
         gender: user.gender,
         totalDownloads: user.totalDownloads,
         lastDownloadTime: user.lastDownloadTime,
+        settings: user.settings || {
+          parentPassword: null,
+          theme: 'light',
+          fontSize: 'medium',
+          locale: 'zh-CN'
+        },
         createdAt: user.createdAt,
         isNewUser: isNewUser
       }

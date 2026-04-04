@@ -12,6 +12,9 @@ Page({
     editingPrize: null,
     showPasswordModal: false,
     isParentMode: false,
+    isFirstTime: false,
+    modalTrigger: null,
+    pendingPrizeId: null,
     formData: {
       name: '',
       description: '',
@@ -29,6 +32,7 @@ Page({
   },
 
   onLoad() {
+    console.log('[奖品管理] onLoad called')
     this.setData({
       themeClass: app.globalData.themeClass,
       isParentMode: app.isParentMode()
@@ -36,10 +40,21 @@ Page({
   },
 
   onShow() {
+    console.log('[奖品管理] onShow called, isParentMode:', app.isParentMode())
     this.setData({
       isParentMode: app.isParentMode()
     })
-    this.loadPrizes()
+
+    // 检查是否为家长模式，不是则要求验证
+    if (!app.isParentMode()) {
+      this.setData({
+        showPasswordModal: true,
+        isFirstTime: !app.hasParentPassword()
+      })
+      console.log('[奖品管理] Require parent mode verification, isFirstTime:', !app.hasParentPassword())
+    } else {
+      this.loadPrizes()
+    }
   },
 
   /**
@@ -49,11 +64,12 @@ Page({
     showLoading()
 
     try {
+      const currentFamilyId = app.getCurrentFamilyId()
       const res = await wx.cloud.callFunction({
         name: 'managePrizes',
         data: {
           action: 'getPrizes',
-          data: {}
+          data: { familyId: currentFamilyId }
         }
       })
 
@@ -72,6 +88,17 @@ Page({
    * 显示添加模态框
    */
   showAddModal() {
+    console.log('[奖品管理] showAddModal called, isParentMode:', this.data.isParentMode)
+    if (!this.data.isParentMode) {
+      this.setData({
+        showPasswordModal: true,
+        isFirstTime: !app.hasParentPassword(),
+        modalTrigger: 'add'
+      })
+      console.log('[奖品管理] showPasswordModal set to true, isFirstTime:', !app.hasParentPassword())
+      return
+    }
+
     this.setData({
       showAddModal: true,
       editingPrize: null,
@@ -90,6 +117,18 @@ Page({
    * 编辑奖品
    */
   editPrize(e) {
+    console.log('[奖品管理] editPrize called, isParentMode:', this.data.isParentMode)
+    if (!this.data.isParentMode) {
+      this.setData({
+        showPasswordModal: true,
+        isFirstTime: !app.hasParentPassword(),
+        modalTrigger: 'edit',
+        pendingPrizeId: e.currentTarget.dataset.prizeid
+      })
+      console.log('[奖品管理] showPasswordModal set to true, isFirstTime:', !app.hasParentPassword())
+      return
+    }
+
     const { prizeid } = e.currentTarget.dataset
     const prize = this.data.prizes.find(p => p.prizeId === prizeid)
 
@@ -112,34 +151,52 @@ Page({
   /**
    * 删除奖品
    */
-  async deletePrize(e) {
+  deletePrize(e) {
+    console.log('[奖品管理] deletePrize called, isParentMode:', this.data.isParentMode)
+    if (!this.data.isParentMode) {
+      this.setData({
+        showPasswordModal: true,
+        isFirstTime: !app.hasParentPassword(),
+        modalTrigger: 'delete',
+        pendingPrizeId: e.currentTarget.dataset.prizeid
+      })
+      console.log('[奖品管理] showPasswordModal set to true, isFirstTime:', !app.hasParentPassword())
+      return
+    }
+
     const { prizeid } = e.currentTarget.dataset
+    const prize = this.data.prizes.find(p => p.prizeId === prizeid)
 
-    const confirm = await showConfirm(t('prizes.deletePrizeConfirm'))
-    if (!confirm) return
+    if (prize) {
+      showConfirm(`确定要删除奖品”${prize.name}”吗？`).then(confirm => {
+        if (confirm) {
+          this.deletePrizeConfirmed(prizeid)
+        }
+      })
+    }
+  },
 
-    showLoading()
-
+  /**
+   * 删除奖品（确认后）
+   */
+  async deletePrizeConfirmed(prizeId) {
     try {
       const res = await wx.cloud.callFunction({
         name: 'managePrizes',
         data: {
           action: 'deletePrize',
-          data: { prizeId: prizeid }
+          data: { prizeId }
         }
       })
 
-      hideLoading()
-
       if (res.result.success) {
-        showToast(t('prizes.prizeDeleted'))
+        showToast('删除成功')
         await this.loadPrizes()
       } else {
         showToast(res.result.error || t('toast.operationFailed'))
       }
     } catch (err) {
-      hideLoading()
-      console.error('[奖品管理] 删除失败:', err)
+      console.error('[奖品管理] 删除奖品失败:', err)
       showToast(t('toast.operationFailed'))
     }
   },
@@ -159,12 +216,12 @@ Page({
    * 选择图片
    */
   chooseImage() {
+    console.log('[奖品管理] chooseImage called')
     wx.chooseMedia({
       count: 1,
       mediaType: ['image'],
       sourceType: ['album'],
       success: (res) => {
-        // 暂时只保存本地路径，实际使用时需要上传到云存储
         this.setData({
           'formData.image': res.tempFiles[0].tempFilePath
         })
@@ -238,7 +295,6 @@ Page({
           console.log('[奖品管理] 图片上传成功:', imageUrl)
         } catch (uploadErr) {
           console.error('[奖品管理] 图片上传失败:', uploadErr)
-          // 上传失败时继续保存，但没有图片
           imageUrl = ''
         }
       }
@@ -246,7 +302,8 @@ Page({
       // 准备要保存的数据
       const prizeData = {
         ...formData,
-        image: imageUrl
+        image: imageUrl,
+        familyId: app.getCurrentFamilyId()
       }
 
       let res
@@ -315,6 +372,7 @@ Page({
    * 切换家长模式
    */
   toggleParentMode() {
+    console.log('[奖品管理] toggleParentMode called')
     if (this.data.isParentMode) {
       // 退出家长模式
       app.exitParentMode()
@@ -323,8 +381,11 @@ Page({
     } else {
       // 进入家长模式
       this.setData({
-        showPasswordModal: true
+        showPasswordModal: true,
+        isFirstTime: !app.hasParentPassword(),
+        modalTrigger: 'toggle'
       })
+      console.log('[奖品管理] showPasswordModal set to true, isFirstTime:', !app.hasParentPassword())
     }
   },
 
@@ -332,17 +393,32 @@ Page({
    * 密码验证成功
    */
   onPasswordSuccess() {
+    console.log('[奖品管理] onPasswordSuccess called')
     this.setData({
       isParentMode: true,
       showPasswordModal: false
     })
     showToast('已进入家长模式')
+
+    // 如果有触发的操作，继续执行
+    const { modalTrigger, pendingPrizeId } = this.data
+    if (modalTrigger === 'add') {
+      setTimeout(() => this.showAddModal(), 100)
+    } else if (modalTrigger === 'edit' && pendingPrizeId) {
+      setTimeout(() => this.editPrize({ currentTarget: { dataset: { prizeid: pendingPrizeId } } }), 100)
+    } else if (modalTrigger === 'delete' && pendingPrizeId) {
+      setTimeout(() => this.deletePrize({ currentTarget: { dataset: { prizeid: pendingPrizeId } } }), 100)
+    }
+
+    // 清除触发器
+    this.setData({ modalTrigger: null, pendingPrizeId: null })
   },
 
   /**
    * 取消密码验证
    */
   onPasswordCancel() {
+    console.log('[奖品管理] onPasswordCancel called')
     this.setData({
       showPasswordModal: false
     })
@@ -352,6 +428,7 @@ Page({
    * 关闭密码弹窗
    */
   onPasswordClose() {
+    console.log('[奖品管理] onPasswordClose called')
     this.setData({
       showPasswordModal: false
     })
@@ -366,99 +443,5 @@ Page({
       return false
     }
     return true
-  },
-
-  /**
-   * 编辑奖品（家长模式验证）
-   */
-  editPrize(e) {
-    if (!this.canEdit()) {
-      return
-    }
-
-    const { prizeid } = e.currentTarget.dataset
-    const prize = this.data.prizes.find(p => p.prizeId === prizeid)
-
-    if (prize) {
-      this.setData({
-        showAddModal: true,
-        editingPrize: prize,
-        formData: {
-          name: prize.name,
-          description: prize.description,
-          image: prize.image || '',
-          coinCost: prize.coinCost,
-          category: prize.category,
-          stock: prize.stock
-        }
-      })
-    }
-  },
-
-  /**
-   * 删除奖品（家长模式验证）
-   */
-  deletePrize(e) {
-    if (!this.canEdit()) {
-      return
-    }
-
-    const { prizeid } = e.currentTarget.dataset
-    const prize = this.data.prizes.find(p => p.prizeId === prizeid)
-
-    if (prize) {
-      showConfirm(`确定要删除奖品“${prize.name}”吗？`).then(confirm => {
-        if (confirm) {
-          this.deletePrizeConfirmed(prizeid)
-        }
-      })
-    }
-  },
-
-  /**
-   * 删除奖品（确认后）
-   */
-  async deletePrizeConfirmed(prizeId) {
-    try {
-      const res = await wx.cloud.callFunction({
-        name: 'managePrizes',
-        data: {
-          action: 'deletePrize',
-          data: { prizeId }
-        }
-      })
-
-      if (res.result.success) {
-        showToast('删除成功')
-        await this.loadPrizes()
-      } else {
-        showToast(res.result.error || t('toast.operationFailed'))
-      }
-    } catch (err) {
-      console.error('[奖品管理] 删除奖品失败:', err)
-      showToast(t('toast.operationFailed'))
-    }
-  },
-
-  /**
-   * 显示添加模态框（家长模式验证）
-   */
-  showAddModal() {
-    if (!this.canEdit()) {
-      return
-    }
-
-    this.setData({
-      showAddModal: true,
-      editingPrize: null,
-      formData: {
-        name: '',
-        description: '',
-        image: '',
-        coinCost: 100,
-        category: 'other',
-        stock: -1
-      }
-    })
   }
 })

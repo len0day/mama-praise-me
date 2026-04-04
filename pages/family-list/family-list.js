@@ -219,7 +219,16 @@ Page({
       ])
 
       if (familyChildrenRes.result.success) {
-        this.setData({ familyChildren: familyChildrenRes.result.children || [] })
+        const children = familyChildrenRes.result.children || []
+        console.log('[家庭列表] 家庭儿童原始数据:', familyChildrenRes.result)
+        console.log('[家庭列表] 家庭儿童数据:', children.map(c => ({
+          name: c.name,
+          hasAvatar: !!c.avatar,
+          avatar: c.avatar,
+          familyCoins: c.familyCoins,
+          allKeys: Object.keys(c)
+        })))
+        this.setData({ familyChildren: children })
       }
 
       if (myChildrenRes.result.success) {

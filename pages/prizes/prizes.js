@@ -21,6 +21,11 @@ Page({
   },
 
   async onShow() {
+    console.log('[奖品商城] onShow 开始')
+    const child = app.getCurrentChild()
+    console.log('[奖品商城] onShow - currentChild:', child)
+    console.log('[奖品商城] onShow - currentChild.name:', child ? child.name : 'null')
+
     // 检查是否有家庭
     if (!app.getCurrentFamilyId()) {
       this.setData({
@@ -37,11 +42,18 @@ Page({
 
     // 获取当前孩子
     const currentChild = app.getCurrentChild()
+    console.log('[奖品商城] 当前孩子:', currentChild)
 
     // 补充家庭信息和金币余额
     if (currentChild && currentChild.familyId) {
       const enrichedChild = await this.enrichChildInfo(currentChild)
-      this.setData({ currentChild: enrichedChild, needFamily: false })
+      console.log('[奖品商城] 补充后的孩子信息:', enrichedChild)
+      console.log('[奖品商城] 补充后的金币:', enrichedChild.familyCoins)
+      this.setData({
+        currentChild: enrichedChild,
+        childCoins: enrichedChild.familyCoins || 0,
+        needFamily: false
+      })
     } else {
       this.setData({ currentChild, needFamily: false })
     }
@@ -159,10 +171,16 @@ Page({
     const localCoinBalances = wx.getStorageSync(`localCoinBalances_${currentFamilyId}`) || {}
     const childCoins = localCoinBalances[currentChild.childId] || 0
 
-    const affordablePrizes = localPrizes.filter(prize => childCoins >= prize.coinCost)
+    // 为每个奖品添加 affordable 标记
+    const prizesWithAffordable = localPrizes.map(prize => ({
+      ...prize,
+      affordable: childCoins >= prize.coinCost
+    }))
+
+    const affordablePrizes = prizesWithAffordable.filter(p => p.affordable)
 
     this.setData({
-      prizes: localPrizes,
+      prizes: prizesWithAffordable,
       affordablePrizes: affordablePrizes,
       childCoins: childCoins,
       coinRecords: [],
@@ -200,13 +218,46 @@ Page({
 
       if (prizesRes.result.success) {
         const prizes = prizesRes.result.prizes || []
-        // 金币是跨家庭共享的，使用 currentChild.totalCoins
+        console.log('[奖品商城] 加载到', prizes.length, '个奖品')
+        console.log('[奖品商城] 奖品数据样例:', prizes.map(p => ({
+          name: p.name,
+          hasImage: !!p.image,
+          image: p.image,
+          coinCost: p.coinCost,
+          affordable: p.affordable
+        })))
+
+        // 获取当前孩子的金币余额（与首页相同的方法）
+        let childCoins = 0
         const currentChild = app.getCurrentChild()
-        const childCoins = currentChild ? currentChild.totalCoins : 0
-        const affordablePrizes = prizes.filter(prize => childCoins >= prize.coinCost)
+        console.log('[奖品商城] currentChild:', currentChild)
+
+        if (currentChild) {
+          try {
+            const enrichedChild = await this.enrichChildInfo(currentChild)
+            childCoins = enrichedChild.familyCoins || 0
+            console.log('[奖品商城] enrichedChild.familyCoins:', enrichedChild.familyCoins)
+            console.log('[奖品商城] 最终 childCoins:', childCoins)
+          } catch (e) {
+            console.error('[奖品商城] 获取金币余额失败:', e)
+            childCoins = 0
+          }
+        }
+
+        console.log('[奖品商城] childCoins:', childCoins)
+        console.log('[奖品商城] 奖品列表:', prizes.map(p => `${p.name} - ${p.coinCost}金币`))
+
+        // 为每个奖品添加 affordable 标记
+        const prizesWithAffordable = prizes.map(prize => ({
+          ...prize,
+          affordable: childCoins >= prize.coinCost
+        }))
+
+        const affordablePrizes = prizesWithAffordable.filter(p => p.affordable)
+        console.log('[奖品商城] 可兑换奖品:', affordablePrizes.map(p => p.name))
 
         this.setData({
-          prizes: prizes,
+          prizes: prizesWithAffordable,
           affordablePrizes: affordablePrizes,
           childCoins: childCoins
         })
@@ -240,6 +291,12 @@ Page({
     const prize = this.data.prizes.find(p => p.prizeId === prizeid)
     if (!prize) return
 
+    // 检查金币是否足够（使用当前显示的金币数）
+    if (this.data.childCoins < prize.coinCost) {
+      showToast('金币不足，无法兑换')
+      return
+    }
+
     const confirm = await showConfirm(
       '确定要兑换"' + prize.name + '"吗？\n需要消耗 ' + prize.coinCost + ' 金币'
     )
@@ -249,6 +306,8 @@ Page({
 
     try {
       const currentFamilyId = app.getCurrentFamilyId()
+      console.log('[奖品商城] 开始兑换 - prizeId:', prizeid, 'childId:', currentChild.childId, 'familyId:', currentFamilyId)
+
       const res = await wx.cloud.callFunction({
         name: 'managePrizes',
         data: {
@@ -261,6 +320,7 @@ Page({
         }
       })
 
+      console.log('[奖品商城] 兑换结果:', res.result)
       hideLoading()
 
       if (res.result.success) {
@@ -273,6 +333,7 @@ Page({
           this.setData({ childCoins: res.result.newBalance })
         }
       } else {
+        console.error('[奖品商城] 兑换失败:', res.result.error)
         showToast(res.result.error || t('toast.operationFailed'))
       }
     } catch (err) {

@@ -36,8 +36,12 @@ Page({
   },
 
   onShow() {
+    const child = app.getCurrentChild()
+    console.log('[设置] onShow - currentChild:', child)
+    console.log('[设置] onShow - currentChild.name:', child ? child.name : 'null')
+
     this.setData({
-      currentChild: app.getCurrentChild(),
+      currentChild: child,
       isParentMode: app.isParentMode()
     })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
@@ -80,14 +84,79 @@ Page({
   /**
    * 加载统计数据
    */
-  loadStats() {
+  async loadStats() {
     const currentChild = app.getCurrentChild()
-    if (currentChild) {
+    if (!currentChild) {
+      this.setData({ stats: { totalCoins: 0, completedTasks: 0, redeemedPrizes: 0 } })
+      return
+    }
+
+    const currentFamilyId = app.getCurrentFamilyId()
+    if (!currentFamilyId) {
+      this.setData({ stats: { totalCoins: 0, completedTasks: 0, redeemedPrizes: 0 } })
+      return
+    }
+
+    try {
+      // 并行查询：金币余额、完成任务数、兑换奖品数
+      const [coinsRes, tasksRes, redemptionsRes] = await Promise.all([
+        // 获取家庭金币余额
+        wx.cloud.callFunction({
+          name: 'manageFamilyCoins',
+          data: {
+            action: 'getChildCoinsInFamily',
+            data: {
+              childId: currentChild.childId,
+              familyId: currentFamilyId
+            }
+          }
+        }),
+        // 获取完成任务数
+        wx.cloud.callFunction({
+          name: 'manageTasks',
+          data: {
+            action: 'getAllCompletions',
+            data: {
+              childId: currentChild.childId,
+              familyId: currentFamilyId
+            }
+          }
+        }),
+        // 获取兑换奖品数
+        wx.cloud.callFunction({
+          name: 'manageRedemptions',
+          data: {
+            action: 'getRedemptions',
+            data: {
+              childId: currentChild.childId,
+              familyId: currentFamilyId
+            }
+          }
+        })
+      ])
+
+      // 统计数据
+      const totalCoins = coinsRes.result.success ? (coinsRes.result.balance || 0) : 0
+      const completedTasks = tasksRes.result.success ? (tasksRes.result.completions?.length || 0) : 0
+      const redeemedPrizes = redemptionsRes.result.success ? (redemptionsRes.result.redemptions?.length || 0) : 0
+
+      console.log('[设置] 统计数据:', { totalCoins, completedTasks, redeemedPrizes })
+
       this.setData({
         stats: {
-          totalCoins: currentChild.familyCoins || 0,  // Use familyCoins instead of totalCoins
-          completedTasks: currentChild.completedTasks,
-          redeemedPrizes: currentChild.redeemedPrizes
+          totalCoins,
+          completedTasks,
+          redeemedPrizes
+        }
+      })
+    } catch (err) {
+      console.error('[设置] 加载统计数据失败:', err)
+      // 失败时使用儿童的基础数据
+      this.setData({
+        stats: {
+          totalCoins: currentChild.familyCoins || 0,
+          completedTasks: currentChild.completedTasks || 0,
+          redeemedPrizes: currentChild.redeemedPrizes || 0
         }
       })
     }
@@ -177,6 +246,16 @@ Page({
         wx.setStorageSync('userInfo', userData)
         app.globalData.currentUserOpenid = userData.openid
         app.globalData.useCloudStorage = true
+
+        // 加载用户设置（包括家长密码）
+        if (userData.settings) {
+          app.globalData.settings = {
+            ...app.globalData.settings,
+            ...userData.settings
+          }
+          app.saveSettingsToStorage()
+          console.log('[设置] 已从云端加载用户设置，包括家长密码')
+        }
 
         this.setData({
           userInfo: userData,
