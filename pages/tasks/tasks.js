@@ -395,6 +395,13 @@ Page({
 
     // 已登录：保存到云端
     try {
+      const currentFamilyId = app.getCurrentFamilyId()
+      if (!currentFamilyId) {
+        hideLoading()
+        showToast('请先选择家庭')
+        return
+      }
+
       let res
       if (editingTask) {
         // 更新
@@ -403,6 +410,7 @@ Page({
           data: {
             action: 'updateTask',
             data: {
+              familyId: currentFamilyId,
               taskId: editingTask.taskId,
               ...formData
             }
@@ -414,7 +422,10 @@ Page({
           name: 'manageTasks',
           data: {
             action: 'createTask',
-            data: formData
+            data: {
+              familyId: currentFamilyId,
+              ...formData
+            }
           }
         })
       }
