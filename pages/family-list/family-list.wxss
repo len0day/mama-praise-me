@@ -338,7 +338,7 @@
   height: 100rpx;
   background: #FAFAFA;
   color: #1A1A1A;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .form-input:focus {

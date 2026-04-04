@@ -787,7 +787,7 @@
   height: 100rpx;
   background: linear-gradient(145deg, #FAFAFA, #F5F5F5);
   color: #1A1A1A;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
   box-shadow: inset 0 2rpx 4rpx rgba(0, 0, 0, 0.02);
 }
 
@@ -795,7 +795,6 @@
   border-color: #FF9800;
   background: #FFFFFF;
   box-shadow: 0 0 0 4rpx rgba(255, 152, 0, 0.12), 0 4rpx 12rpx rgba(255, 152, 0, 0.15);
-  transform: translateY(-1rpx);
 }
 
 .theme-dark .form-input {
