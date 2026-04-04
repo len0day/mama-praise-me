@@ -1,0 +1,54 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/tasks/tasks",
+    "pages/prizes/prizes",
+    "pages/prize-management/prize-management",
+    "pages/redemptions/redemptions",
+    "pages/coins/coins",
+    "pages/children/children",
+    "pages/family-list/family-list",
+    "pages/family/family",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarTitleText": "妈妈表扬我",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#FFF8E1",
+    "navigationStyle": "custom"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#666666",
+    "selectedColor": "#FF9800",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "任务"
+      },
+      {
+        "pagePath": "pages/prizes/prizes",
+        "text": "奖品"
+      },
+      {
+        "pagePath": "pages/family-list/family-list",
+        "text": "家庭"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "text": "设置"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "permission": {
+    "scope.writePhotosAlbum": {
+      "desc": "您的相册权限将用于保存奖品图片和任务记录"
+    }
+  }
+}

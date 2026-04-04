@@ -1,0 +1,174 @@
+<!--pages/prize-management/prize-management.wxml-->
+<view class="container {{themeClass}}">
+  <custom-navbar title="奖品管理" showBack="{{true}}" />
+
+  <!-- 家长模式状态栏 -->
+  <view class="parent-mode-bar">
+    <view class="mode-info">
+      <text class="mode-icon">{{isParentMode ? '🔓' : '🔒'}}</text>
+      <text class="mode-text">{{isParentMode ? '当前模式：家长模式' : '当前模式：儿童模式'}}</text>
+    </view>
+    <button class="mode-switch-btn" bindtap="toggleParentMode">
+      {{isParentMode ? '退出家长模式' : '进入家长模式'}}
+    </button>
+  </view>
+
+  <!-- 奖品列表 -->
+  <view class="prizes-list">
+    <view
+      class="prize-item"
+      wx:for="{{prizes}}"
+      wx:key="prizeId">
+      <view class="prize-header">
+        <view class="prize-image-small">
+          <image wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" />
+          <text wx:else class="placeholder-icon">🎁</text>
+        </view>
+        <view class="prize-info">
+          <view class="prize-name">{{item.name}}</view>
+          <view class="prize-meta">
+            <text class="prize-cost">🪙 {{item.coinCost}}</text>
+            <text class="prize-category">{{getCategoryName(item.category)}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="prize-desc" wx:if="{{item.description}}">{{item.description}}</view>
+      <view class="prize-stock">
+        <text wx:if="{{item.stock === -1}}">库存：无限</text>
+        <text wx:else>库存：{{item.stock}}</text>
+      </view>
+      <view class="prize-actions">
+        <button class="action-btn edit" data-prizeid="{{item.prizeId}}" bindtap="editPrize">
+          编辑
+        </button>
+        <button class="action-btn delete" data-prizeid="{{item.prizeId}}" bindtap="deletePrize">
+          删除
+        </button>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{prizes.length === 0 && !isLoading}}">
+      <text class="empty-icon">🎁</text>
+      <text class="empty-text">暂无奖品</text>
+    </view>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="add-btn" bindtap="showAddModal">
+    <text class="add-icon">+</text>
+    <text class="add-text">添加奖品</text>
+  </view>
+
+  <!-- 添加/编辑模态框 -->
+  <view class="modal" wx:if="{{showAddModal}}">
+    <view class="modal-mask" catchtap="closeModal"></view>
+    <scroll-view class="modal-content" scroll-y catchtap="stopPropagation">
+      <view class="modal-title">
+        {{editingPrize ? '编辑奖品' : '添加奖品'}}
+      </view>
+
+      <!-- 奖品名称 -->
+      <view class="form-group">
+        <view class="form-label">奖品名称 *</view>
+        <input
+          class="form-input"
+          value="{{formData.name}}"
+          data-field="name"
+          bindinput="onInputChange"
+          placeholder="请输入奖品名称" />
+      </view>
+
+      <!-- 奖品描述 -->
+      <view class="form-group">
+        <view class="form-label">奖品描述</view>
+        <textarea
+          class="form-textarea"
+          value="{{formData.description}}"
+          data-field="description"
+          bindinput="onInputChange"
+          placeholder="请输入奖品描述（可选）" />
+      </view>
+
+      <!-- 奖品图片 -->
+      <view class="form-group">
+        <view class="form-label">奖品图片</view>
+        <view class="image-uploader-container">
+          <button class="image-uploader-btn" bindtap="chooseImage">
+            <view class="image-uploader">
+              <image wx:if="{{formData.image}}" src="{{formData.image}}" mode="aspectFill" class="uploaded-image" />
+              <view wx:else class="upload-placeholder">
+                <text class="upload-icon">📷</text>
+                <text class="upload-text">点击上传图片</text>
+              </view>
+            </view>
+          </button>
+          <button wx:if="{{formData.image}}" class="remove-image-btn" bindtap="removeImage">
+            删除图片
+          </button>
+        </view>
+      </view>
+
+      <!-- 所需金币 -->
+      <view class="form-group">
+        <view class="form-label">所需金币 *</view>
+        <input
+          class="form-input"
+          type="number"
+          value="{{formData.coinCost}}"
+          data-field="coinCost"
+          bindinput="onInputChange"
+          placeholder="请输入所需金币数量" />
+      </view>
+
+      <!-- 奖品分类 -->
+      <view class="form-group">
+        <view class="form-label">奖品分类</view>
+        <picker mode="selector" range="{{categories}}" range-key="label" value="{{formData.category}}" bindchange="onCategoryChange">
+          <view class="form-picker">
+            {{getCategoryName(formData.category)}}
+          </view>
+        </picker>
+      </view>
+
+      <!-- 库存数量 -->
+      <view class="form-group">
+        <view class="form-label">库存数量</view>
+        <radio-group class="stock-selector" bindchange="onStockTypeChange">
+          <label class="stock-option">
+            <radio value="limited" checked="{{formData.stock !== -1}}" />
+            <text>有限库存</text>
+          </label>
+          <label class="stock-option">
+            <radio value="unlimited" checked="{{formData.stock === -1}}" />
+            <text>无限库存</text>
+          </label>
+        </radio-group>
+        <input
+          wx:if="{{formData.stock !== -1}}"
+          class="form-input"
+          type="number"
+          value="{{formData.stock}}"
+          data-field="stock"
+          bindinput="onInputChange"
+          placeholder="请输入库存数量"
+          style="margin-top: 20rpx;" />
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="modal-actions">
+        <button class="modal-btn cancel" bindtap="closeModal">取消</button>
+        <button class="modal-btn confirm" bindtap="savePrize">保存</button>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 家长模式密码弹窗 -->
+  <parent-password-modal
+    show="{{showPasswordModal}}"
+    isFirstTime="{{!app.hasParentPassword()}}"
+    bindsuccess="onPasswordSuccess"
+    bindcancel="onPasswordCancel"
+    bindclose="onPasswordClose" />
+
+</view>

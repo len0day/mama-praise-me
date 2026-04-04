@@ -1,0 +1,458 @@
+/* pages/prizes/prizes.wxss */
+.container {
+  min-height: 100vh;
+  background: #FFF8E1;
+  padding-bottom: 120rpx;
+}
+
+.theme-dark.container {
+  background: #1C1C1E;
+}
+
+/* 需要家庭提示 */
+.need-family-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 40rpx;
+  text-align: center;
+}
+
+.tip-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+}
+
+.tip-content {
+  margin-bottom: 60rpx;
+}
+
+.tip-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 20rpx;
+}
+
+.theme-dark .tip-title {
+  color: #FFFFFF;
+}
+
+.tip-desc {
+  font-size: 28rpx;
+  color: #666666;
+  line-height: 1.6;
+}
+
+.theme-dark .tip-desc {
+  color: #AAAAAA;
+}
+
+.tip-btn {
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  border: none;
+  padding: 28rpx 60rpx;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  box-shadow: 0 8rpx 24rpx rgba(255, 152, 0, 0.4);
+}
+
+.tip-btn:active {
+  box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.4);
+  transform: translateY(1rpx);
+}
+
+/* 孩子信息 */
+.child-info {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  background: #FFFFFF;
+  margin: 20rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .child-info {
+  background: #2C2C2E;
+}
+
+.child-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-right: 20rpx;
+}
+
+.child-details {
+  flex: 1;
+}
+
+.child-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 8rpx;
+}
+
+.theme-dark .child-name {
+  color: #FFFFFF;
+}
+
+.child-stats {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  background: linear-gradient(135deg, #FFB74D, #FFD54F);
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.stat-arrow {
+  font-size: 20rpx;
+  margin-left: 4rpx;
+}
+
+.stat-btn {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.stat-icon {
+  font-size: 28rpx;
+  margin-right: 6rpx;
+}
+
+.stat-text {
+  font-size: 24rpx;
+}
+
+/* 金币历史 */
+.coin-history {
+  margin: 20rpx;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .coin-history {
+  background: #2C2C2E;
+}
+
+.coin-history-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 20rpx;
+}
+
+.theme-dark .coin-history-title {
+  color: #FFFFFF;
+}
+
+.coin-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.coin-record-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx;
+  background: #FAFAFA;
+  border-radius: 12rpx;
+}
+
+.theme-dark .coin-record-item {
+  background: #1C1C1E;
+}
+
+.coin-record-info {
+  flex: 1;
+}
+
+.coin-record-desc {
+  font-size: 28rpx;
+  color: #333333;
+  margin-bottom: 6rpx;
+}
+
+.theme-dark .coin-record-desc {
+  color: #FFFFFF;
+}
+
+.coin-record-type {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.coin-record-amount {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.coin-record-amount.positive {
+  color: #4CAF50;
+}
+
+.coin-record-amount.negative {
+  color: #F44336;
+}
+
+/* 浮动管理按钮 - 右下角 */
+.manage-float-btn {
+  position: fixed;
+  bottom: 140rpx;
+  right: 40rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  padding: 20rpx 28rpx;
+  border-radius: 50rpx;
+  box-shadow: 0 8rpx 24rpx rgba(255, 152, 0, 0.4);
+  z-index: 100;
+}
+
+.manage-icon {
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+.manage-text {
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+/* 分类筛选 */
+.categories {
+  display: flex;
+  padding: 20rpx;
+  gap: 16rpx;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.category-item {
+  flex-shrink: 0;
+  padding: 16rpx 32rpx;
+  background: #FAFAFA;
+  border-radius: 30rpx;
+  font-size: 28rpx;
+  color: #666666;
+  border: 2rpx solid #E5E5E5;
+  transition: all 0.2s;
+}
+
+.theme-dark .category-item {
+  background: #1C1C1E;
+  color: #AAAAAA;
+  border-color: #3A3A3C;
+}
+
+.category-item.active {
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  border-color: #FF9800;
+  box-shadow: 0 2rpx 8rpx rgba(255, 152, 0, 0.2);
+}
+
+/* 奖品列表 */
+.prizes-list {
+  padding: 20rpx;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.prize-item {
+  width: 100%;
+}
+
+.prize-card {
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.theme-dark .prize-card {
+  background: #2C2C2E;
+}
+
+.prize-card.disabled {
+  opacity: 0.6;
+}
+
+.prize-image {
+  width: 100%;
+  height: 200rpx;
+  background: #F5F5F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.theme-dark .prize-image {
+  background: #1C1C1E;
+}
+
+.prize-image image {
+  width: 100%;
+  height: 100%;
+}
+
+.placeholder-icon {
+  font-size: 80rpx;
+}
+
+.prize-info {
+  padding: 20rpx;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.prize-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-dark .prize-name {
+  color: #FFFFFF;
+}
+
+.prize-desc {
+  font-size: 24rpx;
+  color: #666666;
+  margin-bottom: 12rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.theme-dark .prize-desc {
+  color: #AAAAAA;
+}
+
+.prize-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.prize-cost {
+  font-size: 28rpx;
+  color: #FF9800;
+  font-weight: bold;
+}
+
+.prize-stock {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.redeem-btn {
+  margin: 20rpx;
+  padding: 16rpx;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+}
+
+.redeem-btn.disabled {
+  background: #E0E0E0;
+  color: #999999;
+}
+
+.theme-dark .redeem-btn.disabled {
+  background: #1C1C1E;
+  color: #666666;
+}
+
+/* 空状态 */
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 0;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: #999999;
+}
+
+/* 浮动管理按钮 - 右下角 */
+.manage-float-btn {
+  position: fixed;
+  bottom: 180rpx;
+  right: 40rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  padding: 16rpx 24rpx;
+  border-radius: 40rpx;
+  box-shadow: 0 6rpx 20rpx rgba(255, 152, 0, 0.3);
+  z-index: 999;
+}
+
+.manage-icon {
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.manage-text {
+  font-size: 24rpx;
+  font-weight: 500;
+}

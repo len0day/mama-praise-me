@@ -1,0 +1,267 @@
+/* pages/coins/coins.wxss */
+.container {
+  min-height: 100vh;
+  background: #FFF8E1;
+  padding-bottom: 120rpx;
+}
+
+.theme-dark.container {
+  background: #1C1C1E;
+}
+
+/* 统计卡片 */
+.stats-card {
+  background: #FFFFFF;
+  margin: 20rpx;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .stats-card {
+  background: #2C2C2E;
+}
+
+.child-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding-bottom: 30rpx;
+  border-bottom: 1rpx solid #E0E0E0;
+}
+
+.theme-dark .child-section {
+  border-bottom: 1rpx solid #333333;
+}
+
+.child-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-right: 20rpx;
+}
+
+.child-info {
+  flex: 1;
+}
+
+.child-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 8rpx;
+}
+
+.theme-dark .child-name {
+  color: #FFFFFF;
+}
+
+.current-balance {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  color: #FF9800;
+  font-weight: bold;
+}
+
+.coin-icon {
+  margin-right: 8rpx;
+}
+
+.balance-amount {
+  font-size: 40rpx;
+}
+
+.stats-section {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #999999;
+  margin-bottom: 8rpx;
+}
+
+.stat-value {
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.stat-value.earned {
+  color: #4CAF50;
+}
+
+.stat-value.spent {
+  color: #F44336;
+}
+
+.stat-divider {
+  width: 1rpx;
+  height: 60rpx;
+  background: #E0E0E0;
+}
+
+.theme-dark .stat-divider {
+  background: #333333;
+}
+
+/* 无孩子提示 */
+.no-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 0;
+}
+
+.no-child-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+}
+
+.no-child-text {
+  font-size: 32rpx;
+  color: #999999;
+  margin-bottom: 60rpx;
+}
+
+.add-child-btn {
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 50rpx;
+  padding: 20rpx 60rpx;
+  font-size: 32rpx;
+}
+
+/* 记录容器 */
+.records-container {
+  padding: 20rpx;
+}
+
+.section-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 20rpx;
+  padding: 0 10rpx;
+}
+
+.theme-dark .section-title {
+  color: #FFFFFF;
+}
+
+/* 加载中 */
+.loading {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999999;
+}
+
+/* 记录列表 */
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.record-item {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 15rpx;
+  padding: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.theme-dark .record-item {
+  background: #2C2C2E;
+}
+
+.record-icon {
+  font-size: 36rpx;
+  margin-right: 15rpx;
+  flex-shrink: 0;
+}
+
+.record-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.record-title {
+  font-size: 28rpx;
+  color: #333333;
+  margin-bottom: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-dark .record-title {
+  color: #FFFFFF;
+}
+
+.record-meta {
+  display: flex;
+  gap: 15rpx;
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.record-time {
+  flex-shrink: 0;
+}
+
+.record-type {
+  flex-shrink: 0;
+}
+
+.record-amount {
+  font-size: 32rpx;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-left: 15rpx;
+}
+
+.record-amount.earned {
+  color: #4CAF50;
+}
+
+.record-amount.spent {
+  color: #F44336;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999999;
+}

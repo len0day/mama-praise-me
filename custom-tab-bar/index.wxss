@@ -1,0 +1,50 @@
+/* custom-tab-bar/index.wxss */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100rpx;
+  display: flex;
+  background: #FFFFFF;
+  border-top: 1rpx solid #E0E0E0;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 9999;
+}
+
+.tab-bar.theme-dark {
+  background: #1C1C1E;
+  border-top: 1rpx solid #333333;
+}
+
+.tab-bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10rpx 0;
+}
+
+.tab-icon {
+  font-size: 44rpx;
+  margin-bottom: 4rpx;
+}
+
+.tab-text {
+  font-size: 24rpx;
+  color: #666666;
+}
+
+.tab-bar.theme-dark .tab-text {
+  color: #AAAAAA;
+}
+
+.tab-text.selected {
+  color: #FF9800;
+  font-weight: bold;
+}
+
+.tab-bar.theme-dark .tab-text.selected {
+  color: #FF9800;
+}

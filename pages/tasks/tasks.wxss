@@ -1,0 +1,489 @@
+/* pages/tasks/tasks.wxss */
+.container {
+  min-height: 100vh;
+  background: #FFF8E1;
+  padding-bottom: 160rpx;
+}
+
+.theme-dark.container {
+  background: #1C1C1E;
+}
+
+/* 当前信息栏 */
+.current-info {
+  display: flex;
+  gap: 30rpx;
+  padding: 20rpx 30rpx;
+  background: #FFFFFF;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.theme-dark .current-info {
+  background: #2C2C2E;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 28rpx;
+}
+
+.info-label {
+  color: #666666;
+  font-weight: 500;
+}
+
+.theme-dark .info-label {
+  color: #AAAAAA;
+}
+
+.info-value {
+  color: #FF9800;
+  font-weight: bold;
+}
+
+/* 家长模式状态栏 */
+.parent-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  background: #FFFFFF;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.theme-dark .parent-mode-bar {
+  background: #2C2C2E;
+}
+
+.mode-info {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.mode-icon {
+  font-size: 32rpx;
+}
+
+.mode-text {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333333;
+}
+
+.theme-dark .mode-text {
+  color: #FFFFFF;
+}
+
+.mode-switch-btn {
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.mode-switch-btn:active {
+  opacity: 0.8;
+}
+
+/* 任务列表 */
+.tasks-list {
+  padding: 20rpx;
+}
+
+.task-item {
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .task-item {
+  background: #2C2C2E;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.task-type-badge {
+  font-size: 32rpx;
+  margin-right: 10rpx;
+}
+
+.task-title {
+  flex: 1;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.theme-dark .task-title {
+  color: #FFFFFF;
+}
+
+.task-reward {
+  font-size: 28rpx;
+  color: #FF9800;
+  font-weight: bold;
+}
+
+.task-desc {
+  font-size: 28rpx;
+  color: #666666;
+  margin-bottom: 15rpx;
+  line-height: 1.5;
+}
+
+.theme-dark .task-desc {
+  color: #AAAAAA;
+}
+
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 15rpx;
+}
+
+.meta-item {
+  font-size: 24rpx;
+  color: #999999;
+  background: #F5F5F5;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+}
+
+.theme-dark .meta-item {
+  background: #1C1C1E;
+  color: #AAAAAA;
+}
+
+.task-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 16rpx;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  border: none;
+  margin: 0;
+}
+
+.action-btn.edit {
+  background: #E3F2FD;
+  color: #2196F3;
+}
+
+.action-btn.delete {
+  background: #FFEBEE;
+  color: #F44336;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 0;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: #999999;
+}
+
+/* 添加按钮 */
+.add-btn {
+  position: fixed;
+  bottom: 120rpx;
+  right: 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  padding: 20rpx 40rpx;
+  border-radius: 50rpx;
+  box-shadow: 0 8rpx 24rpx rgba(255, 152, 0, 0.4);
+  z-index: 100;
+}
+
+.add-icon {
+  font-size: 48rpx;
+  line-height: 1;
+}
+
+.add-text {
+  font-size: 24rpx;
+  margin-top: 8rpx;
+}
+
+/* 模态框 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+}
+
+.modal-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+.modal-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 650rpx;
+  max-height: 80vh;
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 48rpx 32rpx;
+  overflow-y: auto;
+  box-sizing: border-box;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+}
+
+.theme-dark .modal-content {
+  background: #2C2C2E;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.4);
+}
+
+.modal-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 48rpx;
+  color: #1A1A1A;
+}
+
+.theme-dark .modal-title {
+  color: #FFFFFF;
+}
+
+.form-group {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: #333333;
+  margin-bottom: 16rpx;
+  font-weight: 500;
+}
+
+.theme-dark .form-label {
+  color: #FFFFFF;
+}
+
+.form-input,
+.form-textarea,
+.form-picker {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24rpx 20rpx;
+  border: 2rpx solid #E5E5E5;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  line-height: 1.5;
+  min-height: 88rpx;
+  background: #FAFAFA;
+  color: #1A1A1A;
+  transition: all 0.2s;
+}
+
+/* 确保placeholder可见 */
+.form-input::-webkit-input-placeholder,
+.form-textarea::-webkit-input-placeholder,
+.form-picker::-webkit-input-placeholder {
+  color: #999999;
+  font-size: 28rpx;
+}
+
+.form-input::-moz-placeholder,
+.form-textarea::-moz-placeholder,
+.form-picker::-moz-placeholder {
+  color: #999999;
+  font-size: 28rpx;
+}
+
+.form-input:-ms-input-placeholder,
+.form-textarea:-ms-input-placeholder,
+.form-picker:-ms-input-placeholder {
+  color: #999999;
+  font-size: 28rpx;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-picker:focus {
+  border-color: #FF9800;
+  background: #FFFFFF;
+  color: #1A1A1A;
+}
+
+.theme-dark .form-input,
+.theme-dark .form-textarea,
+.theme-dark .form-picker {
+  background: #1C1C1E;
+  border-color: #3A3A3C;
+  color: #FFFFFF;
+}
+
+/* 深色模式placeholder */
+.theme-dark .form-input::-webkit-input-placeholder,
+.theme-dark .form-textarea::-webkit-input-placeholder,
+.theme-dark .form-picker::-webkit-input-placeholder {
+  color: #888888;
+  font-size: 28rpx;
+}
+
+.theme-dark .form-input::-moz-placeholder,
+.theme-dark .form-textarea::-moz-placeholder,
+.theme-dark .form-picker::-moz-placeholder {
+  color: #888888;
+  font-size: 28rpx;
+}
+
+.theme-dark .form-input:-ms-input-placeholder,
+.theme-dark .form-textarea:-ms-input-placeholder,
+.theme-dark .form-picker:-ms-input-placeholder {
+  color: #888888;
+  font-size: 28rpx;
+}
+
+.theme-dark .form-input:focus,
+.theme-dark .form-textarea:focus,
+.theme-dark .form-picker:focus {
+  border-color: #FF9800;
+  background: #2C2C2E;
+  color: #FFFFFF;
+}
+
+.form-textarea {
+  min-height: 160rpx;
+  resize: none;
+}
+
+.form-picker {
+  min-height: 80rpx;
+  display: flex;
+  align-items: center;
+}
+
+.radio-group {
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.radio-item {
+  padding: 16rpx 28rpx;
+  border: 2rpx solid #E5E5E5;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #666666;
+  background: #FAFAFA;
+  transition: all 0.2s;
+}
+
+.radio-item.active {
+  border-color: #FF9800;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  box-shadow: 0 2rpx 8rpx rgba(255, 152, 0, 0.2);
+}
+
+.theme-dark .radio-item {
+  border-color: #3A3A3C;
+  background: #1C1C1E;
+  color: #AAAAAA;
+}
+
+.theme-dark .radio-item.active {
+  border-color: #FF9800;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  box-shadow: 0 2rpx 8rpx rgba(255, 152, 0, 0.2);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 48rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 28rpx;
+  border-radius: 16rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  border: none;
+  transition: all 0.2s;
+}
+
+.modal-btn.cancel {
+  background: #F5F5F5;
+  color: #666666;
+}
+
+.modal-btn.cancel:active {
+  background: #E8E8E8;
+}
+
+.theme-dark .modal-btn.cancel {
+  background: #3A3A3C;
+  color: #AAAAAA;
+}
+
+.theme-dark .modal-btn.cancel:active {
+  background: #4A4A4C;
+}
+
+.modal-btn.confirm {
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.3);
+}
+
+.modal-btn.confirm:active {
+  box-shadow: 0 2rpx 8rpx rgba(255, 152, 0, 0.3);
+  transform: translateY(1rpx);
+}

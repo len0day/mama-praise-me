@@ -1,0 +1,135 @@
+<!--pages/children/children.wxml-->
+<view class="container {{themeClass}}">
+  <custom-navbar title="{{i18n.children.title || '孩子管理'}}" showBack="{{true}}" />
+
+  <!-- 孩子列表 -->
+  <view class="children-list">
+    <view
+      class="child-item {{currentChildId === item.childId ? 'active' : ''}}"
+      wx:for="{{children}}"
+      wx:key="childId">
+      <view class="child-card" data-childid="{{item.childId}}" bindtap="switchChild">
+        <view class="child-avatar">
+          <image wx:if="{{item.avatar && (item.avatar.indexOf('http') === 0 || item.avatar.indexOf('cloud://') === 0)}}" src="{{item.avatar}}" mode="aspectFill" />
+          <text wx:else>{{item.avatar || item.name.substring(0, 1)}}</text>
+        </view>
+        <view class="child-info">
+          <view class="child-name">{{item.name}}</view>
+          <view class="child-stats">
+            <text class="stat-item">✅ {{item.completedTasks}}</text>
+          </view>
+        </view>
+        <view class="current-badge" wx:if="{{currentChildId === item.childId}}">当前</view>
+      </view>
+
+      <view class="child-actions">
+        <button class="action-btn edit" data-childid="{{item.childId}}" bindtap="editChild">
+          {{i18n.common.edit || '编辑'}}
+        </button>
+        <button class="action-btn delete" data-childid="{{item.childId}}" bindtap="deleteChild">
+          {{i18n.common.delete || '删除'}}
+        </button>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{children.length === 0}}">
+      <text class="empty-icon">👶</text>
+      <text class="empty-text">{{i18n.children.noChildren || '暂无孩子'}}</text>
+    </view>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="add-btn" bindtap="showAddModal">
+    <text class="add-icon">+</text>
+    <text class="add-text">{{i18n.children.addChild || '添加孩子'}}</text>
+  </view>
+
+  <!-- 添加/编辑模态框 -->
+  <view class="modal" wx:if="{{showAddModal}}">
+    <view class="modal-mask" catchtap="closeModal"></view>
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="modal-title">
+        {{editingChild ? i18n.children.editChild : i18n.children.addChild}}
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">{{i18n.children.childName || '姓名'}} *</view>
+        <input
+          class="form-input"
+          value="{{formData.name}}"
+          data-field="name"
+          bindinput="onInputChange"
+          placeholder="请输入孩子姓名" />
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">{{i18n.children.childGender || '性别'}}</view>
+        <view class="gender-selector">
+          <view
+            class="gender-option {{formData.gender === 'male' ? 'selected' : ''}}"
+            data-gender="male"
+            bindtap="selectGender">
+            <text class="gender-icon">👦</text>
+            <text class="gender-text">男孩</text>
+          </view>
+          <view
+            class="gender-option {{formData.gender === 'female' ? 'selected' : ''}}"
+            data-gender="female"
+            bindtap="selectGender">
+            <text class="gender-icon">👧</text>
+            <text class="gender-text">女孩</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">{{i18n.children.childAvatar || '头像'}}</view>
+
+        <!-- 当前选中头像预览 -->
+        <view class="current-avatar-preview" wx:if="{{formData.avatar}}">
+          <view class="avatar-display-large">
+            <image wx:if="{{formData.avatar.indexOf('http') === 0 || formData.avatar.indexOf('cloud://') === 0}}" src="{{formData.avatar}}" mode="aspectFill" />
+            <text wx:else class="avatar-emoji-large">{{formData.avatar}}</text>
+          </view>
+        </view>
+
+        <!-- 预设头像选择 -->
+        <view class="form-label-small">选择预设头像</view>
+        <view class="preset-avatars-grid">
+          <view
+            class="preset-avatar-item {{formData.avatar === item ? 'selected' : ''}}"
+            wx:for="{{['👦', '👧', '🧒', '👶', '🧑', '🐱', '🐶', '🐰', '🦊', '🐻']}}"
+            wx:key="*this"
+            bindtap="selectPresetAvatar"
+            data-avatar="{{item}}">
+            <text class="preset-avatar-text">{{item}}</text>
+          </view>
+        </view>
+
+        <!-- 上传自定义头像 -->
+        <view class="form-label-small">或上传自定义头像</view>
+        <button class="upload-avatar-btn" bindtap="chooseFromAlbum">
+          <text class="upload-icon">📷</text>
+          <text>从相册选择</text>
+        </button>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">{{i18n.children.childAge || '年龄'}}</view>
+        <input
+          class="form-input"
+          type="number"
+          value="{{formData.age}}"
+          data-field="age"
+          bindinput="onInputChange"
+          placeholder="请输入年龄" />
+      </view>
+
+      <view class="modal-actions">
+        <button class="modal-btn cancel" bindtap="closeModal">{{i18n.common.cancel || '取消'}}</button>
+        <button class="modal-btn confirm" bindtap="saveChild">{{i18n.common.save || '保存'}}</button>
+      </view>
+    </view>
+  </view>
+</view>

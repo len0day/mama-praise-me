@@ -1,0 +1,105 @@
+<view class="container {{themeClass}}">
+  <custom-navbar title="{{i18n.prizes.title || '奖品商城'}}" showBack="{{false}}" />
+
+  <!-- 需要创建家庭提示 -->
+  <view class="need-family-tip" wx:if="{{needFamily}}">
+    <view class="tip-icon">👨‍👩‍👧‍👦</view>
+    <view class="tip-content">
+      <view class="tip-title">需要加入家庭</view>
+      <view class="tip-desc">奖品商城是以家庭为单位的，请先加入或创建一个家庭</view>
+    </view>
+    <button class="tip-btn" bindtap="goToFamily">去创建</button>
+  </view>
+
+  <!-- 当前孩子信息 -->
+  <view class="child-info" wx:if="{{currentChild && !needFamily}}">
+    <view class="child-avatar">
+      <text>{{currentChild.name.substring(0, 1)}}</text>
+    </view>
+    <view class="child-details">
+      <view class="child-name">{{currentChild.name}} - {{currentChild.familyName || '家庭'}}</view>
+      <view class="child-stats">
+        <view class="stat-item" bindtap="toggleCoinHistory">
+          <text class="stat-icon">🪙</text>
+          <text class="stat-text">{{currentChild.familyCoins || childCoins}}</text>
+          <text class="stat-arrow">{{showCoinHistory ? '▲' : '▼'}}</text>
+        </view>
+        <view class="stat-btn" bindtap="goToMyPrizes">
+          <text class="stat-icon">🎁</text>
+          <text class="stat-text">我的奖品</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 金币历史 -->
+  <view class="coin-history" wx:if="{{showCoinHistory && coinRecords.length > 0}}">
+    <view class="coin-history-title">最近金币记录</view>
+    <view class="coin-history-list">
+      <view class="coin-record-item" wx:for="{{coinRecords}}" wx:key="recordId">
+        <view class="coin-record-info">
+          <view class="coin-record-desc">{{item.description}}</view>
+          <view class="coin-record-type">{{formatCoinType(item.type)}}</view>
+        </view>
+        <view class="coin-record-amount {{item.amount > 0 ? 'positive' : 'negative'}}">
+          {{item.amount > 0 ? '+' : ''}}{{item.amount}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类筛选 -->
+  <view class="categories">
+    <view
+      class="category-item {{currentCategory === item ? 'active' : ''}}"
+      wx:for="{{categories}}"
+      wx:key="*this"
+      data-category="{{item}}"
+      bindtap="filterByCategory">
+      {{getCategoryName(item)}}
+    </view>
+  </view>
+
+  <!-- 奖品列表 -->
+  <view class="prizes-list">
+    <view
+      class="prize-item"
+      wx:for="{{prizes}}"
+      wx:key="prizeId"
+      wx:if="{{currentCategory === 'all' || item.category === currentCategory}}">
+      <view class="prize-card {{item.affordable ? '' : 'disabled'}}">
+        <view class="prize-image">
+          <image wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" />
+          <text wx:else class="placeholder-icon">🎁</text>
+        </view>
+        <view class="prize-info">
+          <view class="prize-name">{{item.name}}</view>
+          <view class="prize-desc" wx:if="{{item.description}}">{{item.description}}</view>
+          <view class="prize-meta">
+            <text class="prize-cost">🪙 {{item.coinCost}}</text>
+            <text class="prize-stock" wx:if="{{item.stock !== -1}}">库存: {{item.stock}}</text>
+            <text class="prize-stock" wx:else>不限</text>
+          </view>
+        </view>
+        <button
+          class="redeem-btn {{item.affordable ? '' : 'disabled'}}"
+          data-prizeid="{{item.prizeId}}"
+          bindtap="redeemPrize">
+          {{item.affordable ? '兑换' : '金币不足'}}
+        </button>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{prizes.length === 0 && !isLoading}}">
+      <text class="empty-icon">🎁</text>
+      <text class="empty-text">暂无奖品</text>
+    </view>
+  </view>
+
+  <!-- 浮动管理按钮 -->
+  <view class="manage-float-btn" bindtap="goToPrizeManagement">
+    <text class="manage-icon">⚙️</text>
+    <text class="manage-text">管理</text>
+  </view>
+</view>

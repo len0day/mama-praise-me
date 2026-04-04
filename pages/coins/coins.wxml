@@ -1,0 +1,75 @@
+<!--pages/coins/coins.wxml-->
+<view class="container {{themeClass}}">
+  <custom-navbar title="{{i18n.coins.title || '金币'}}" showBack="{{false}}" />
+
+  <!-- 当前孩子信息和统计 -->
+  <view class="stats-card" wx:if="{{currentChild}}">
+    <view class="child-section">
+      <view class="child-avatar">
+        <text>{{currentChild.name.substring(0, 1)}}</text>
+      </view>
+      <view class="child-info">
+        <view class="child-name">{{currentChild.name}}</view>
+        <view class="current-balance">
+          <text class="coin-icon">🪙</text>
+          <text class="balance-amount">{{currentChild.totalCoins}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="stats-section">
+      <view class="stat-item">
+        <text class="stat-label">{{i18n.coins.totalEarned || '累计获得'}}</text>
+        <text class="stat-value earned">+{{totalEarned}}</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-label">{{i18n.coins.totalSpent || '累计消耗'}}</text>
+        <text class="stat-value spent">-{{totalSpent}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 无孩子提示 -->
+  <view class="no-child" wx:if="{{!currentChild && !isLoading}}">
+    <view class="no-child-icon">👶</view>
+    <view class="no-child-text">{{i18n.coins.noChild || '请先添加孩子'}}</view>
+    <button class="add-child-btn" bindtap="goToChildren">{{i18n.common.addChild || '添加孩子'}}</button>
+  </view>
+
+  <!-- 金币记录列表 -->
+  <view class="records-container" wx:if="{{currentChild}}">
+    <view class="section-title">{{i18n.coins.coinHistory || '金币记录'}}</view>
+
+    <!-- 加载中 -->
+    <view class="loading" wx:if="{{isLoading}}">
+      <text>{{i18n.common.loading || '加载中...'}}</text>
+    </view>
+
+    <!-- 记录列表 -->
+    <view class="records-list" wx:if="{{!isLoading}}">
+      <view
+        class="record-item {{getRecordTypeClass(item.type)}}"
+        wx:for="{{records}}"
+        wx:key="recordId">
+        <view class="record-icon">{{getRecordTypeIcon(item.type)}}</view>
+        <view class="record-content">
+          <view class="record-title">{{item.description}}</view>
+          <view class="record-meta">
+            <text class="record-time">{{formatTime(item.createdAt)}}</text>
+            <text class="record-type">{{getRecordTypeText(item.type)}}</text>
+          </view>
+        </view>
+        <view class="record-amount {{getRecordTypeClass(item.type)}}">
+          <text>{{item.amount > 0 ? '+' : ''}}{{item.amount}}</text>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{records.length === 0}}">
+        <text class="empty-icon">🪙</text>
+        <text class="empty-text">{{i18n.coins.noRecords || '暂无金币记录'}}</text>
+      </view>
+    </view>
+  </view>
+</view>

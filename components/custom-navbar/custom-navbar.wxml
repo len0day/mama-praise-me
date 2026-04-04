@@ -1,0 +1,34 @@
+<!--components/custom-navbar/custom-navbar.wxml-->
+<view class="custom-navbar {{themeClass}} {{transparent ? 'transparent' : ''}} {{transparentWithSlot ? 'transparent-with-slot' : ''}}" style="height: {{totalHeight}}px; {{transparentWithSlot ? 'background-color: ' + navBackgroundColor : 'background-color: ' + currentBackgroundColor}};">
+  <!-- 状态栏占位 -->
+  <view class="status-bar" style="height: {{statusBarHeight}}px;"></view>
+
+  <!-- 导航栏内容 -->
+  <view class="navbar-content" style="height: {{navigationBarHeight}}px;">
+    <!-- 自定义左侧内容（slot） -->
+    <view class="navbar-left-slot">
+      <slot name="left"></slot>
+    </view>
+
+    <!-- 返回按钮 -->
+    <view wx:if="{{showBack}}" class="navbar-back" bindtap="goBack">
+      <text class="iconfont icon-arrow-left"></text>
+    </view>
+
+    <!-- 设置按钮 -->
+    <view wx:if="{{showSettings}}" class="navbar-settings navbar-left" catchtap="goToSettings">
+      <text class="settings-icon">⚙️</text>
+    </view>
+
+    <!-- 标题 -->
+    <view class="navbar-title">{{title}}</view>
+
+    <!-- 首页按钮 -->
+    <view wx:if="{{showHome}}" class="navbar-home" bindtap="goHome">
+      <text class="iconfont icon-home"></text>
+    </view>
+  </view>
+</view>
+
+<!-- 占位元素，防止页面内容上浮 -->
+<view class="navbar-placeholder" style="height: {{totalHeight}}px;"></view>

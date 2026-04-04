@@ -1,0 +1,213 @@
+/* pages/index/index.wxss */
+.container {
+  min-height: 100vh;
+  background: #FFF8E1;
+  padding-bottom: 120rpx;
+}
+
+.container.theme-dark {
+  background: #1C1C1E;
+}
+
+/* 孩子信息 */
+.child-info {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  background: #FFFFFF;
+  margin: 20rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .child-info {
+  background: #2C2C2E;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
+}
+
+.child-avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 48rpx;
+  font-weight: bold;
+  margin-right: 20rpx;
+}
+
+.child-avatar image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.child-details {
+  flex: 1;
+}
+
+.child-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 10rpx;
+}
+
+.theme-dark .child-name {
+  color: #FFFFFF;
+}
+
+.child-coins {
+  display: flex;
+  align-items: center;
+  font-size: 32rpx;
+  color: #FF9800;
+  font-weight: bold;
+}
+
+.coin-icon {
+  margin-right: 8rpx;
+}
+
+.task-manage-btn {
+  font-size: 48rpx;
+  padding: 10rpx;
+}
+
+/* 无孩子提示 */
+.no-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 0;
+}
+
+.no-child-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+}
+
+.no-child-text {
+  font-size: 32rpx;
+  color: #999999;
+  margin-bottom: 60rpx;
+}
+
+.add-child-btn {
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 50rpx;
+  padding: 20rpx 60rpx;
+  font-size: 32rpx;
+}
+
+/* 任务容器 */
+.tasks-container {
+  padding: 20rpx;
+}
+
+.section-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 20rpx;
+  padding: 0 10rpx;
+}
+
+.theme-dark .section-title {
+  color: #FFFFFF;
+}
+
+/* 加载中 */
+.loading {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999999;
+}
+
+/* 任务列表 */
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+}
+
+.theme-dark .task-item {
+  background: #2C2C2E;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
+}
+
+.task-item.completed {
+  opacity: 0.6;
+}
+
+.task-content {
+  flex: 1;
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.task-type {
+  font-size: 32rpx;
+  margin-right: 10rpx;
+}
+
+.task-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.theme-dark .task-title {
+  color: #FFFFFF;
+}
+
+.task-desc {
+  font-size: 28rpx;
+  color: #666666;
+  margin-bottom: 10rpx;
+}
+
+.theme-dark .task-desc {
+  color: #AAAAAA;
+}
+
+.task-reward {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  color: #FF9800;
+  font-weight: bold;
+}
+
+.task-status {
+  font-size: 48rpx;
+  margin-left: 20rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999999;
+  font-size: 28rpx;
+}

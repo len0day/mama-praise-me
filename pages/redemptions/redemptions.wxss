@@ -1,0 +1,240 @@
+/* pages/redemptions/redemptions.wxss - 已兑换奖品仓库 */
+.container {
+  min-height: 100vh;
+  background: #FFF8E1;
+  padding-bottom: 40rpx;
+}
+
+.theme-dark.container {
+  background: #1C1C1E;
+}
+
+/* 孩子信息 */
+.child-info {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  background: #FFFFFF;
+  margin: 20rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .child-info {
+  background: #2C2C2E;
+}
+
+.child-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-right: 20rpx;
+}
+
+.child-details {
+  flex: 1;
+}
+
+.child-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 8rpx;
+}
+
+.theme-dark .child-name {
+  color: #FFFFFF;
+}
+
+.child-stats {
+  font-size: 26rpx;
+  color: #666666;
+}
+
+.theme-dark .child-stats {
+  color: #AAAAAA;
+}
+
+/* 无孩子提示 */
+.no-child-tip {
+  text-align: center;
+  padding: 40rpx 20rpx;
+  color: #999999;
+  font-size: 28rpx;
+}
+
+/* 奖品容器 */
+.prizes-container {
+  padding: 20rpx;
+}
+
+/* 加载中 */
+.loading {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999999;
+}
+
+/* 奖品列表 */
+.prizes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.prize-item {
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+}
+
+.theme-dark .prize-item {
+  background: #2C2C2E;
+}
+
+.prize-item.used {
+  opacity: 0.6;
+}
+
+.prize-card {
+  display: flex;
+  padding: 24rpx;
+  gap: 20rpx;
+  align-items: center;
+}
+
+/* 奖品图片 */
+.prize-image {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 16rpx;
+  background: #F5F5F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.theme-dark .prize-image {
+  background: #1C1C1E;
+}
+
+.prize-image image {
+  width: 100%;
+  height: 100%;
+}
+
+.placeholder-icon {
+  font-size: 50rpx;
+}
+
+/* 奖品信息 */
+.prize-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.prize-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-dark .prize-name {
+  color: #FFFFFF;
+}
+
+.prize-meta {
+  font-size: 24rpx;
+  color: #999999;
+  margin-bottom: 12rpx;
+}
+
+/* 使用状态 */
+.use-status {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 26rpx;
+}
+
+.use-status.pending {
+  color: #FF9800;
+}
+
+.use-status.ready {
+  color: #4CAF50;
+}
+
+.use-status .status-icon {
+  font-size: 28rpx;
+}
+
+.use-status .status-text {
+  font-weight: 500;
+}
+
+.use-time {
+  font-size: 22rpx;
+  color: #999999;
+  margin-left: auto;
+}
+
+/* 使用按钮 */
+.use-btn {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+  box-shadow: 0 2rpx 8rpx rgba(255, 152, 0, 0.2);
+  white-space: nowrap;
+}
+
+.use-btn:active {
+  box-shadow: 0 1rpx 4rpx rgba(255, 152, 0, 0.2);
+  transform: scale(0.98);
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 0;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: #999999;
+}

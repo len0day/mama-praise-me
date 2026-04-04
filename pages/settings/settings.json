@@ -1,0 +1,7 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "custom-navbar": "/components/custom-navbar/custom-navbar",
+    "parent-password-modal": "/components/parent-password-modal/parent-password-modal"
+  }
+}

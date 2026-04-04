@@ -1,0 +1,165 @@
+<!--pages/tasks/tasks.wxml-->
+<view class="container {{themeClass}}">
+  <custom-navbar title="{{i18n.tasks.title || '任务管理'}}" showBack="{{true}}" />
+
+  <!-- 家长模式状态栏 -->
+  <view class="parent-mode-bar">
+    <view class="mode-info">
+      <text class="mode-icon">{{isParentMode ? '🔓' : '🔒'}}</text>
+      <text class="mode-text">{{isParentMode ? '当前模式：家长模式' : '当前模式：儿童模式'}}</text>
+    </view>
+    <button class="mode-switch-btn" bindtap="toggleParentMode">
+      {{isParentMode ? '退出家长模式' : '进入家长模式'}}
+    </button>
+  </view>
+
+  <!-- 当前家庭和儿童信息 -->
+  <view class="current-info" wx:if="{{currentFamily}}">
+    <view class="info-item">
+      <text class="info-label">家庭：</text>
+      <text class="info-value">{{currentFamily.name}}</text>
+    </view>
+    <view class="info-item" wx:if="{{currentChild}}">
+      <text class="info-label">儿童：</text>
+      <text class="info-value">{{currentChild.name}}</text>
+    </view>
+  </view>
+
+  <!-- 任务列表 -->
+  <view class="tasks-list">
+    <view
+      class="task-item"
+      wx:for="{{tasks}}"
+      wx:key="taskId">
+      <view class="task-header">
+        <view class="task-type-badge">{{item.taskType === 'daily' ? '📅' : (item.taskType === 'weekly' ? '📆' : '🗓️')}}</view>
+        <view class="task-title">{{item.title}}</view>
+        <view class="task-reward">🪙 +{{item.coinReward}}</view>
+      </view>
+      <view class="task-desc" wx:if="{{item.description}}">{{item.description}}</view>
+      <view class="task-meta">
+        <text class="meta-item">{{getTaskTypeText(item.taskType)}}</text>
+        <text class="meta-item" wx:if="{{item.taskType === 'weekly'}}">
+          {{item.weekStart}} ~ {{item.weekEnd}}
+        </text>
+        <text class="meta-item" wx:if="{{item.taskType === 'monthly'}}">
+          {{item.monthStart}} ~ {{item.monthEnd}}
+        </text>
+      </view>
+      <view class="task-actions">
+        <button class="action-btn edit" data-taskid="{{item.taskId}}" bindtap="editTask">
+          {{i18n.common.edit || '编辑'}}
+        </button>
+        <button class="action-btn delete" data-taskid="{{item.taskId}}" bindtap="deleteTask">
+          {{i18n.common.delete || '删除'}}
+        </button>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{tasks.length === 0 && !isLoading}}">
+      <text class="empty-icon">📋</text>
+      <text class="empty-text">{{i18n.common.noData || '暂无任务'}}</text>
+    </view>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="add-btn" bindtap="showAddModal">
+    <text class="add-icon">+</text>
+    <text class="add-text">{{i18n.tasks.addTask || '添加任务'}}</text>
+  </view>
+
+  <!-- 添加/编辑模态框 -->
+  <view class="modal" wx:if="{{showAddModal}}">
+    <view class="modal-mask" catchtap="closeModal"></view>
+    <scroll-view class="modal-content" scroll-y catchtap="stopPropagation">
+      <view class="modal-title">
+        {{editingTask ? i18n.tasks.editTask : i18n.tasks.addTask}}
+      </view>
+
+      <!-- 任务名称 -->
+      <view class="form-group">
+        <view class="form-label">{{i18n.tasks.taskName || '任务名称'}} *</view>
+        <input
+          class="form-input"
+          value="{{formData.title}}"
+          data-field="title"
+          bindinput="onInputChange"
+          placeholder="请输入任务名称" />
+      </view>
+
+      <!-- 任务描述 -->
+      <view class="form-group">
+        <view class="form-label">{{i18n.tasks.taskDesc || '任务描述'}}</view>
+        <textarea
+          class="form-textarea"
+          value="{{formData.description}}"
+          data-field="description"
+          bindinput="onInputChange"
+          placeholder="请输入任务描述（可选）" />
+      </view>
+
+      <!-- 金币奖励 -->
+      <view class="form-group">
+        <view class="form-label">{{i18n.tasks.coinReward || '金币奖励'}}</view>
+        <input
+          class="form-input"
+          type="number"
+          value="{{formData.coinReward}}"
+          data-field="coinReward"
+          bindinput="onInputChange"
+          placeholder="请输入金币奖励数量" />
+      </view>
+
+      <!-- 任务类型 -->
+      <view class="form-group">
+        <view class="form-label">{{i18n.tasks.taskType || '任务类型'}}</view>
+        <picker mode="selector" range="{{['每日任务', '每周任务', '每月任务']}}" value="{{formData.taskType === 'daily' ? 0 : (formData.taskType === 'weekly' ? 1 : 2)}}" bindchange="onTaskTypeChange">
+          <view class="form-picker">
+            {{formData.taskType === 'daily' ? '每日任务' : (formData.taskType === 'weekly' ? '每周任务' : '每月任务')}}
+          </view>
+        </picker>
+      </view>
+
+      <!-- 每周任务：日期范围 -->
+      <view class="form-group" wx:if="{{formData.taskType === 'weekly'}}">
+        <view class="form-label">{{i18n.tasks.weekStart || '开始周'}}</view>
+        <picker mode="date" value="{{formData.weekStart}}" data-field="weekStart" bindchange="onDateChange">
+          <view class="form-picker">{{formData.weekStart}}</view>
+        </picker>
+
+        <view class="form-label" style="margin-top: 20rpx;">{{i18n.tasks.weekEnd || '结束周'}}</view>
+        <picker mode="date" value="{{formData.weekEnd}}" data-field="weekEnd" bindchange="onDateChange">
+          <view class="form-picker">{{formData.weekEnd}}</view>
+        </picker>
+      </view>
+
+      <!-- 每月任务：月份范围 -->
+      <view class="form-group" wx:if="{{formData.taskType === 'monthly'}}">
+        <view class="form-label">{{i18n.tasks.monthStart || '开始月'}}</view>
+        <picker mode="date" fields="month" value="{{formData.monthStart}}" data-field="monthStart" bindchange="onDateChange">
+          <view class="form-picker">{{formData.monthStart}}</view>
+        </picker>
+
+        <view class="form-label" style="margin-top: 20rpx;">{{i18n.tasks.monthEnd || '结束月'}}</view>
+        <picker mode="date" fields="month" value="{{formData.monthEnd}}" data-field="monthEnd" bindchange="onDateChange">
+          <view class="form-picker">{{formData.monthEnd}}</view>
+        </picker>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="modal-actions">
+        <button class="modal-btn cancel" bindtap="closeModal">{{i18n.common.cancel || '取消'}}</button>
+        <button class="modal-btn confirm" bindtap="saveTask">{{i18n.common.save || '保存'}}</button>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 家长密码弹窗 -->
+  <parent-password-modal
+    show="{{showPasswordModal}}"
+    isFirstTime="{{isFirstTime}}"
+    bindsuccess="onPasswordSuccess"
+    bindcancel="onPasswordCancel"
+    bindclose="onPasswordClose" />
+</view>

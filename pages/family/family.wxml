@@ -1,0 +1,351 @@
+<!--pages/family/family.wxml-->
+<view class="container {{themeClass}}">
+  <custom-navbar title="{{family ? family.name : '家庭'}}" showBack="{{true}}" />
+
+  <!-- 无家庭时的提示 -->
+  <view class="no-family" wx:if="{{!family}}">
+    <view class="empty-icon">👨‍👩‍👧‍👦</view>
+    <view class="empty-text">还没有家庭</view>
+    <view class="empty-tips">创建家庭邀请家人一起管理</view>
+
+    <button class="create-family-btn" bindtap="showCreateModal">
+      <text class="btn-icon">➕</text>
+      <text>创建家庭</text>
+    </button>
+  </view>
+
+  <!-- 家庭内容 -->
+  <view class="family-content" wx:if="{{family}}">
+
+    <!-- 当前家庭和儿童选择器 -->
+    <view class="current-selector">
+      <view class="selector-section">
+        <view class="selector-label">当前家庭</view>
+        <view class="selector-value">
+          <text class="family-name-display">{{family.name}}</text>
+        </view>
+      </view>
+      <view class="selector-section" wx:if="{{familyChildren.length > 0}}">
+        <view class="selector-label">当前儿童</view>
+        <view class="selector-value">
+          <picker
+            bindchange="onCurrentChildChange"
+            value="{{currentChildIndex}}"
+            range="{{familyChildren}}"
+            range-key="name">
+            <view class="picker">
+              {{currentChildIndex >= 0 ? familyChildren[currentChildIndex].name : '请选择儿童'}}
+              <text class="picker-arrow">›</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+    </view>
+
+    <!-- 邀请家人按钮（仅管理员） -->
+    <view class="invite-section" wx:if="{{family.role === 'admin'}}">
+      <button class="invite-main-btn" bindtap="showInviteOptions">
+        <text class="btn-icon">➕</text>
+        <text>邀请家人</text>
+      </button>
+    </view>
+
+    <!-- 家庭成员卡片（横向滚动） -->
+    <view class="members-section">
+      <view class="section-title">
+        <text>家庭成员</text>
+        <text class="count">{{members.length}}</text>
+      </view>
+
+      <scroll-view class="members-scroll" scroll-x enable-flex>
+        <view class="member-card" wx:for="{{members}}" wx:key="openid">
+          <view class="member-avatar">
+            {{item.nickname.substring(0, 1)}}
+          </view>
+          <view class="member-name">{{item.nickname}}</view>
+          <view class="member-role-badge {{item.role}}">
+            {{item.role === 'admin' ? '家长' : '家人'}}
+          </view>
+          <view class="member-me" wx:if="{{item.isMe}}">我</view>
+
+          <!-- 移除按钮（仅管理员，对自己不可见） -->
+          <view
+            class="member-remove"
+            wx:if="{{family.role === 'admin' && !item.isMe}}"
+            data-memberopenid="{{item.openid}}"
+            data-nickname="{{item.nickname}}"
+            bindtap="removeMember">
+            ✕
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 家庭儿童 -->
+    <view class="children-section">
+      <view class="section-title">
+        <text>家庭儿童</text>
+        <text class="count">{{familyChildren.length}}</text>
+      </view>
+
+      <!-- 儿童列表 -->
+      <view class="children-list" wx:if="{{familyChildren.length > 0}}">
+        <view class="child-item" wx:for="{{familyChildren}}" wx:key="childId">
+          <view class="child-avatar">{{item.name.substring(0, 1)}}</view>
+          <view class="child-info">
+            <view class="child-name">{{item.name}}</view>
+            <view class="child-coins">{{item.familyCoins}} 金币</view>
+          </view>
+
+          <!-- 移除按钮（仅管理员） -->
+          <button
+            class="child-remove-btn"
+            wx:if="{{family.role === 'admin'}}"
+            data-childid="{{item.childId}}"
+            data-childname="{{item.name}}"
+            bindtap="unassignChild">
+            移除
+          </button>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-children" wx:if="{{familyChildren.length === 0}}">
+        <text class="empty-icon">👶</text>
+        <text class="empty-text">还没有分配儿童</text>
+        <button class="go-add-child-btn" wx:if="{{family.role === 'admin'}}" bindtap="goToAddChild">
+          去添加儿童
+        </button>
+      </view>
+
+      <!-- 添加儿童按钮（仅管理员） -->
+      <view class="add-child-btn-wrapper" wx:if="{{family.role === 'admin' && myChildren.length > 0}}">
+        <view class="add-child-title">添加我的儿童</view>
+        <view class="my-children-list">
+          <view
+            class="my-child-item"
+            wx:for="{{myChildren}}"
+            wx:for-item="myChild"
+            wx:key="childId">
+            <view class="child-avatar-small">{{myChild.name.substring(0, 1)}}</view>
+            <view class="child-name-small">{{myChild.name}}</view>
+            <button
+              class="add-child-btn"
+              data-childid="{{myChild.childId}}"
+              bindtap="showAssignChildModal">
+              添加
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部操作按钮 -->
+    <view class="bottom-actions">
+      <!-- 创建者专属操作 -->
+      <view wx:if="{{family.isCreator}}" class="creator-actions">
+        <button class="bottom-btn normal" bindtap="updateFamilyName">修改家庭名称</button>
+        <button class="bottom-btn danger" bindtap="disbandFamily">解散家庭</button>
+      </view>
+      <!-- 普通成员操作 -->
+      <view wx:else>
+        <button class="bottom-btn danger" bindtap="leaveFamily">退出家庭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 创建家庭弹窗 -->
+  <view class="modal" wx:if="{{showCreateModal}}">
+    <view class="modal-mask" catchtap="closeModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">创建家庭</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-group">
+          <view class="form-label">家庭名称</view>
+          <input
+            class="form-input"
+            data-field="familyName"
+            value="{{formData.familyName}}"
+            bindinput="onInputChange"
+            placeholder="请输入家庭名称"
+            focus="{{showCreateModal}}"
+          />
+        </view>
+        <view class="form-group">
+          <view class="form-label">您的身份</view>
+          <input
+            class="form-input"
+            data-field="creatorNickname"
+            value="{{formData.creatorNickname}}"
+            bindinput="onInputChange"
+            placeholder="例如：妈妈、爸爸、外婆"
+          />
+          <view class="quick-identity-options">
+            <view class="identity-option" bindtap="selectIdentity" data-identity="妈妈">妈妈</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="爸爸">爸爸</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="外婆">外婆</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="爷爷">爷爷</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="奶奶">奶奶</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="外公">外公</view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeModal">取消</button>
+        <button class="modal-btn confirm" bindtap="createFamily">创建</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加入家庭弹窗 -->
+  <view class="modal" wx:if="{{showJoinModal}}">
+    <view class="modal-mask" catchtap="closeModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">加入家庭</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-group">
+          <view class="form-label">邀请码</view>
+          <input
+            class="form-input"
+            data-field="inviteCode"
+            value="{{formData.inviteCode}}"
+            bindinput="onInputChange"
+            style="text-transform: uppercase;"
+            placeholder="请输入6位邀请码"
+            maxlength="6"
+          />
+        </view>
+        <view class="form-group">
+          <view class="form-label">昵称</view>
+          <input
+            class="form-input"
+            data-field="nickname"
+            value="{{formData.nickname}}"
+            bindinput="onInputChange"
+            placeholder="例如：妈妈、爸爸、外婆"
+          />
+          <view class="quick-identity-options">
+            <view class="identity-option" bindtap="selectIdentity" data-identity="妈妈">妈妈</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="爸爸">爸爸</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="外婆">外婆</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="爷爷">爷爷</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="奶奶">奶奶</view>
+            <view class="identity-option" bindtap="selectIdentity" data-identity="外公">外公</view>
+          </view>
+        </view>
+        <!-- 身份选择 -->
+        <view class="form-group">
+          <view class="form-label">选择身份</view>
+          <view class="role-selector">
+            <view
+              class="role-option {{formData.role === 'admin' ? 'selected' : ''}}"
+              data-role="admin"
+              bindtap="selectRole">
+              <view class="role-icon">👨‍👩‍👧‍👦</view>
+              <view class="role-name">家长</view>
+              <view class="role-desc">可管理任务和奖品</view>
+            </view>
+            <view
+              class="role-option {{formData.role === 'member' ? 'selected' : ''}}"
+              data-role="member"
+              bindtap="selectRole">
+              <view class="role-icon">👨‍👩‍👧‍👦</view>
+              <view class="role-name">家人</view>
+              <view class="role-desc">仅查看和完成任务</view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeModal">取消</button>
+        <button class="modal-btn confirm" bindtap="joinFamily">加入</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 邀请选项弹窗（图2） -->
+  <view class="action-sheet" wx:if="{{showInviteActionSheet}}">
+    <view class="action-sheet-mask" catchtap="closeInviteActionSheet"></view>
+    <view class="action-sheet-content">
+      <view class="action-sheet-header">
+        <text>邀请家人</text>
+        <view class="close-btn" catchtap="closeInviteActionSheet">✕</view>
+      </view>
+
+      <!-- 分享卡片（图3） -->
+      <view class="share-card">
+        <view class="share-card-header">
+          <view class="family-icon-large">🏠</view>
+          <view class="family-info">
+            <view class="family-name-large">{{family.name}}</view>
+            <view class="invite-code-display">
+              <text class="code-text">邀请码：{{family.inviteCode}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="share-card-body">
+          <view class="share-tip">扫描或输入邀请码加入家庭</view>
+        </view>
+
+        <view class="share-card-actions">
+          <button class="share-action-btn" bindtap="shareToFriend">
+            <view class="action-icon-large">📤</view>
+            <text>发送给朋友</text>
+          </button>
+          <button class="share-action-btn" bindtap="saveShareImage">
+            <view class="action-icon-large">💾</view>
+            <text>保存图片</text>
+          </button>
+          <button class="share-action-btn" bindtap="copyInviteCode">
+            <view class="action-icon-large">📋</view>
+            <text>复制邀请码</text>
+          </button>
+        </view>
+      </view>
+
+      <view class="action-sheet-cancel" catchtap="closeInviteActionSheet">
+        取消
+      </view>
+    </view>
+  </view>
+
+  <!-- 分配儿童弹窗 -->
+  <view class="modal" wx:if="{{showAssignChildModal}}">
+    <view class="modal-mask" catchtap="closeAssignChildModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">分配儿童到家庭</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-group">
+          <view class="form-label">儿童</view>
+          <view class="child-display">
+            <view class="child-avatar-small">{{assigningChild.name.substring(0, 1)}}</view>
+            <view class="child-name-small">{{assigningChild.name}}</view>
+          </view>
+        </view>
+        <view class="form-group">
+          <view class="form-label">初始金币</view>
+          <input
+            class="form-input"
+            type="number"
+            data-field="initialCoins"
+            value="{{assignFormData.initialCoins}}"
+            bindinput="onAssignInputChange"
+            placeholder="请输入初始金币数量"
+          />
+          <view class="form-hint">儿童加入该家庭时的初始金币数量</view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeAssignChildModal">取消</button>
+        <button class="modal-btn confirm" bindtap="confirmAssignChild">确定</button>
+      </view>
+    </view>
+  </view>
+</view>

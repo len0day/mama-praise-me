@@ -1,0 +1,280 @@
+/* components/custom-navbar/custom-navbar.wxss */
+
+.custom-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;  /* 降低 z-index，使全屏流光效果能覆盖 */
+  transition: background-color 0.15s ease;
+}
+
+/* 使用左侧slot且需要透明背景时 */
+.custom-navbar.transparent-with-slot {
+  background: transparent !important;
+}
+
+/* 浅色模式下导航栏添加深蓝色不透明渐变背景 */
+.theme-light .custom-navbar.transparent-with-slot {
+  background: linear-gradient(to bottom,
+    rgba(0, 122, 255, 0.8) 0%,
+    rgba(0, 122, 255, 0.6) 40%,
+    rgba(245, 245, 245, 1) 70%,
+    rgba(245, 245, 245, 1) 100%) !important;
+}
+
+.custom-navbar.transparent-with-slot .navbar-content {
+  /* 移除透明背景设置，让页面样式可以覆盖 */
+}
+
+/* 深色主题下的透明with-slot模式 - 深蓝色不透明渐变 */
+.theme-dark .custom-navbar.transparent-with-slot {
+  background: linear-gradient(to bottom,
+    rgba(0, 122, 255, 0.7) 0%,
+    rgba(0, 122, 255, 0.5) 40%,
+    rgba(28, 28, 30, 1) 70%,
+    rgba(28, 28, 30, 1) 100%) !important;
+}
+
+.theme-dark .custom-navbar.transparent-with-slot .navbar-content {
+  /* 移除透明背景设置，让页面样式可以覆盖 */
+}
+
+/* 透明模式 - 第三档流光效果时使用 */
+.custom-navbar.transparent {
+  background: transparent !important;
+}
+
+.custom-navbar.transparent .navbar-content {
+  background: transparent;
+}
+
+/* 浅色模式下透明导航栏添加蓝色渐变背景 */
+.theme-light .custom-navbar.transparent .navbar-content {
+  background: linear-gradient(180deg, rgba(0, 122, 255, 0.15) 0%, rgba(0, 122, 255, 0.08) 50%, transparent 100%) !important;
+}
+
+.status-bar {
+  width: 100%;
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 0 16rpx;
+}
+
+/* 左侧slot容器 - 透明背景 */
+.navbar-left-slot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 16rpx;
+  z-index: 20;
+  /* 不设置背景色，保持透明 */
+}
+
+.navbar-back,
+.navbar-home,
+.navbar-settings {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80rpx;
+  height: 100%;
+  font-size: 36rpx;
+  color: #ffffff;
+  z-index: 10;
+}
+
+.navbar-back {
+  left: 0;
+}
+
+.navbar-settings.navbar-left {
+  left: 0;
+}
+
+.navbar-home {
+  right: 0;
+}
+
+.navbar-back .iconfont,
+.navbar-home .iconfont,
+.navbar-settings .iconfont {
+  font-size: 40rpx;
+}
+
+/* 设置图标样式 */
+.navbar-settings .settings-icon {
+  font-size: 44rpx;
+  line-height: 1;
+  filter: drop-shadow(0 2rpx 4rpx rgba(0, 0, 0, 0.3));
+  transition: all 0.15s ease;
+}
+
+.navbar-settings:active .settings-icon {
+  transform: scale(0.9) rotate(45deg);
+}
+
+.navbar-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #ffffff;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 主题样式 */
+.theme-light .navbar-title {
+  color: #ffffff;
+}
+
+.theme-dark .navbar-title {
+  color: #ffffff;
+}
+
+.navbar-placeholder {
+  width: 100%;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* 更多精彩按钮样式 */
+.navbar-action-btn {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #ffffff;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.navbar-action-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.95);
+}
+
+/* 用户信息区域样式 */
+.navbar-user-section {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: 16rpx;
+  /* 确保容器背景透明，不遮挡内部按钮的渐变背景 */
+  background: transparent;
+}
+
+/* 未登录：登录按钮 - 小尺寸半透明磨砂效果 */
+.navbar-login-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 8rpx 16rpx;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10rpx);
+  -webkit-backdrop-filter: blur(10rpx);
+  border-radius: 24rpx;
+  border: none;
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 500;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.navbar-login-btn .iconfont {
+  font-size: 20rpx;
+}
+
+.navbar-login-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.navbar-login-text {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+/* 已登录：用户信息 - 参照首页样式，头像更小 */
+.navbar-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 6rpx 12rpx;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10rpx);
+  border-radius: 32rpx;
+  border: 1.5rpx solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.navbar-user-info:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.navbar-user-avatar {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1.5rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.navbar-user-name {
+  max-width: 180rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navbar-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36rpx;
+  height: 36rpx;
+  margin-left: 4rpx;
+}
+
+.navbar-logout-icon {
+  font-size: 22rpx;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+/* 主题适配：浅色主题使用黑色文字 */
+.theme-light .navbar-login-btn,
+.theme-light .navbar-login-text,
+.theme-light .navbar-user-name {
+  color: #000 !important;
+}
+
+.theme-light .navbar-login-btn {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* 主题适配：深色主题使用白色文字 */
+.theme-dark .navbar-login-btn,
+.theme-dark .navbar-login-text,
+.theme-dark .navbar-user-name {
+  color: #fff !important;
+}

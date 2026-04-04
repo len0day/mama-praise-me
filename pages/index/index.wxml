@@ -1,0 +1,78 @@
+<!--pages/index/index.wxml-->
+<view class="container {{themeClass}}">
+  <!-- 自定义导航栏 -->
+  <custom-navbar title="{{i18n.tasks.title || '任务'}}" showBack="{{false}}" />
+
+  <!-- 当前孩子信息 -->
+  <view class="child-info" wx:if="{{currentChild}}">
+    <view class="child-avatar">
+      <image wx:if="{{currentChild.avatar}}" src="{{currentChild.avatar}}" mode="aspectFill" />
+      <text wx:else>{{currentChild.name.substring(0, 1)}}</text>
+    </view>
+    <view class="child-details">
+      <view class="child-name">{{currentChild.name}} - {{currentChild.familyName || '家庭'}}</view>
+      <view class="child-coins">
+        <text class="coin-icon">🪙</text>
+        <text>{{currentChild.familyCoins || 0}}</text>
+      </view>
+    </view>
+    <view class="task-manage-btn" bindtap="goToTasks">
+      <text>📝</text>
+    </view>
+  </view>
+
+  <!-- 无家庭提示 -->
+  <view class="no-child" wx:if="{{needFamily}}">
+    <view class="no-child-icon">🏠</view>
+    <view class="no-child-text">请先加入或创建一个家庭</view>
+    <button class="add-child-btn" bindtap="goToFamily">去添加家庭</button>
+  </view>
+
+  <!-- 无孩子提示 -->
+  <view class="no-child" wx:if="{{!currentChild && !isLoading && !needFamily}}">
+    <view class="no-child-icon">👶</view>
+    <view class="no-child-text">{{i18n.children.noChildren || '暂无孩子，请先添加'}}</view>
+    <button class="add-child-btn" bindtap="goToAddChild">{{i18n.children.addChild || '添加孩子'}}</button>
+  </view>
+
+  <!-- 今日任务列表 -->
+  <view class="tasks-container" wx:if="{{currentChild}}">
+    <view class="section-title">{{i18n.tasks.todayTasks || '今日任务'}}</view>
+
+    <!-- 加载中 -->
+    <view class="loading" wx:if="{{isLoading}}">
+      <text>{{i18n.common.loading || '加载中...'}}</text>
+    </view>
+
+    <!-- 任务列表 -->
+    <view class="task-list" wx:if="{{!isLoading}}">
+      <view
+        class="task-item {{item.completed ? 'completed' : ''}}"
+        wx:for="{{tasks}}"
+        wx:key="taskId"
+        data-taskid="{{item.taskId}}"
+        bindtap="completeTask">
+        <view class="task-content">
+          <view class="task-header">
+            <view class="task-type">{{item.taskType === 'daily' ? '📅' : (item.taskType === 'weekly' ? '📆' : '🗓️')}}</view>
+            <view class="task-title">{{item.title}}</view>
+          </view>
+          <view class="task-desc" wx:if="{{item.description}}">{{item.description}}</view>
+          <view class="task-reward">
+            <text class="coin-icon">🪙</text>
+            <text>+{{item.coinReward}}</text>
+          </view>
+        </view>
+        <view class="task-status">
+          <text wx:if="{{item.completed}}">✅</text>
+          <text wx:else>⭕</text>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{tasks.length === 0}}">
+        <text>{{i18n.common.noData || '暂无数据'}}</text>
+      </view>
+    </view>
+  </view>
+</view>

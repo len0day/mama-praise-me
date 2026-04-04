@@ -1,0 +1,86 @@
+<!--pages/redemptions/redemptions.wxml-->
+<view class="container {{themeClass}}">
+  <custom-navbar title="{{i18n.redemptions.title || '我的奖品'}}" showBack="{{true}}" />
+
+  <!-- 当前孩子信息 -->
+  <view class="child-info" wx:if="{{currentChild}}">
+    <view class="child-avatar">
+      <text>{{currentChild.name.substring(0, 1)}}</text>
+    </view>
+    <view class="child-details">
+      <view class="child-name">{{currentChild.name}}</view>
+      <view class="child-stats">
+        <text class="stat-item">{{redemptions.length}} 个已兑换奖品</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 无孩子提示 -->
+  <view class="no-child-tip" wx:if="{{!currentChild && !isLoading}}">
+    <text>{{i18n.common.noChild || '请先添加孩子'}}</text>
+  </view>
+
+  <!-- 奖品列表 -->
+  <view class="prizes-container" wx:if="{{currentChild}}">
+    <!-- 加载中 -->
+    <view class="loading" wx:if="{{isLoading}}">
+      <text>{{i18n.common.loading || '加载中...'}}</text>
+    </view>
+
+    <!-- 奖品列表 -->
+    <view class="prizes-list" wx:if="{{!isLoading}}">
+      <view
+        class="prize-item {{redemption.usedAt ? 'used' : ''}}"
+        wx:for="{{redemptions}}"
+        wx:key="redemptionId">
+        <view class="prize-card">
+          <!-- 奖品图片 -->
+          <view class="prize-image">
+            <image
+              wx:if="{{redemption.prizeImage}}"
+              src="{{redemption.prizeImage}}"
+              mode="aspectFill" />
+            <text wx:else class="placeholder-icon">🎁</text>
+          </view>
+
+          <!-- 奖品信息 -->
+          <view class="prize-info">
+            <view class="prize-name">{{redemption.prizeName}}</view>
+            <view class="prize-meta">
+              <text class="redeem-time">兑换于 {{formatTime(redemption.redeemedAt)}}</text>
+            </view>
+
+            <!-- 使用状态 -->
+            <view class="use-status pending" wx:if="{{redemption.status === 'pending'}}">
+              <text class="status-icon">⏳</text>
+              <text class="status-text">{{i18n.redemptions.pending || '待兑换'}}</text>
+            </view>
+            <view class="use-status" wx:elif="{{redemption.usedAt}}">
+              <text class="status-icon">✓</text>
+              <text class="status-text">{{i18n.redemptions.used || '已使用'}}</text>
+              <text class="use-time">{{formatTime(redemption.usedAt)}}</text>
+            </view>
+            <view class="use-status ready" wx:else>
+              <text class="status-icon">🎁</text>
+              <text class="status-text">{{i18n.redemptions.notUsed || '待使用'}}</text>
+            </view>
+          </view>
+
+          <!-- 使用按钮 -->
+          <button
+            class="use-btn"
+            data-redemptionid="{{redemption.redemptionId}}"
+            bindtap="usePrize">
+            {{i18n.redemptions.use || '使用'}}
+          </button>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{redemptions.length === 0}}">
+        <text class="empty-icon">🎁</text>
+        <text class="empty-text">{{i18n.redemptions.noPrizes || '暂无已兑换的奖品'}}</text>
+      </view>
+    </view>
+  </view>
+</view>
