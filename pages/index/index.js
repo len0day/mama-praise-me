@@ -220,14 +220,20 @@ Page({
           name: 'manageTasks',
           data: {
             action: 'getTasks',
-            data: { childId: currentChild.childId }
+            data: {
+              familyId: currentFamilyId,
+              childId: currentChild.childId
+            }
           }
         }),
         wx.cloud.callFunction({
           name: 'manageTasks',
           data: {
             action: 'getAllCompletions',
-            data: { childId: currentChild.childId }
+            data: {
+              familyId: currentFamilyId,
+              childId: currentChild.childId
+            }
           }
         })
       ])
