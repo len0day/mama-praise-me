@@ -589,5 +589,27 @@ Page({
    */
   stopPropagation() {
     // 阻止点击事件冒泡到 modal-mask
+  },
+
+  /**
+   * 分享给朋友
+   */
+  onShareAppMessage() {
+    return {
+      title: '妈妈表扬我 - 管理孩子信息',
+      path: '/pages/children/children',
+      imageUrl: ''
+    }
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    return {
+      title: '妈妈表扬我 - 帮助孩子建立良好习惯的任务奖励小程序',
+      query: '',
+      imageUrl: ''
+    }
   }
 })

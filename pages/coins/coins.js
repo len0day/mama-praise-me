@@ -161,5 +161,30 @@ Page({
     wx.navigateTo({
       url: '/pages/children/children'
     })
+  },
+
+  /**
+   * 分享给朋友
+   */
+  onShareAppMessage() {
+    const currentChild = app.getCurrentChild()
+    return {
+      title: currentChild
+        ? `${currentChild.name}的金币记录`
+        : '妈妈表扬我 - 金币记录',
+      path: '/pages/coins/coins',
+      imageUrl: ''
+    }
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    return {
+      title: '妈妈表扬我 - 帮助孩子建立良好习惯的任务奖励小程序',
+      query: '',
+      imageUrl: ''
+    }
   }
 })

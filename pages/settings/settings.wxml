@@ -207,61 +207,62 @@
 
   <!-- 修改家长密码弹窗 -->
   <view class="modal" wx:if="{{showChangePasswordModal}}">
-    <view class="modal-mask" catchtap="closeChangePasswordModal"></view>
-    <view class="modal-content">
-      <view class="modal-header">
-        <text class="modal-title">修改家长密码</text>
-      </view>
-      <view class="modal-body">
-        <view class="form-group">
-          <view class="form-label">旧密码</view>
-          <view class="password-input-wrapper">
-            <input
-              class="form-input"
-              type="{{showOldPassword ? 'text' : 'password'}}"
-              value="{{changePasswordForm.oldPassword}}"
-              data-field="oldPassword"
-              bindinput="onChangePasswordInput"
-              placeholder="请输入旧密码" />
-            <view class="password-toggle-small" bindtap="toggleOldPasswordVisibility">
-              {{showOldPassword ? '👁️' : '👁️‍🗨️'}}
+    <view class="modal-mask" catchtap="closeChangePasswordModal">
+      <view class="modal-content" catchtap="stopPropagation">
+        <view class="modal-header">
+          <text class="modal-title">修改家长密码</text>
+        </view>
+        <view class="modal-body">
+          <view class="form-group">
+            <view class="form-label">旧密码</view>
+            <view class="password-input-wrapper">
+              <input
+                class="form-input"
+                type="{{showOldPassword ? 'text' : 'password'}}"
+                value="{{changePasswordForm.oldPassword}}"
+                data-field="oldPassword"
+                bindinput="onChangePasswordInput"
+                placeholder="请输入旧密码" />
+              <view class="password-toggle-small" bindtap="toggleOldPasswordVisibility">
+                {{showOldPassword ? '👁️' : '👁️‍🗨️'}}
+              </view>
+            </view>
+          </view>
+          <view class="form-group">
+            <view class="form-label">新密码</view>
+            <view class="password-input-wrapper">
+              <input
+                class="form-input"
+                type="{{showNewPassword ? 'text' : 'password'}}"
+                value="{{changePasswordForm.newPassword}}"
+                data-field="newPassword"
+                bindinput="onChangePasswordInput"
+                placeholder="请输入新密码（至少4位）" />
+              <view class="password-toggle-small" bindtap="toggleNewPasswordVisibility">
+                {{showNewPassword ? '👁️' : '👁️‍🗨️'}}
+              </view>
+            </view>
+          </view>
+          <view class="form-group">
+            <view class="form-label">确认新密码</view>
+            <view class="password-input-wrapper">
+              <input
+                class="form-input"
+                type="{{showConfirmPassword ? 'text' : 'password'}}"
+                value="{{changePasswordForm.confirmPassword}}"
+                data-field="confirmPassword"
+                bindinput="onChangePasswordInput"
+                placeholder="请再次输入新密码" />
+              <view class="password-toggle-small" bindtap="toggleConfirmPasswordVisibility">
+                {{showConfirmPassword ? '👁️' : '👁️‍🗨️'}}
+              </view>
             </view>
           </view>
         </view>
-        <view class="form-group">
-          <view class="form-label">新密码</view>
-          <view class="password-input-wrapper">
-            <input
-              class="form-input"
-              type="{{showNewPassword ? 'text' : 'password'}}"
-              value="{{changePasswordForm.newPassword}}"
-              data-field="newPassword"
-              bindinput="onChangePasswordInput"
-              placeholder="请输入新密码（至少4位）" />
-            <view class="password-toggle-small" bindtap="toggleNewPasswordVisibility">
-              {{showNewPassword ? '👁️' : '👁️‍🗨️'}}
-            </view>
-          </view>
+        <view class="modal-footer">
+          <button class="modal-btn cancel" bindtap="closeChangePasswordModal">取消</button>
+          <button class="modal-btn confirm" bindtap="confirmChangePassword">确定</button>
         </view>
-        <view class="form-group">
-          <view class="form-label">确认新密码</view>
-          <view class="password-input-wrapper">
-            <input
-              class="form-input"
-              type="{{showConfirmPassword ? 'text' : 'password'}}"
-              value="{{changePasswordForm.confirmPassword}}"
-              data-field="confirmPassword"
-              bindinput="onChangePasswordInput"
-              placeholder="请再次输入新密码" />
-            <view class="password-toggle-small" bindtap="toggleConfirmPasswordVisibility">
-              {{showConfirmPassword ? '👁️' : '👁️‍🗨️'}}
-            </view>
-          </view>
-        </view>
-      </view>
-      <view class="modal-footer">
-        <button class="modal-btn cancel" bindtap="closeChangePasswordModal">取消</button>
-        <button class="modal-btn confirm" bindtap="confirmChangePassword">确定</button>
       </view>
     </view>
   </view>

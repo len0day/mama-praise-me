@@ -270,10 +270,22 @@ App({
    */
   loadCurrentChildId() {
     try {
-      const currentChildId = wx.getStorageSync('currentChildId')
-      if (currentChildId) {
-        this.globalData.currentChildId = currentChildId
-        console.log('[妈妈表扬我] ✓ 加载当前孩子ID:', currentChildId)
+      const currentFamilyId = this.globalData.currentFamilyId
+      if (currentFamilyId) {
+        // 从家庭配置中获取该家庭对应的儿童ID
+        const familyConfig = wx.getStorageSync('familyConfig') || {}
+        const childId = familyConfig[currentFamilyId]?.currentChildId
+        if (childId) {
+          this.globalData.currentChildId = childId
+          console.log('[妈妈表扬我] ✓ 加载当前家庭的孩子ID:', childId)
+        }
+      } else {
+        // 如果没有当前家庭，使用旧的存储方式（向后兼容）
+        const currentChildId = wx.getStorageSync('currentChildId')
+        if (currentChildId) {
+          this.globalData.currentChildId = currentChildId
+          console.log('[妈妈表扬我] ✓ 加载当前孩子ID（旧方式）:', currentChildId)
+        }
       }
     } catch (e) {
       console.error('[妈妈表扬我] 加载当前孩子ID失败:', e)
@@ -281,13 +293,28 @@ App({
   },
 
   /**
-   * 保存当前孩子ID
+   * 保存当前孩子ID（保存到对应家庭的配置中）
    */
   saveCurrentChildId(childId) {
     try {
-      wx.setStorageSync('currentChildId', childId)
+      const currentFamilyId = this.globalData.currentFamilyId
+
+      if (currentFamilyId) {
+        // 保存到家庭配置中
+        const familyConfig = wx.getStorageSync('familyConfig') || {}
+        if (!familyConfig[currentFamilyId]) {
+          familyConfig[currentFamilyId] = {}
+        }
+        familyConfig[currentFamilyId].currentChildId = childId
+        wx.setStorageSync('familyConfig', familyConfig)
+        console.log('[妈妈表扬我] ✓ 孩子ID已保存到家庭配置:', currentFamilyId, childId)
+      } else {
+        // 如果没有当前家庭，使用旧的存储方式（向后兼容）
+        wx.setStorageSync('currentChildId', childId)
+        console.log('[妈妈表扬我] ✓ 孩子ID已保存（旧方式）:', childId)
+      }
+
       this.globalData.currentChildId = childId
-      console.log('[妈妈表扬我] ✓ 当前孩子ID已保存:', childId)
     } catch (e) {
       console.error('[妈妈表扬我] 保存当前孩子ID失败:', e)
     }
@@ -364,10 +391,19 @@ App({
   async loadChildren() {
     // 未登录：从本地加载
     if (!this.globalData.useCloudStorage) {
-      const localChildren = wx.getStorageSync('children') || []
-      this.globalData.children = localChildren
-      console.log('[妈妈表扬我] 从本地加载了', localChildren.length, '个孩子')
-      return localChildren
+      // 获取所有本地家庭
+      const localFamilies = wx.getStorageSync('localFamilies') || []
+      const allChildren = []
+
+      // 从每个家庭中收集儿童数据
+      localFamilies.forEach(family => {
+        const familyChildren = wx.getStorageSync(`localChildren_${family.familyId}`) || []
+        allChildren.push(...familyChildren)
+      })
+
+      this.globalData.children = allChildren
+      console.log('[妈妈表扬我] 从本地加载了', allChildren.length, '个孩子（来自', localFamilies.length, '个家庭）')
+      return allChildren
     }
 
     // 已登录：从云端加载
@@ -416,41 +452,35 @@ App({
       if (currentFamilyId) {
         const familyChildren = this.globalData.children.filter(child => child.familyId === currentFamilyId)
         if (familyChildren.length > 0) {
-          // 优先使用上次选择的孩子
-          const savedChildId = wx.getStorageSync('currentChildId')
-          const savedChild = familyChildren.find(child => child.childId === savedChildId)
-          if (savedChild) {
-            this.globalData.currentChildId = savedChild.childId
-            wx.setStorageSync('currentChildId', savedChild.childId)
-            console.log('[妈妈表扬我] ✓ 恢复上次选择的孩子:', savedChild.name)
-            return savedChild
+          // 从家庭配置中获取该家庭上次选择的儿童ID
+          const familyConfig = wx.getStorageSync('familyConfig') || {}
+          const savedChildId = familyConfig[currentFamilyId]?.currentChildId
+
+          if (savedChildId) {
+            const savedChild = familyChildren.find(child => child.childId === savedChildId)
+            if (savedChild) {
+              this.globalData.currentChildId = savedChild.childId
+              console.log('[妈妈表扬我] ✓ 恢复该家庭上次选择的孩子:', savedChild.name)
+              return savedChild
+            }
           }
 
-          // 否则选择该家庭的第一个孩子
+          // 如果没有保存的记录或孩子不存在，选择第一个
           const firstChild = familyChildren[0]
           this.globalData.currentChildId = firstChild.childId
-          wx.setStorageSync('currentChildId', firstChild.childId)
+          this.saveCurrentChildId(firstChild.childId)
           console.log('[妈妈表扬我] ✓ 自动选择该家庭的第一个孩子:', firstChild.name)
           return firstChild
         }
       }
 
-      // 如果当前家庭没有儿童，选择所有孩子的第一个
-      const savedChildId = wx.getStorageSync('currentChildId')
-      if (savedChildId) {
-        const found = this.globalData.children.find(child => child.childId === savedChildId)
-        if (found) {
-          this.globalData.currentChildId = savedChildId
-          console.log('[妈妈表扬我] ✓ 恢复上次选择的孩子:', found.name)
-          return found
-        }
-      }
-
-      // 选择第一个孩子
+      // 如果当前家庭没有儿童，选择所有孩子的第一个（并切换到该孩子的家庭）
       const firstChild = this.globalData.children[0]
       this.globalData.currentChildId = firstChild.childId
-      wx.setStorageSync('currentChildId', firstChild.childId)
-      console.log('[妈妈表扬我] ✓ 自动选择第一个孩子:', firstChild.name)
+      this.globalData.currentFamilyId = firstChild.familyId
+      this.saveCurrentChildId(firstChild.childId)
+      this.saveCurrentFamilyId(firstChild.familyId)
+      console.log('[妈妈表扬我] ✓ 自动选择第一个孩子及其家庭:', firstChild.name)
       return firstChild
     }
 
@@ -465,14 +495,13 @@ App({
       if (currentFamilyId && currentChild.familyId !== currentFamilyId) {
         console.log('[妈妈表扬我] 当前孩子已离开当前家庭，清除选择')
         this.globalData.currentChildId = ''
-        wx.removeStorageSync('currentChildId')
 
         // 重新选择当前家庭的孩子
         const familyChildren = this.globalData.children.filter(child => child.familyId === currentFamilyId)
         if (familyChildren.length > 0) {
           const firstChild = familyChildren[0]
           this.globalData.currentChildId = firstChild.childId
-          wx.setStorageSync('currentChildId', firstChild.childId)
+          this.saveCurrentChildId(firstChild.childId)
           console.log('[妈妈表扬我] ✓ 自动选择该家庭的第一个孩子:', firstChild.name)
           return firstChild
         }
@@ -597,46 +626,152 @@ App({
 
   /**
    * 同步本地数据到云端（登录时调用）
+   * 返回值：'none' 无数据，'sync' 自动同步，'conflict' 需要用户选择，'cancel' 用户取消
    */
   async syncLocalDataToCloud() {
     try {
-      // 检查是否有本地数据需要同步
-      const localChildren = wx.getStorageSync('children')
-      const localTasks = wx.getStorageSync('tasks')
-      const localPrizes = wx.getStorageSync('prizes')
+      console.log('[妈妈表扬我] ===== 开始检查数据同步 =====')
 
-      if (!localChildren && !localTasks && !localPrizes) {
-        console.log('[妈妈表扬我] 没有本地数据需要同步')
-        return
+      // 检查本地数据
+      const localFamilies = wx.getStorageSync('localFamilies') || []
+      console.log('[妈妈表扬我] 本地家庭列表:', localFamilies)
+
+      // 从每个家庭中收集儿童数据
+      const localChildrenData = {}
+      let localChildrenCount = 0
+
+      localFamilies.forEach(family => {
+        const familyChildren = wx.getStorageSync(`localChildren_${family.familyId}`) || []
+        console.log(`[妈妈表扬我] 家庭 ${family.name} (${family.familyId}) 的儿童数量:`, familyChildren.length)
+        if (familyChildren.length > 0) {
+          localChildrenData[family.familyId] = familyChildren
+          localChildrenCount += familyChildren.length
+        }
+      })
+
+      console.log('[妈妈表扬我] 本地数据统计 - 家庭:', localFamilies.length, '儿童:', localChildrenCount)
+
+      // 如果没有本地数据，直接返回
+      if (localFamilies.length === 0 && localChildrenCount === 0) {
+        console.log('[妈妈表扬我] 没有本地数据需要同步，返回 none')
+        return 'none'
       }
 
-      console.log('[妈妈表扬我] 开始同步本地数据到云端')
+      // 检查云端是否有数据
+      console.log('[妈妈表扬我] 开始检查云端数据...')
+      const cloudFamiliesRes = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: { action: 'getAllMyFamilies' }
+      })
 
-      // 同步孩子数据
-      if (localChildren && localChildren.length > 0) {
-        await this.syncChildrenToCloud(localChildren)
+      console.log('[妈妈表扬我] 云函数返回结果:', cloudFamiliesRes)
+
+      const cloudFamilies = cloudFamiliesRes.result.success ? (cloudFamiliesRes.result.families || []) : []
+      console.log('[妈妈表扬我] 云端数据统计 - 家庭:', cloudFamilies.length)
+
+      // 如果云端没有数据，自动同步本地数据到云端
+      if (cloudFamilies.length === 0) {
+        console.log('[妈妈表扬我] 云端无数据，自动同步本地数据')
+        await this.uploadLocalDataToCloud(localFamilies, localChildrenData)
+        return 'sync'
       }
 
-      // 同步任务数据
-      if (localTasks && localTasks.length > 0) {
-        await this.syncTasksToCloud(localTasks)
-      }
+      // 如果两边都有数据，需要用户选择
+      console.log('[妈妈表扬我] ✓ 检测到数据冲突，需要用户选择，返回 conflict')
+      return 'conflict'
 
-      // 同步奖品数据
-      if (localPrizes && localPrizes.length > 0) {
-        await this.syncPrizesToCloud(localPrizes)
-      }
-
-      console.log('[妈妈表扬我] ✓ 本地数据同步完成')
-
-      // 清除本地缓存（已同步到云端）
-      wx.removeStorageSync('children')
-      wx.removeStorageSync('tasks')
-      wx.removeStorageSync('prizes')
-
-      showToast('数据已同步到云端')
     } catch (err) {
-      console.error('[妈妈表扬我] 数据同步失败:', err)
+      console.error('[妈妈表扬我] 检查数据同步失败:', err)
+      return 'error'
+    }
+  },
+
+  /**
+   * 上传本地数据到云端
+   */
+  async uploadLocalDataToCloud(localFamilies, localChildrenData) {
+    try {
+      console.log('[妈妈表扬我] 开始上传本地数据到云端')
+
+      // 1. 上传家庭
+      for (const family of localFamilies) {
+        await wx.cloud.callFunction({
+          name: 'manageFamilies',
+          data: {
+            action: 'createFamily',
+            data: {
+              name: family.name,
+              creatorNickname: family.creatorNickname
+            }
+          }
+        })
+      }
+
+      // 重新获取创建的家庭（获取新的 familyId）
+      const familiesRes = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: { action: 'getAllMyFamilies' }
+      })
+
+      if (familiesRes.result.success) {
+        const cloudFamilies = familiesRes.result.families || []
+
+        // 2. 上传儿童（使用新的 familyId）
+        for (let i = 0; i < cloudFamilies.length; i++) {
+          const cloudFamily = cloudFamilies[i]
+          const localFamilyId = localFamilies[i]?.familyId
+
+          if (localFamilyId && localChildrenData[localFamilyId]) {
+            for (const child of localChildrenData[localFamilyId]) {
+              await wx.cloud.callFunction({
+                name: 'manageChildren',
+                data: {
+                  action: 'createChild',
+                  data: {
+                    ...child,
+                    familyId: cloudFamily.familyId
+                  }
+                }
+              })
+            }
+          }
+        }
+      }
+
+      console.log('[妈妈表扬我] ✓ 本地数据上传完成')
+
+      // 清除本地数据
+      wx.removeStorageSync('localFamilies')
+      localFamilies.forEach(family => {
+        wx.removeStorageSync(`localChildren_${family.familyId}`)
+        wx.removeStorageSync(`localTasks_${family.familyId}`)
+        wx.removeStorageSync(`localPrizes_${family.familyId}`)
+      })
+
+    } catch (err) {
+      console.error('[妈妈表扬我] 上传本地数据失败:', err)
+      throw err
+    }
+  },
+
+  /**
+   * 用云端数据覆盖本地数据
+   */
+  async downloadCloudDataToLocal() {
+    try {
+      console.log('[妈妈表扬我] 开始下载云端数据到本地')
+
+      // 清除所有本地数据
+      wx.clearStorageSync()
+
+      // 重新保存必要的配置
+      this.saveSettingsToStorage()
+
+      console.log('[妈妈表扬我] ✓ 本地数据已清除，将使用云端数据')
+
+    } catch (err) {
+      console.error('[妈妈表扬我] 清除本地数据失败:', err)
+      throw err
     }
   },
 

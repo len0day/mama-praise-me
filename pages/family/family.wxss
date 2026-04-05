@@ -177,6 +177,155 @@
   box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
 }
 
+/* 待批准邀请 */
+.pending-invitations {
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .pending-invitations {
+  background: #2C2C2E;
+}
+
+.invitations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.invitation-item {
+  background: #FAFAFA;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  border: 2rpx solid #E5E5E5;
+}
+
+.theme-dark .invitation-item {
+  background: #1C1C1E;
+  border-color: #3A3A3C;
+}
+
+.invitation-info {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.invitation-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 32rpx;
+  font-weight: bold;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.invitation-avatar image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.invitation-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8rpx;
+}
+
+.invitation-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.theme-dark .invitation-name {
+  color: #FFFFFF;
+}
+
+.invitation-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.invitation-role {
+  font-size: 26rpx;
+  color: #666666;
+  background: #F5F5F5;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.theme-dark .invitation-role {
+  color: #AAAAAA;
+  background: #3A3A3C;
+}
+
+.invitation-divider {
+  font-size: 20rpx;
+  color: #CCCCCC;
+}
+
+.theme-dark .invitation-divider {
+  color: #555555;
+}
+
+.invitation-time {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.invitation-nickname {
+  font-size: 24rpx;
+  color: #FF9800;
+}
+
+.invitation-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.invitation-btn {
+  flex: 1;
+  padding: 20rpx;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.invitation-btn.reject {
+  background: #FFEBEE;
+  color: #F44336;
+}
+
+.theme-dark .invitation-btn.reject {
+  background: #3A1A1A;
+  color: #FF6B6B;
+}
+
+.invitation-btn.approve {
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: #FFFFFF;
+  box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
+}
+
+.invitation-btn:active {
+  transform: scale(0.98);
+}
+
 /* 区域标题 */
 .section-title {
   display: flex;

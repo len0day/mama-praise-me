@@ -41,23 +41,31 @@ Page({
     // 获取当前孩子（会自动选择）
     const currentChild = app.getCurrentChild()
 
-    // 补充家庭信息和金币余额
-    if (currentChild) {
-      // 确保 child 有 familyId 字段
-      const childWithFamilyId = {
-        ...currentChild,
-        familyId: currentChild.familyId || app.getCurrentFamilyId()
-      }
-      // 加载家庭名称和金币余额
-      const enrichedChild = await this.enrichChildInfo(childWithFamilyId)
-      console.log('[首页] enrichedChild:', enrichedChild)
-      console.log('[首页] enrichedChild.familyName:', enrichedChild.familyName)
-      console.log('[首页] enrichedChild.familyCoins:', enrichedChild.familyCoins)
-      this.setData({ currentChild: enrichedChild, needFamily: false })
-      console.log('[首页] setData completed')
-    } else {
-      this.setData({ currentChild, needFamily: false })
+    // 如果没有孩子，显示添加孩子提示
+    if (!currentChild) {
+      this.setData({
+        currentChild: null,
+        tasks: [],
+        todayCompletions: [],
+        isLoading: false,
+        needFamily: false
+      })
+      return
     }
+
+    // 补充家庭信息和金币余额
+    // 确保 child 有 familyId 字段
+    const childWithFamilyId = {
+      ...currentChild,
+      familyId: currentChild.familyId || app.getCurrentFamilyId()
+    }
+    // 加载家庭名称和金币余额
+    const enrichedChild = await this.enrichChildInfo(childWithFamilyId)
+    console.log('[首页] enrichedChild:', enrichedChild)
+    console.log('[首页] enrichedChild.familyName:', enrichedChild.familyName)
+    console.log('[首页] enrichedChild.familyCoins:', enrichedChild.familyCoins)
+    this.setData({ currentChild: enrichedChild, needFamily: false })
+    console.log('[首页] setData completed')
 
     // 加载数据
     await this.loadData()
@@ -577,5 +585,30 @@ Page({
     wx.switchTab({
       url: '/pages/family-list/family-list'
     })
+  },
+
+  /**
+   * 分享给朋友
+   */
+  onShareAppMessage() {
+    const currentChild = this.data.currentChild
+    return {
+      title: currentChild
+        ? `我在用"妈妈表扬我"记录${currentChild.name}的任务和奖励`
+        : '妈妈表扬我 - 儿童任务奖励管理',
+      path: '/pages/index/index',
+      imageUrl: ''
+    }
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    return {
+      title: '妈妈表扬我 - 帮助孩子建立良好习惯的任务奖励小程序',
+      query: '',
+      imageUrl: ''
+    }
   }
 })

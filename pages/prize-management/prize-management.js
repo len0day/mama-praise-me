@@ -469,5 +469,28 @@ Page({
       return false
     }
     return true
+  },
+
+  /**
+   * 分享给朋友
+   */
+  onShareAppMessage() {
+    return {
+      title: '妈妈表扬我 - 管理奖品库',
+      path: '/pages/prize-management/prize-management',
+      imageUrl: ''
+    }
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    return {
+      title: '妈妈表扬我 - 帮助孩子建立良好习惯的任务奖励小程序',
+      query: '',
+      imageUrl: ''
+    }
   }
 })
+

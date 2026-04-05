@@ -49,10 +49,11 @@
           </view>
 
           <!-- 家庭儿童 -->
-          <view class="children-section" wx:if="{{familyChildren.length > 0}}">
+          <view class="children-section">
             <view class="sub-section-title">家庭儿童 ({{familyChildren.length}})</view>
 
-            <view class="child-list">
+            <!-- 有儿童时显示列表 -->
+            <view class="child-list" wx:if="{{familyChildren.length > 0}}">
               <view class="child-item" wx:for="{{familyChildren}}" wx:key="childId" wx:for-item="child">
                 <view class="child-avatar">
                   <image wx:if="{{child.avatar}}" src="{{child.avatar}}" mode="aspectFill" />
@@ -73,6 +74,13 @@
                   </button>
                 </view>
               </view>
+            </view>
+
+            <!-- 无儿童时显示提示 -->
+            <view class="empty-children" wx:if="{{familyChildren.length === 0}}">
+              <text class="empty-icon">👶</text>
+              <text class="empty-text">还没有添加儿童</text>
+              <button class="add-child-btn" bindtap="goToAddChild">去添加儿童</button>
             </view>
           </view>
         </view>

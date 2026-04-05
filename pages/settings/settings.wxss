@@ -398,8 +398,17 @@
 }
 
 /* 修改密码弹窗样式 */
-.modal-mask {
+.modal {
   position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+}
+
+.modal-mask {
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -408,7 +417,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9998;
 }
 
 .modal-content {

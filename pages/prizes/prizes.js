@@ -422,5 +422,30 @@ Page({
     const hour = date.getHours().toString().padStart(2, '0')
     const minute = date.getMinutes().toString().padStart(2, '0')
     return `${month}-${day} ${hour}:${minute}`
+  },
+
+  /**
+   * 分享给朋友
+   */
+  onShareAppMessage() {
+    const currentChild = app.getCurrentChild()
+    return {
+      title: currentChild
+        ? `我在用"妈妈表扬我"为${currentChild.name}设置奖励`
+        : '妈妈表扬我 - 儿童任务奖励兑换',
+      path: '/pages/prizes/prizes',
+      imageUrl: ''
+    }
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    return {
+      title: '妈妈表扬我 - 帮助孩子建立良好习惯的任务奖励小程序',
+      query: '',
+      imageUrl: ''
+    }
   }
 })

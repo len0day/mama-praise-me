@@ -262,12 +262,43 @@ Page({
           isLoggedIn: true
         })
 
-        showToast('登录成功，正在同步数据...')
+        showToast('登录成功')
 
-        // 同步本地数据到云端
-        setTimeout(() => {
-          app.syncLocalDataToCloud()
-        }, 500)
+        // 检查数据同步情况
+        setTimeout(async () => {
+          console.log('[设置] 开始检查数据同步...')
+          const syncResult = await app.syncLocalDataToCloud()
+          console.log('[设置] 数据同步结果:', syncResult)
+
+          if (syncResult === 'conflict') {
+            // 数据冲突，让用户选择
+            console.log('[设置] 显示数据冲突对话框')
+            // 使用 nextTick 确保 UI 更新完成
+            await new Promise(resolve => setTimeout(resolve, 100))
+            this.showDataConflictDialog()
+          } else {
+            // 'sync', 'none', 'error' 都需要加载数据并自动选择
+            console.log('[设置] 加载云端数据并自动选择')
+            await app.loadChildren()
+            await this.loadAndSelectFamily()
+
+            // 刷新所有Tab页面
+            const pages = getCurrentPages()
+            pages.forEach(page => {
+              if (page && page.onShow) {
+                try {
+                  page.onShow()
+                } catch (e) {
+                  console.error('[设置] 刷新页面失败:', e)
+                }
+              }
+            })
+
+            if (syncResult === 'sync') {
+              showToast('本地数据已同步到云端')
+            }
+          }
+        }, 800)
       } else {
         showToast('登录失败: ' + (cloudRes.result.error || '未知错误'))
       }
@@ -279,6 +310,158 @@ Page({
         showToast('登录失败: ' + err.message)
       }
     }
+  },
+
+  /**
+   * 加载并自动选择第一个家庭
+   */
+  async loadAndSelectFamily() {
+    try {
+      // 获取所有家庭
+      const familiesRes = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'getAllMyFamilies'
+        }
+      })
+
+      if (familiesRes.result.success) {
+        const families = familiesRes.result.families || []
+        if (families.length > 0) {
+          // 选择第一个家庭
+          const firstFamily = families[0]
+          app.saveCurrentFamilyId(firstFamily.familyId)
+
+          // 加载该家庭的儿童
+          const childrenRes = await wx.cloud.callFunction({
+            name: 'manageFamilies',
+            data: {
+              action: 'getFamilyChildren',
+              data: {
+                familyId: firstFamily.familyId
+              }
+            }
+          })
+
+          if (childrenRes.result.success) {
+            const children = childrenRes.result.children || []
+            if (children.length > 0) {
+              // 优先选择上次选择的儿童，否则选择第一个
+              const familyConfig = wx.getStorageSync('familyConfig') || {}
+              const savedChildId = familyConfig[firstFamily.familyId]?.currentChildId
+
+              const childToSelect = savedChildId
+                ? children.find(c => c.childId === savedChildId)
+                : children[0]
+
+              if (childToSelect) {
+                app.saveCurrentChildId(childToSelect.childId)
+                console.log('[设置] 自动选择家庭和儿童:', firstFamily.name, childToSelect.name)
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[设置] 自动选择家庭失败:', err)
+    }
+  },
+
+  /**
+   * 显示数据冲突对话框
+   */
+  showDataConflictDialog() {
+    console.log('[设置] showDataConflictDialog 被调用')
+    wx.hideToast() // 先隐藏可能存在的 toast
+
+    setTimeout(() => {
+      wx.showModal({
+        title: '数据同步',
+        content: '检测到本地和云端都有数据\n\n本地数据：将本地数据上传到云端，覆盖云端数据\n云端数据：清除本地数据，使用云端数据',
+        confirmText: '本地数据',
+        cancelText: '云端数据',
+        editable: false,
+        success: async (res) => {
+          console.log('[设置] 用户选择结果:', res)
+          if (res.confirm) {
+            // 用户选择使用本地数据
+            try {
+              wx.showLoading({ title: '同步中...' })
+              const localFamilies = wx.getStorageSync('localFamilies') || []
+
+              // 从每个家庭中收集儿童数据
+              const localChildrenData = {}
+              localFamilies.forEach(family => {
+                const familyChildren = wx.getStorageSync(`localChildren_${family.familyId}`) || []
+                if (familyChildren.length > 0) {
+                  localChildrenData[family.familyId] = familyChildren
+                }
+              })
+
+              await app.uploadLocalDataToCloud(localFamilies, localChildrenData)
+              wx.hideLoading()
+              showToast('本地数据已同步到云端')
+              await app.loadChildren()
+              await this.loadAndSelectFamily()
+
+              // 刷新所有Tab页面
+              const pages = getCurrentPages()
+              pages.forEach(page => {
+                if (page && page.onShow) {
+                  try {
+                    page.onShow()
+                  } catch (e) {
+                    console.error('[设置] 刷新页面失败:', e)
+                  }
+                }
+              })
+            } catch (err) {
+              wx.hideLoading()
+              showToast('同步失败')
+            }
+          } else if (res.cancel) {
+            // 用户点击取消（云端数据），显示确认对话框
+            this.showCloudDataDialog()
+          }
+        },
+        fail: (err) => {
+          console.error('[设置] showModal 失败:', err)
+        }
+      })
+    }, 300)
+  },
+
+  /**
+   * 显示云端数据选项对话框
+   */
+  showCloudDataDialog() {
+    wx.hideToast()
+
+    setTimeout(() => {
+      wx.showModal({
+        title: '数据同步',
+        content: '是否使用云端数据覆盖本地数据？\n\n本地数据将被清除。',
+        confirmText: '云端数据',
+        cancelText: '取消',
+        success: async (res) => {
+          if (res.confirm) {
+            // 用户选择使用云端数据
+            try {
+              wx.showLoading({ title: '处理中...' })
+              await app.downloadCloudDataToLocal()
+              wx.hideLoading()
+              showToast('已切换到云端数据')
+              // 重新加载页面
+              this.onLoad()
+              this.onShow()
+            } catch (err) {
+              wx.hideLoading()
+              showToast('操作失败')
+            }
+          }
+        }
+      })
+    }, 300)
   },
 
   /**
@@ -366,6 +549,68 @@ Page({
     const confirm = await showConfirm('退出登录后，数据将保存在本地，无法使用家庭功能和云端同步。确定要退出吗？')
     if (!confirm) return
 
+    // 检查是否有云端数据
+    try {
+      const familiesRes = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: { action: 'getAllMyFamilies' }
+      })
+
+      const hasCloudData = familiesRes.result.success && (familiesRes.result.families || []).length > 0
+
+      if (hasCloudData) {
+        // 有云端数据，询问用户如何处理
+        this.showLogoutDataDialog()
+        return
+      }
+    } catch (err) {
+      console.error('[设置] 检查云端数据失败:', err)
+    }
+
+    // 没有云端数据，直接退出
+    this.performLogout()
+  },
+
+  /**
+   * 显示退出登录数据选择对话框
+   */
+  showLogoutDataDialog() {
+    wx.hideToast()
+
+    setTimeout(() => {
+      wx.showModal({
+        title: '退出登录',
+        content: '检测到云端有数据，退出登录时如何处理？\n\n• 保留云端：将云端数据下载到本地\n• 保留本地：继续使用本地数据',
+        confirmText: '保留云端',
+        cancelText: '保留本地',
+        success: async (res) => {
+          if (res.confirm) {
+            // 用户选择保留云端数据
+            try {
+              wx.showLoading({ title: '处理中...' })
+              await app.downloadCloudDataToLocal()
+              wx.hideLoading()
+              showToast('已下载云端数据')
+              this.performLogout()
+            } catch (err) {
+              wx.hideLoading()
+              showToast('下载数据失败')
+              // 即使失败也继续退出
+              this.performLogout()
+            }
+          } else if (res.cancel) {
+            // 用户选择保留本地数据，直接退出
+            this.performLogout()
+          }
+        }
+      })
+    }, 300)
+  },
+
+  /**
+   * 执行退出登录
+   */
+  performLogout() {
     wx.removeStorageSync('userInfo')
     app.globalData.currentUserOpenid = null
     app.globalData.useCloudStorage = false
@@ -435,6 +680,7 @@ Page({
    * 显示修改密码弹窗
    */
   showChangePasswordModal() {
+    console.log('[设置] showChangePasswordModal 被调用')
     this.setData({
       showChangePasswordModal: true,
       changePasswordForm: {
@@ -446,6 +692,7 @@ Page({
       showNewPassword: false,
       showConfirmPassword: false
     })
+    console.log('[设置] showChangePasswordModal 已设置为:', this.data.showChangePasswordModal)
   },
 
   /**
@@ -496,6 +743,13 @@ Page({
   },
 
   /**
+   * 阻止事件冒泡
+   */
+  stopPropagation() {
+    // 阻止点击弹窗内容时触发关闭
+  },
+
+  /**
    * 确认修改密码
    */
   confirmChangePassword() {
@@ -523,6 +777,28 @@ Page({
       this.closeChangePasswordModal()
     } else {
       showToast('旧密码错误')
+    }
+  },
+
+  /**
+   * 分享给朋友
+   */
+  onShareAppMessage() {
+    return {
+      title: '妈妈表扬我 - 儿童任务奖励管理小程序',
+      path: '/pages/index/index',
+      imageUrl: ''
+    }
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    return {
+      title: '妈妈表扬我 - 帮助孩子建立良好习惯的任务奖励小程序',
+      query: '',
+      imageUrl: ''
     }
   }
 })

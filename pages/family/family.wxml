@@ -50,6 +50,61 @@
       </button>
     </view>
 
+    <!-- 待批准邀请（仅管理员） -->
+    <view class="pending-invitations" wx:if="{{family.role === 'admin' && invitations.length > 0}}">
+      <view class="section-title">
+        <text>待批准申请</text>
+        <text class="count">{{invitations.length}}</text>
+      </view>
+
+      <view class="invitations-list">
+        <view class="invitation-item" wx:for="{{invitations}}" wx:key="invitationId">
+          <view class="invitation-info">
+            <view class="invitation-avatar">
+              <image
+                wx:if="{{item.applicantUserInfo && item.applicantUserInfo.avatarUrl}}"
+                src="{{item.applicantUserInfo.avatarUrl}}"
+                mode="aspectFill" />
+              <text wx:else>{{item.applicantNickname.substring(0, 1)}}</text>
+            </view>
+            <view class="invitation-details">
+              <view class="invitation-name">
+                {{item.applicantUserInfo.nickName || item.applicantNickname}}
+              </view>
+              <view class="invitation-meta">
+                <view class="invitation-role">
+                  申请成为：{{item.applicantRole === 'admin' ? '家长' : '家人'}}
+                </view>
+                <view class="invitation-divider">•</view>
+                <view class="invitation-time">
+                  {{item.createdAt}}
+                </view>
+              </view>
+              <view class="invitation-nickname" wx:if="{{item.applicantUserInfo.nickName !== item.applicantNickname}}">
+                家庭昵称：{{item.applicantNickname}}
+              </view>
+            </view>
+          </view>
+          <view class="invitation-actions">
+            <button
+              class="invitation-btn reject"
+              data-invitationid="{{item.invitationId}}"
+              data-approve="{{false}}"
+              bindtap="reviewInvitation">
+              拒绝
+            </button>
+            <button
+              class="invitation-btn approve"
+              data-invitationid="{{item.invitationId}}"
+              data-approve="{{true}}"
+              bindtap="reviewInvitation">
+              批准
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- 家庭成员卡片（横向滚动） -->
     <view class="members-section">
       <view class="section-title">

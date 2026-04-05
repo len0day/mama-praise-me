@@ -146,12 +146,34 @@ Page({
     // 加载该家庭的详细信息
     await this.loadFamilyDetail(familyId)
 
-    // 自动选择该家庭的第一个儿童
-    if (this.data.familyChildren.length > 0) {
-      const firstChild = this.data.familyChildren[0]
-      app.saveCurrentChildId(firstChild.childId)
-      console.log('[家庭列表] 自动选择儿童:', firstChild.name)
+    // 检查是否有儿童
+    if (this.data.familyChildren.length === 0) {
+      console.log('[家庭列表] 该家庭没有儿童，跳转到添加儿童页面')
+      // 跳转到添加儿童页面
+      wx.navigateTo({
+        url: '/pages/children/children'
+      })
+      return
     }
+
+    // 自动选择该家庭的儿童（优先选择上次选择的）
+    // 从家庭配置中获取上次选择的儿童ID
+    const familyConfig = wx.getStorageSync('familyConfig') || {}
+    const savedChildId = familyConfig[familyId]?.currentChildId
+
+    let childToSelect
+    if (savedChildId) {
+      // 尝试找到上次选择的儿童
+      childToSelect = this.data.familyChildren.find(c => c.childId === savedChildId)
+    }
+
+    // 如果没有保存的记录或找不到该儿童，选择第一个
+    if (!childToSelect) {
+      childToSelect = this.data.familyChildren[0]
+    }
+
+    app.saveCurrentChildId(childToSelect.childId)
+    console.log('[家庭列表] 自动选择儿童:', childToSelect.name)
   },
 
   /**
@@ -390,6 +412,15 @@ Page({
         showToast('家庭创建成功')
         this.closeAllModals()
         await this.loadAllFamilies()
+
+        // 检查是否有儿童，没有则跳转到添加儿童页面
+        const localChildren = wx.getStorageSync(`localChildren_${newFamily.familyId}`) || []
+        if (localChildren.length === 0) {
+          // 跳转到添加儿童页面
+          wx.navigateTo({
+            url: '/pages/children/children'
+          })
+        }
         return
       }
 
@@ -410,6 +441,29 @@ Page({
         showToast('家庭创建成功')
         this.closeAllModals()
         await this.loadAllFamilies()
+
+        // 检查是否有儿童，没有则跳转到添加儿童页面
+        try {
+          const childrenRes = await wx.cloud.callFunction({
+            name: 'manageFamilies',
+            data: {
+              action: 'getFamilyChildren',
+              data: { familyId: res.result.family.familyId }
+            }
+          })
+
+          if (childrenRes.result.success) {
+            const children = childrenRes.result.children || []
+            if (children.length === 0) {
+              // 跳转到添加儿童页面
+              wx.navigateTo({
+                url: '/pages/children/children'
+              })
+            }
+          }
+        } catch (err) {
+          console.error('[家庭列表] 检查儿童失败:', err)
+        }
       } else {
         showToast(res.result.error || '创建失败')
       }
@@ -650,6 +704,37 @@ Page({
     } catch (err) {
       hideLoading()
       showToast('操作失败')
+    }
+  },
+
+  /**
+   * 跳转到添加儿童页面
+   */
+  goToAddChild() {
+    wx.navigateTo({
+      url: '/pages/children/children'
+    })
+  },
+
+  /**
+   * 分享给朋友
+   */
+  onShareAppMessage() {
+    return {
+      title: '妈妈表扬我 - 邀请家人一起管理孩子的任务和奖励',
+      path: '/pages/family-list/family-list',
+      imageUrl: ''
+    }
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    return {
+      title: '妈妈表扬我 - 帮助孩子建立良好习惯的任务奖励小程序',
+      query: '',
+      imageUrl: ''
     }
   }
 })

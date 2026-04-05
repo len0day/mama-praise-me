@@ -369,7 +369,7 @@ exports.main = async (event, context) => {
 
     // 申请加入家庭
     if (action === 'joinFamily') {
-      const { inviteCode, nickname } = data
+      const { inviteCode, nickname, role } = data
 
       if (!inviteCode || !inviteCode.trim()) {
         return {
@@ -424,6 +424,20 @@ exports.main = async (event, context) => {
         }
       }
 
+      // 获取用户微信信息
+      let userInfo = null
+      try {
+        const userRes = await db.collection('users').where({
+          openid: OPENID
+        }).get()
+
+        if (userRes.data.length > 0) {
+          userInfo = userRes.data[0].userInfo || null
+        }
+      } catch (err) {
+        console.error('[manageFamilies] 获取用户信息失败:', err)
+      }
+
       // 创建加入申请
       await db.collection('family_invitations').add({
         data: {
@@ -432,6 +446,8 @@ exports.main = async (event, context) => {
           familyName: family.name,
           applicantOpenid: OPENID,
           applicantNickname: nickname.trim(),
+          applicantRole: role || 'member', // 申请的角色：admin 或 member
+          applicantUserInfo: userInfo, // 微信用户信息（头像、昵称等）
           status: 'pending', // pending, approved, rejected
           createdAt: new Date()
         }
@@ -517,12 +533,12 @@ exports.main = async (event, context) => {
       }
 
       if (approve) {
-        // 批准：创建成员记录
+        // 批准：创建成员记录，使用申请时的角色
         await db.collection('family_members').add({
           data: {
             openid: invitation.applicantOpenid,
             familyId: invitation.familyId,
-            role: 'member',
+            role: invitation.applicantRole || 'member', // 使用申请时选择的角色
             nickname: invitation.applicantNickname,
             status: 'active',
             createdAt: new Date()

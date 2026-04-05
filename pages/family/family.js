@@ -221,7 +221,11 @@ Page({
       ])
 
       if (invitationsRes.result.success) {
-        this.setData({ invitations: invitationsRes.result.invitations || [] })
+        const invitations = (invitationsRes.result.invitations || []).map(inv => ({
+          ...inv,
+          createdAt: this.formatTime(inv.createdAt)
+        }))
+        this.setData({ invitations })
       }
 
       if (familyChildrenRes.result.success) {
@@ -339,7 +343,7 @@ Page({
    * 加入家庭
    */
   async joinFamily() {
-    const { inviteCode, nickname } = this.data.formData
+    const { inviteCode, nickname, role } = this.data.formData
 
     if (!inviteCode.trim()) {
       showToast('请输入邀请码')
@@ -360,7 +364,8 @@ Page({
           action: 'joinFamily',
           data: {
             inviteCode: inviteCode.trim(),
-            nickname: nickname.trim()
+            nickname: nickname.trim(),
+            role: role || 'member'
           }
         }
       })
@@ -926,5 +931,20 @@ Page({
       console.error('[家庭] 解散家庭失败:', err)
       showToast('操作失败')
     }
+  },
+
+  /**
+   * 格式化时间
+   */
+  formatTime(timestamp) {
+    if (!timestamp) return ''
+
+    const date = new Date(timestamp)
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const hour = date.getHours().toString().padStart(2, '0')
+    const minute = date.getMinutes().toString().padStart(2, '0')
+
+    return `${month}-${day} ${hour}:${minute}`
   }
 })

@@ -13,13 +13,27 @@
     </button>
   </view>
 
+  <!-- 无家庭提示 -->
+  <view class="empty-state" wx:if="{{!currentFamily}}">
+    <text class="empty-icon">🏠</text>
+    <text class="empty-text">需要先加入或创建一个家庭</text>
+    <button class="action-btn" bindtap="goToFamily">去添加家庭</button>
+  </view>
+
+  <!-- 无儿童提示 -->
+  <view class="empty-state" wx:elif="{{!currentChild}}">
+    <text class="empty-icon">👶</text>
+    <text class="empty-text">需要先添加儿童</text>
+    <button class="action-btn" bindtap="goToAddChild">去添加儿童</button>
+  </view>
+
   <!-- 当前家庭和儿童信息 -->
-  <view class="current-info" wx:if="{{currentFamily}}">
+  <view class="current-info" wx:if="{{currentFamily && currentChild}}">
     <view class="info-item">
       <text class="info-label">家庭：</text>
       <text class="info-value">{{currentFamily.name}}</text>
     </view>
-    <view class="info-item" wx:if="{{currentChild}}">
+    <view class="info-item">
       <text class="info-label">儿童：</text>
       <text class="info-value">{{currentChild.name}}</text>
     </view>

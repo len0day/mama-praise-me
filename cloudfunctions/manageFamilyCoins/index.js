@@ -55,6 +55,9 @@ exports.main = async (event, context) => {
     if (action === 'addCoins') {
       const { childId, familyId, amount, taskId, taskTitle } = data
 
+      // 确保 amount 是数字类型
+      const amountNum = parseInt(amount) || 0
+
       // 获取或创建金币余额记录
       const balanceRes = await db.collection('family_coin_balances')
         .where({
@@ -67,12 +70,12 @@ exports.main = async (event, context) => {
       let totalEarned = 0
 
       if (balanceRes.data.length > 0) {
-        currentBalance = balanceRes.data[0].balance || 0
-        totalEarned = balanceRes.data[0].totalEarned || 0
+        currentBalance = parseInt(balanceRes.data[0].balance) || 0
+        totalEarned = parseInt(balanceRes.data[0].totalEarned) || 0
       }
 
-      const newBalance = currentBalance + amount
-      const newTotalEarned = totalEarned + amount
+      const newBalance = currentBalance + amountNum
+      const newTotalEarned = totalEarned + amountNum
 
       if (balanceRes.data.length > 0) {
         // 更新现有记录
@@ -109,7 +112,7 @@ exports.main = async (event, context) => {
           recordId: `coin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           childId: childId,
           familyId: familyId,
-          amount: amount,
+          amount: amountNum,
           type: 'task_complete',
           relatedId: taskId,
           description: taskTitle || '完成任务',
@@ -128,6 +131,9 @@ exports.main = async (event, context) => {
     if (action === 'deductCoins') {
       const { childId, familyId, amount, prizeId, prizeName } = data
 
+      // 确保 amount 是数字类型
+      const amountNum = parseInt(amount) || 0
+
       // 获取当前余额
       const balanceRes = await db.collection('family_coin_balances')
         .where({
@@ -144,10 +150,10 @@ exports.main = async (event, context) => {
         }
       }
 
-      const currentBalance = balanceRes.data[0].balance || 0
-      const totalSpent = balanceRes.data[0].totalSpent || 0
+      const currentBalance = parseInt(balanceRes.data[0].balance) || 0
+      const totalSpent = parseInt(balanceRes.data[0].totalSpent) || 0
 
-      if (currentBalance < amount) {
+      if (currentBalance < amountNum) {
         return {
           success: false,
           error: '余额不足',
@@ -155,8 +161,8 @@ exports.main = async (event, context) => {
         }
       }
 
-      const newBalance = currentBalance - amount
-      const newTotalSpent = totalSpent + amount
+      const newBalance = currentBalance - amountNum
+      const newTotalSpent = totalSpent + amountNum
 
       // 更新余额
       await db.collection('family_coin_balances')
@@ -178,7 +184,7 @@ exports.main = async (event, context) => {
           recordId: `coin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           childId: childId,
           familyId: familyId,
-          amount: -amount,
+          amount: -amountNum,
           type: 'prize_redeem',
           relatedId: prizeId,
           description: prizeName || '兑换奖品',
@@ -197,6 +203,9 @@ exports.main = async (event, context) => {
     // 手动调整金币（仅管理员）
     if (action === 'adjustCoins') {
       const { childId, familyId, amount, reason } = data
+
+      // 确保 amount 是数字类型
+      const amountNum = parseInt(amount) || 0
 
       // 验证是否是该家庭的管理员
       const memberRes = await db.collection('family_members')
@@ -226,10 +235,10 @@ exports.main = async (event, context) => {
       let currentBalance = 0
 
       if (balanceRes.data.length > 0) {
-        currentBalance = balanceRes.data[0].balance || 0
+        currentBalance = parseInt(balanceRes.data[0].balance) || 0
       }
 
-      const newBalance = currentBalance + amount
+      const newBalance = currentBalance + amountNum
 
       if (balanceRes.data.length > 0) {
         // 更新现有记录
@@ -251,8 +260,8 @@ exports.main = async (event, context) => {
             childId: childId,
             familyId: familyId,
             balance: newBalance,
-            totalEarned: amount > 0 ? amount : 0,
-            totalSpent: amount < 0 ? Math.abs(amount) : 0,
+            totalEarned: amountNum > 0 ? amountNum : 0,
+            totalSpent: amountNum < 0 ? Math.abs(amountNum) : 0,
             createdAt: new Date(),
             updatedAt: new Date()
           }
@@ -265,7 +274,7 @@ exports.main = async (event, context) => {
           recordId: `coin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           childId: childId,
           familyId: familyId,
-          amount: amount,
+          amount: amountNum,
           type: 'manual_adjust',
           description: reason || '手动调整',
           balanceAfter: newBalance,

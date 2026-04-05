@@ -48,6 +48,11 @@ Page({
    * 加载家庭和儿童信息
    */
   async loadFamilyAndChild() {
+    // 先尝试加载儿童数据（如果还没有的话）
+    if (app.globalData.children.length === 0) {
+      await app.loadChildren()
+    }
+
     const currentFamilyId = app.getCurrentFamilyId()
     const currentChild = app.getCurrentChild()
 
@@ -402,6 +407,12 @@ Page({
         return
       }
 
+      // 确保 coinReward 是数字类型
+      const taskData = {
+        ...formData,
+        coinReward: parseInt(formData.coinReward) || 0
+      }
+
       let res
       if (editingTask) {
         // 更新
@@ -412,7 +423,7 @@ Page({
             data: {
               familyId: currentFamilyId,
               taskId: editingTask.taskId,
-              ...formData
+              ...taskData
             }
           }
         })
@@ -424,7 +435,7 @@ Page({
             action: 'createTask',
             data: {
               familyId: currentFamilyId,
-              ...formData
+              ...taskData
             }
           }
         })
@@ -479,7 +490,7 @@ Page({
           familyId: currentFamilyId,
           title: formData.title,
           description: formData.description,
-          coinReward: formData.coinReward,
+          coinReward: parseInt(formData.coinReward) || 0,  // 确保是数字类型
           taskType: formData.taskType,
           weekStart: formData.weekStart,
           weekEnd: formData.weekEnd,
@@ -627,5 +638,45 @@ Page({
       return false
     }
     return true
+  },
+
+  /**
+   * 跳转到家庭列表
+   */
+  goToFamily() {
+    wx.switchTab({
+      url: '/pages/family-list/family-list'
+    })
+  },
+
+  /**
+   * 跳转到添加儿童页面
+   */
+  goToAddChild() {
+    wx.navigateTo({
+      url: '/pages/children/children'
+    })
+  },
+
+  /**
+   * 分享给朋友
+   */
+  onShareAppMessage() {
+    return {
+      title: '妈妈表扬我 - 创建和管理孩子的每日任务',
+      path: '/pages/tasks/tasks',
+      imageUrl: ''
+    }
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    return {
+      title: '妈妈表扬我 - 帮助孩子建立良好习惯的任务奖励小程序',
+      query: '',
+      imageUrl: ''
+    }
   }
 })
