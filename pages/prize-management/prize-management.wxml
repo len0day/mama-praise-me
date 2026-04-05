@@ -28,7 +28,7 @@
           <view class="prize-name">{{item.name}}</view>
           <view class="prize-meta">
             <text class="prize-cost">🪙 {{item.coinCost}}</text>
-            <text class="prize-category">{{getCategoryName(item.category)}}</text>
+            <text class="prize-category">{{item.categoryName}}</text>
           </view>
         </view>
       </view>
@@ -124,9 +124,9 @@
       <!-- 奖品分类 -->
       <view class="form-group">
         <view class="form-label">奖品分类</view>
-        <picker mode="selector" range="{{categories}}" range-key="label" value="{{formData.category}}" bindchange="onCategoryChange">
+        <picker mode="selector" range="{{categories}}" range-key="label" value="{{categoryIndex}}" bindchange="onCategoryChange">
           <view class="form-picker">
-            {{getCategoryName(formData.category)}}
+            {{categoryDisplayName}}
           </view>
         </picker>
       </view>

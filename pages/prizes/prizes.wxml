@@ -52,12 +52,12 @@
   <!-- 分类筛选 -->
   <view class="categories">
     <view
-      class="category-item {{currentCategory === item ? 'active' : ''}}"
+      class="category-item {{currentCategory === item.value ? 'active' : ''}}"
       wx:for="{{categories}}"
-      wx:key="*this"
-      data-category="{{item}}"
+      wx:key="value"
+      data-category="{{item.value}}"
       bindtap="filterByCategory">
-      {{getCategoryName(item)}}
+      {{item.label}}
     </view>
   </view>
 

@@ -23,6 +23,8 @@ Page({
       category: 'other',
       stock: -1
     },
+    categoryIndex: 3,  // 默认选中"其他"（索引3）
+    categoryDisplayName: '其他',  // 分类显示名称
     categories: [
       { value: 'toys', label: '玩具' },
       { value: 'food', label: '食物' },
@@ -74,7 +76,13 @@ Page({
       })
 
       if (res.result.success) {
-        this.setData({ prizes: res.result.prizes })
+        const prizes = res.result.prizes || []
+        // 为每个奖品添加分类名称
+        const prizesWithCategoryName = prizes.map(prize => ({
+          ...prize,
+          categoryName: this.getCategoryName(prize.category)
+        }))
+        this.setData({ prizes: prizesWithCategoryName })
       }
     } catch (err) {
       console.error('[奖品管理] 加载失败:', err)
@@ -102,6 +110,8 @@ Page({
     this.setData({
       showAddModal: true,
       editingPrize: null,
+      categoryIndex: 3,  // 默认"其他"
+      categoryDisplayName: '其他',
       formData: {
         name: '',
         description: '',
@@ -133,9 +143,16 @@ Page({
     const prize = this.data.prizes.find(p => p.prizeId === prizeid)
 
     if (prize) {
+      // 找到分类对应的索引
+      const categoryIndex = this.data.categories.findIndex(c => c.value === prize.category)
+      const categoryName = categoryIndex >= 0 ? this.data.categories[categoryIndex].label : '其他'
+      console.log('[奖品管理] 编辑奖品 - category:', prize.category, 'index:', categoryIndex, 'name:', categoryName)
+
       this.setData({
         showAddModal: true,
         editingPrize: prize,
+        categoryIndex: categoryIndex >= 0 ? categoryIndex : 3,  // 找不到则默认"其他"
+        categoryDisplayName: categoryName,
         formData: {
           name: prize.name,
           description: prize.description,
@@ -245,10 +262,14 @@ Page({
    * 分类选择
    */
   onCategoryChange(e) {
-    const index = e.detail.value
+    const index = parseInt(e.detail.value)
     const category = this.data.categories[index].value
+    const categoryName = this.data.categories[index].label
+    console.log('[奖品管理] 分类选择 - index:', index, 'category:', category, 'name:', categoryName)
     this.setData({
-      'formData.category': category
+      'formData.category': category,
+      categoryIndex: index,
+      categoryDisplayName: categoryName
     })
   },
 
@@ -364,8 +385,13 @@ Page({
    * 获取分类名称
    */
   getCategoryName(category) {
+    console.log('[奖品管理] getCategoryName - category:', category)
+    console.log('[奖品管理] getCategoryName - categories:', this.data.categories)
     const item = this.data.categories.find(c => c.value === category)
-    return item ? item.label : category
+    console.log('[奖品管理] getCategoryName - found item:', item)
+    const result = item ? item.label : category
+    console.log('[奖品管理] getCategoryName - result:', result)
+    return result
   },
 
   /**

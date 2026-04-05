@@ -102,10 +102,10 @@ Page({
 
         // 从本地获取金币
         const localCoinBalances = wx.getStorageSync(`localCoinBalances_${currentFamilyId}`) || {}
-        familyCoins = localCoinBalances[child.childId] || 0
+        familyCoins = parseInt(localCoinBalances[child.childId]) || 0
 
         console.log('[首页] 本地家庭名称:', familyName)
-        console.log('[首页] 本地金币余额:', familyCoins)
+        console.log('[首页] 本地金币余额:', familyCoins, typeof familyCoins)
 
         return {
           ...child,
@@ -136,10 +136,10 @@ Page({
       ])
 
       familyName = familyRes.result.success ? familyRes.result.family.name : '家庭'
-      familyCoins = coinsRes.result.success ? coinsRes.result.balance : 0
+      familyCoins = coinsRes.result.success ? parseInt(coinsRes.result.balance) || 0 : 0
 
       console.log('[首页] 家庭名称:', familyName)
-      console.log('[首页] 金币余额:', familyCoins)
+      console.log('[首页] 金币余额:', familyCoins, typeof familyCoins)
 
       return {
         ...child,

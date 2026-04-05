@@ -13,7 +13,13 @@ Page({
     showCoinHistory: false,  // 是否显示金币历史
     isLoading: false,
     currentCategory: 'all',
-    categories: ['all', 'toys', 'food', 'outings', 'other']
+    categories: [
+      { value: 'all', label: '全部' },
+      { value: 'toys', label: '玩具' },
+      { value: 'food', label: '食物' },
+      { value: 'outings', label: '外出' },
+      { value: 'other', label: '其他' }
+    ]
   },
 
   onLoad() {
@@ -92,7 +98,7 @@ Page({
 
         // 从本地获取金币
         const localCoinBalances = wx.getStorageSync(`localCoinBalances_${currentFamilyId}`) || {}
-        familyCoins = localCoinBalances[child.childId] || 0
+        familyCoins = parseInt(localCoinBalances[child.childId]) || 0
 
         return {
           ...child,
@@ -123,7 +129,9 @@ Page({
       ])
 
       familyName = familyRes.result.success ? familyRes.result.family.name : '家庭'
-      familyCoins = coinsRes.result.success ? coinsRes.result.balance : 0
+      familyCoins = coinsRes.result.success ? parseInt(coinsRes.result.balance) || 0 : 0
+
+      console.log('[奖品] enrichedChild.familyCoins:', familyCoins, typeof familyCoins)
 
       return {
         ...child,
@@ -279,6 +287,14 @@ Page({
     this.setData({ currentCategory: category })
   },
 
+  /**
+   * 获取当前选中分类的显示名称
+   */
+  getCurrentCategoryLabel() {
+    const category = this.data.categories.find(c => c.value === this.data.currentCategory)
+    return category ? category.label : '全部'
+  },
+
   async redeemPrize(e) {
     const { prizeid } = e.currentTarget.dataset
     const currentChild = app.getCurrentChild()
@@ -344,14 +360,8 @@ Page({
   },
 
   getCategoryName(category) {
-    const names = {
-      'all': '全部',
-      'toys': '玩具',
-      'food': '食物',
-      'outings': '外出',
-      'other': '其他'
-    }
-    return names[category] || category
+    const item = this.data.categories.find(c => c.value === category)
+    return item ? item.label : category
   },
 
   /**

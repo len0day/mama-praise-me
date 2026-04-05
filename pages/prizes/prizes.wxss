@@ -271,10 +271,10 @@
 
 .category-item {
   flex-shrink: 0;
-  padding: 16rpx 32rpx;
+  padding: 10rpx 20rpx;
   background: #FAFAFA;
-  border-radius: 30rpx;
-  font-size: 28rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
   color: #666666;
   border: 2rpx solid #E5E5E5;
   transition: all 0.2s;
