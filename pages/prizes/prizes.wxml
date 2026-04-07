@@ -103,4 +103,51 @@
     <text class="manage-icon">⚙️</text>
     <text class="manage-text">管理</text>
   </view>
+
+  <!-- 兑换数量选择弹窗 -->
+  <view class="modal" wx:if="{{showRedeemModal}}">
+    <view class="modal-mask" catchtap="closeRedeemModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">选择兑换数量</text>
+        <text class="modal-close" bindtap="closeRedeemModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="prize-summary">
+          <image class="prize-thumb" wx:if="{{selectedPrize.image}}" src="{{selectedPrize.image}}" mode="aspectFill" />
+          <text class="prize-thumb" wx:else>🎁</text>
+          <view class="prize-summary-info">
+            <view class="prize-summary-name">{{selectedPrize.name}}</view>
+            <view class="prize-summary-cost">单价: 🪙 {{selectedPrize.coinCost}}</view>
+            <view class="prize-summary-stock" wx:if="{{selectedPrize.stock !== -1}}">库存: {{selectedPrize.stock}}</view>
+          </view>
+        </view>
+
+        <view class="quantity-selector">
+          <view class="quantity-label"></view>
+          <view class="quantity-summary">
+            <text class="summary-label">总计：</text>
+            <text class="summary-cost">🪙 {{redeemQuantity * selectedPrize.coinCost}}</text>
+          </view>
+          <view class="quantity-controls">
+            <button class="quantity-btn" bindtap="decreaseQuantity" disabled="{{redeemQuantity <= 1}}">-</button>
+            <input class="quantity-input" type="number" value="{{redeemQuantity}}" bindinput="onQuantityInput" />
+            <button class="quantity-btn" bindtap="increaseQuantity">+</button>
+          </view>
+        </view>
+
+        <view class="quick-quantity">
+          <text class="quick-label">快捷选择：</text>
+          <view class="quick-btn" data-qty="1" bindtap="quickSelectQuantity">1</view>
+          <view class="quick-btn" data-qty="3" bindtap="quickSelectQuantity">3</view>
+          <view class="quick-btn" data-qty="5" bindtap="quickSelectQuantity">5</view>
+          <view class="quick-btn" data-qty="10" bindtap="quickSelectQuantity">10</view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeRedeemModal">取消</button>
+        <button class="modal-btn confirm" bindtap="confirmRedeem">确认兑换</button>
+      </view>
+    </view>
+  </view>
 </view>

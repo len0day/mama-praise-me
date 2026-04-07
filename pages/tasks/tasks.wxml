@@ -29,13 +29,67 @@
 
   <!-- 当前家庭和儿童信息 -->
   <view class="current-info" wx:if="{{currentFamily && currentChild}}">
-    <view class="info-item">
+    <view class="info-item" bindtap="showFamilyPicker">
       <text class="info-label">家庭：</text>
-      <text class="info-value">{{currentFamily.name}}</text>
+      <view class="info-value-with-arrow">
+        <text class="info-value">{{currentFamily.name}}</text>
+        <text class="dropdown-arrow">▼</text>
+      </view>
     </view>
-    <view class="info-item">
+    <view class="info-item {{currentFamilyChildren.length > 1 ? 'with-arrow' : ''}}" bindtap="currentFamilyChildren.length > 1 ? showChildPicker : ''">
       <text class="info-label">儿童：</text>
-      <text class="info-value">{{currentChild.name}}</text>
+      <view class="info-value-with-arrow" wx:if="{{currentFamilyChildren.length > 1}}">
+        <text class="info-value">{{currentChild.name}}</text>
+        <text class="dropdown-arrow">▼</text>
+      </view>
+      <text class="info-value" wx:else>{{currentChild.name}}</text>
+    </view>
+  </view>
+
+  <!-- 家庭选择弹窗 -->
+  <view class="picker-modal" wx:if="{{showFamilyPicker}}" catchtap="hideFamilyPicker">
+    <view class="picker-content" style="top: {{pickerTop}}px;" catchtap="stopPropagation">
+      <view class="picker-header">
+        <text class="picker-title">选择家庭</text>
+        <text class="picker-close" bindtap="hideFamilyPicker">✕</text>
+      </view>
+      <view class="picker-list">
+        <view
+          class="picker-item"
+          wx:for="{{allFamilies}}"
+          wx:key="familyId"
+          bindtap="selectFamily"
+          data-familyid="{{item.familyId}}">
+          <view class="picker-item-info" style="display: flex; align-items: center; gap: 12rpx;">
+            <view class="picker-item-name">{{item.name}}</view>
+            <view class="picker-role-badge {{item.isCreator ? 'creator' : item.role}}" style="padding: 4rpx 12rpx; border-radius: 8rpx; font-size: 20rpx; font-weight: 500;">
+              {{item.isCreator ? '创建者' : (item.role === 'admin' ? '管理员' : '成员')}}
+            </view>
+          </view>
+          <view class="picker-item-check" wx:if="{{currentFamilyId === item.familyId}}">✓</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 儿童选择弹窗 -->
+  <view class="picker-modal" wx:if="{{showChildPicker}}" catchtap="hideChildPicker">
+    <view class="picker-content" style="top: {{childPickerTop}}px;" catchtap="stopPropagation">
+      <view class="picker-header">
+        <text class="picker-title">选择儿童</text>
+        <text class="picker-close" bindtap="hideChildPicker">✕</text>
+      </view>
+      <view class="picker-list">
+        <view
+          class="picker-item"
+          wx:for="{{currentFamilyChildren}}"
+          wx:key="childId"
+          bindtap="selectChild"
+          data-childid="{{item.childId}}">
+          <view class="picker-item-name">{{item.name}}</view>
+          <view class="picker-item-check" wx:if="{{currentChild.childId === item.childId}}">✓</view>
+        </view>
+      </view>
     </view>
   </view>
 
@@ -48,7 +102,9 @@
       <view class="task-header">
         <view class="task-type-badge">{{item.taskTypeBadge}}</view>
         <view class="task-title">{{item.title}}</view>
-        <view class="task-reward">🪙 +{{item.coinReward}}</view>
+        <view class="task-reward" wx:if="{{item.taskType === 'penalty_child'}}" style="color: #E53935;">🪙 -{{item.coinReward}}</view>
+        <view class="task-reward" wx:elif="{{item.taskType === 'penalty_parent'}}" style="color: #4CAF50;">🪙 +{{item.coinReward}}</view>
+        <view class="task-reward" wx:else>🪙 +{{item.coinReward}}</view>
       </view>
       <view class="task-desc" wx:if="{{item.description}}">{{item.description}}</view>
       <view class="task-meta">
@@ -113,16 +169,20 @@
           placeholder="请输入任务描述（可选）" />
       </view>
 
-      <!-- 金币奖励 -->
+      <!-- 金币奖励（惩罚任务显示为扣除/增加） -->
       <view class="form-group">
-        <view class="form-label">{{i18n.tasks.coinReward || '金币奖励'}}</view>
+        <view class="form-label">
+          <text wx:if="{{formData.taskType === 'penalty_child'}}">扣除金币 (输入正数)</text>
+          <text wx:elif="{{formData.taskType === 'penalty_parent'}}">增加金币 (输入正数)</text>
+          <text wx:else>{{i18n.tasks.coinReward || '金币奖励'}}</text>
+        </view>
         <input
           class="form-input"
           type="number"
           value="{{formData.coinReward}}"
           data-field="coinReward"
           bindinput="onInputChange"
-          placeholder="请输入金币奖励数量" />
+          placeholder="请输入金币数量" />
       </view>
 
       <!-- 任务类型 -->
@@ -133,6 +193,30 @@
             {{taskTypeOptions[taskTypeIndex]}}
           </view>
         </picker>
+      </view>
+
+      <!-- 惩罚任务提示 -->
+      <view class="form-group" wx:if="{{formData.taskType === 'penalty_parent' || formData.taskType === 'penalty_child'}}">
+        <view class="form-tip" style="font-size: 26rpx; color: #E53935; padding: 16rpx; background: #FFF5F5; border-radius: 8rpx;">
+          <text wx:if="{{formData.taskType === 'penalty_parent'}}">💡 惩罚家长：执行后小孩金币增加（奖励小孩）</text>
+          <text wx:else>⚠️ 惩罚小孩：执行后小孩金币减少</text>
+          <view style="margin-top: 8rpx; font-size: 24rpx; color: #999;">惩罚任务无次数限制，可无限执行，且只能由家庭创建者操作</view>
+        </view>
+      </view>
+
+      <!-- 每日/每周/每月任务：可完成次数 -->
+      <view class="form-group" wx:if="{{(formData.taskType === 'daily' || formData.taskType === 'weekly' || formData.taskType === 'monthly')}}">
+        <view class="form-label">本期可完成次数（可选）</view>
+        <input
+          class="form-input"
+          type="number"
+          value="{{formData.maxCompletions}}"
+          data-field="maxCompletions"
+          bindinput="onInputChange"
+          placeholder="留空表示只能完成1次" />
+        <view class="form-tip" style="margin-top: 8rpx; font-size: 24rpx; color: #999;">
+          设置后可在这期内多次完成任务
+        </view>
       </view>
 
       <!-- 每周任务：日期范围 -->
@@ -159,6 +243,32 @@
         <picker mode="date" fields="month" value="{{formData.monthEnd}}" data-field="monthEnd" bindchange="onDateChange">
           <view class="form-picker">{{formData.monthEnd}}</view>
         </picker>
+      </view>
+
+      <!-- 自定义任务：次数和时间范围 -->
+      <view class="form-group" wx:if="{{formData.taskType === 'custom'}}">
+        <view class="form-label">最大完成次数（可选）</view>
+        <input
+          class="form-input"
+          type="number"
+          value="{{formData.maxCompletions}}"
+          data-field="maxCompletions"
+          bindinput="onInputChange"
+          placeholder="留空表示可无限次完成" />
+
+        <view class="form-label" style="margin-top: 20rpx;">开始日期（可选）</view>
+        <picker mode="date" value="{{formData.startDate}}" data-field="startDate" bindchange="onDateChange">
+          <view class="form-picker">{{formData.startDate || '未设置'}}</view>
+        </picker>
+
+        <view class="form-label" style="margin-top: 20rpx;">结束日期（可选）</view>
+        <picker mode="date" value="{{formData.endDate}}" data-field="endDate" bindchange="onDateChange">
+          <view class="form-picker">{{formData.endDate || '未设置'}}</view>
+        </picker>
+
+        <view class="form-tip" style="margin-top: 16rpx; font-size: 24rpx; color: #999;">
+          不设置时间则为无限期任务，不设置次数则可反复完成
+        </view>
       </view>
 
       <!-- 操作按钮 -->

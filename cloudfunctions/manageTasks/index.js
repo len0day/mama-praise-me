@@ -143,7 +143,7 @@ exports.main = async (event, context) => {
         title: title,
         description: description || '',
         coinReward: coinReward || 0,
-        taskType: taskType || 'permanent',  // daily, weekly, monthly, permanent
+        taskType: taskType || 'permanent',  // daily, weekly, monthly, permanent, penalty_parent, penalty_child
         weekStart: weekStart || null,
         weekEnd: weekEnd || null,
         monthStart: monthStart || null,
@@ -306,6 +306,32 @@ exports.main = async (event, context) => {
         }
       }
 
+      // 惩罚任务：只有家庭创建者才能执行
+      if (task.taskType === 'penalty_parent' || task.taskType === 'penalty_child') {
+        const familyCheck = await db.collection('families')
+          .where({
+            familyId: familyId
+          })
+          .get()
+
+        if (familyCheck.data.length === 0) {
+          return {
+            success: false,
+            error: '家庭不存在'
+          }
+        }
+
+        const family = familyCheck.data[0]
+        const isCreator = family.creatorOpenid === OPENID || family.openid === OPENID
+
+        if (!isCreator) {
+          return {
+            success: false,
+            error: '惩罚任务只能由家庭创建者执行'
+          }
+        }
+      }
+
       // 获取儿童信息
       const childRes = await db.collection('children')
         .where({
@@ -342,8 +368,8 @@ exports.main = async (event, context) => {
         alreadyCompleted = completedRes.data.some(c => c.completedWeek === currentWeek)
       } else if (task.taskType === 'monthly') {
         alreadyCompleted = completedRes.data.some(c => c.completedMonth === currentMonth)
-      } else if (task.taskType === 'permanent') {
-        // 无期限任务：可以重复完成，不需要检查
+      } else if (task.taskType === 'permanent' || task.taskType === 'penalty_parent' || task.taskType === 'penalty_child') {
+        // 无期限任务或惩罚任务：可以重复完成，不需要检查
         alreadyCompleted = false
       }
 
@@ -354,6 +380,13 @@ exports.main = async (event, context) => {
         }
       }
 
+      let finalCoinEarned = task.coinReward || 0
+      if (task.taskType === 'penalty_child') {
+        finalCoinEarned = -Math.abs(finalCoinEarned)
+      } else if (task.taskType === 'penalty_parent') {
+        finalCoinEarned = Math.abs(finalCoinEarned)
+      }
+
       // 创建完成记录
       await db.collection('task_completions').add({
         data: {
@@ -362,7 +395,7 @@ exports.main = async (event, context) => {
           taskTitle: task.title,
           childId: childId,
           familyId: familyId,  // 添加家庭ID
-          coinEarned: task.coinReward,
+          coinEarned: finalCoinEarned,
           completedAt: new Date(),
           completedDate: today,
           completedWeek: currentWeek,
@@ -370,7 +403,7 @@ exports.main = async (event, context) => {
         }
       })
 
-      // 增加金币（使用 manageFamilyCoins，按家庭隔离）
+      // 增加/扣除金币（使用 manageFamilyCoins，按家庭隔离）
       const coinsRes = await cloud.callFunction({
         name: 'manageFamilyCoins',
         data: {
@@ -378,7 +411,7 @@ exports.main = async (event, context) => {
           data: {
             childId: childId,
             familyId: familyId,
-            amount: task.coinReward,
+            amount: finalCoinEarned,
             taskId: taskId,
             taskTitle: task.title
           }

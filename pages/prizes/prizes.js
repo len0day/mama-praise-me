@@ -13,11 +13,15 @@ Page({
     showCoinHistory: false,  // 是否显示金币历史
     isLoading: false,
     currentCategory: 'all',
+    showRedeemModal: false,  // 兑换数量选择弹窗
+    selectedPrize: null,     // 选中的奖品
+    redeemQuantity: 1,        // 兑换数量
     categories: [
       { value: 'all', label: '全部' },
       { value: 'toys', label: '玩具' },
       { value: 'food', label: '食物' },
       { value: 'outings', label: '外出' },
+      { value: 'entertainment', label: '娱乐' },
       { value: 'other', label: '其他' }
     ]
   },
@@ -313,8 +317,103 @@ Page({
       return
     }
 
+    // 显示兑换数量选择弹窗
+    this.setData({
+      selectedPrize: prize,
+      redeemQuantity: 1,
+      showRedeemModal: true
+    })
+  },
+
+  /**
+   * 关闭兑换弹窗
+   */
+  closeRedeemModal() {
+    this.setData({
+      showRedeemModal: false,
+      selectedPrize: null,
+      redeemQuantity: 1
+    })
+  },
+
+  /**
+   * 减少兑换数量
+   */
+  decreaseQuantity() {
+    if (this.data.redeemQuantity > 1) {
+      this.setData({
+        redeemQuantity: this.data.redeemQuantity - 1
+      })
+    }
+  },
+
+  /**
+   * 增加兑换数量
+   */
+  increaseQuantity() {
+    const newQuantity = this.data.redeemQuantity + 1
+    const maxQuantity = this.data.selectedPrize.stock === -1 ? 999 : this.data.selectedPrize.stock
+    const maxAffordable = Math.floor(this.data.childCoins / this.data.selectedPrize.coinCost)
+
+    // 取库存、金币可兑换数量和新增数量中的最小值
+    const actualMax = Math.min(maxQuantity, maxAffordable, newQuantity)
+
+    if (newQuantity <= actualMax) {
+      this.setData({
+        redeemQuantity: newQuantity
+      })
+    } else {
+      showToast(`最多只能兑换 ${actualMax} 个`)
+    }
+  },
+
+  /**
+   * 兑换数量输入
+   */
+  onQuantityInput(e) {
+    const value = parseInt(e.detail.value) || 1
+    const maxQuantity = this.data.selectedPrize.stock === -1 ? 999 : this.data.selectedPrize.stock
+    const maxAffordable = Math.floor(this.data.childCoins / this.data.selectedPrize.coinCost)
+    const actualMax = Math.min(maxQuantity, maxAffordable)
+
+    if (value < 1) {
+      this.setData({ redeemQuantity: 1 })
+    } else if (value > actualMax) {
+      this.setData({ redeemQuantity: actualMax })
+      showToast(`最多只能兑换 ${actualMax} 个`)
+    } else {
+      this.setData({ redeemQuantity: value })
+    }
+  },
+
+  /**
+   * 快捷选择数量
+   */
+  quickSelectQuantity(e) {
+    const qty = parseInt(e.currentTarget.dataset.qty)
+    const maxQuantity = this.data.selectedPrize.stock === -1 ? 999 : this.data.selectedPrize.stock
+    const maxAffordable = Math.floor(this.data.childCoins / this.data.selectedPrize.coinCost)
+    const actualMax = Math.min(maxQuantity, maxAffordable)
+
+    if (qty > actualMax) {
+      showToast(`金币或库存不足，最多只能兑换 ${actualMax} 个`)
+      return
+    }
+
+    this.setData({ redeemQuantity: qty })
+  },
+
+  /**
+   * 确认兑换
+   */
+  async confirmRedeem() {
+    const { selectedPrize, redeemQuantity, currentChild } = this.data
+    if (!selectedPrize || !currentChild) return
+
+    const totalCost = redeemQuantity * selectedPrize.coinCost
+
     const confirm = await showConfirm(
-      '确定要兑换"' + prize.name + '"吗？\n需要消耗 ' + prize.coinCost + ' 金币'
+      `确定要兑换 ${redeemQuantity} 个"${selectedPrize.name}"吗？\n需要消耗 ${totalCost} 金币`
     )
     if (!confirm) return
 
@@ -322,16 +421,17 @@ Page({
 
     try {
       const currentFamilyId = app.getCurrentFamilyId()
-      console.log('[奖品商城] 开始兑换 - prizeId:', prizeid, 'childId:', currentChild.childId, 'familyId:', currentFamilyId)
+      console.log('[奖品商城] 开始兑换 - prizeId:', selectedPrize.prizeId, 'quantity:', redeemQuantity, 'childId:', currentChild.childId, 'familyId:', currentFamilyId)
 
       const res = await wx.cloud.callFunction({
         name: 'managePrizes',
         data: {
           action: 'redeemPrize',
           data: {
-            prizeId: prizeid,
+            prizeId: selectedPrize.prizeId,
             childId: currentChild.childId,
-            familyId: currentFamilyId
+            familyId: currentFamilyId,
+            quantity: redeemQuantity
           }
         }
       })
@@ -341,6 +441,7 @@ Page({
 
       if (res.result.success) {
         showToast(t('prizes.redeemSuccess'))
+        this.closeRedeemModal()
         await this.loadPrizes()
         // 更新全局孩子数据
         const index = app.globalData.children.findIndex(c => c.childId === currentChild.childId)

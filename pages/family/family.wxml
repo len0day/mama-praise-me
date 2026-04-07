@@ -42,13 +42,37 @@
       </view>
     </view>
 
-    <!-- 邀请家人按钮（仅管理员） -->
-    <view class="invite-section" wx:if="{{family.role === 'admin'}}">
-      <button class="invite-main-btn" bindtap="showInviteOptions">
-        <text class="btn-icon">➕</text>
-        <text>邀请家人</text>
-      </button>
+    <!-- 我的信息 -->
+    <view class="my-info-section">
+      <view class="section-title">
+        <text>我的信息</text>
+      </view>
+      <view class="my-info-card">
+        <view class="my-info-avatar-wrapper" bindtap="changeMemberAvatar">
+          <image class="my-info-avatar" wx:if="{{myMemberInfo.avatar}}" src="{{myMemberInfo.avatar}}" mode="aspectFill" />
+          <view class="my-info-avatar-placeholder" wx:else>
+            <text class="avatar-placeholder-text">📷</text>
+          </view>
+          <view class="avatar-edit-hint">点击修改</view>
+        </view>
+        <view class="my-info-details">
+          <view class="my-info-item">
+            <view class="info-label">称呼</view>
+            <view class="info-value" bindtap="editMemberNickname">
+              <text class="nickname-text">{{myMemberInfo.nickname || '未设置'}}</text>
+              <text class="edit-icon">✏️</text>
+            </view>
+          </view>
+          <view class="my-info-item">
+            <view class="info-label">角色</view>
+            <view class="info-value">
+              {{myMemberInfo.isCreator ? '创建者' : (myMemberInfo.role === 'admin' ? '管理员' : '成员')}}
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
+
 
     <!-- 待批准邀请（仅管理员） -->
     <view class="pending-invitations" wx:if="{{family.role === 'admin' && invitations.length > 0}}">
@@ -108,29 +132,40 @@
     <!-- 家庭成员卡片（横向滚动） -->
     <view class="members-section">
       <view class="section-title">
-        <text>家庭成员</text>
-        <text class="count">{{members.length}}</text>
+        <view class="title-left">
+          <text>家庭成员</text>
+          <text class="count">{{members.length}}</text>
+        </view>
+        <view class="invite-header-btn" bindtap="showInviteOptions" wx:if="{{family.role === 'admin'}}">
+          <text class="btn-icon">➕</text>
+          <text>邀请家人</text>
+        </view>
       </view>
 
       <scroll-view class="members-scroll" scroll-x enable-flex>
         <view class="member-card" wx:for="{{members}}" wx:key="openid">
-          <view class="member-avatar">
-            {{item.nickname.substring(0, 1)}}
+          <view class="member-name-row">
+            <view class="member-avatar">
+              <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="avatar-img" />
+              <text wx:else>{{item.nickname.substring(0, 1)}}</text>
+            </view>
+            <view class="member-me" wx:if="{{item.isMe}}">我</view>
           </view>
           <view class="member-name">{{item.nickname}}</view>
-          <view class="member-role-badge {{item.role}}">
-            {{item.role === 'admin' ? '家长' : '家人'}}
+          <view class="member-role-badge {{item.isCreator ? 'creator' : item.role}}">
+            {{item.isCreator ? '创建者' : (item.role === 'admin' ? '管理员' : '家人')}}
           </view>
-          <view class="member-me" wx:if="{{item.isMe}}">我</view>
 
-          <!-- 移除按钮（仅管理员，对自己不可见） -->
+          <!-- 操作按钮（仅管理员，对自己不可见） -->
           <view
-            class="member-remove"
+            class="member-options-btn"
             wx:if="{{family.role === 'admin' && !item.isMe}}"
             data-memberopenid="{{item.openid}}"
             data-nickname="{{item.nickname}}"
-            bindtap="removeMember">
-            ✕
+            data-role="{{item.role}}"
+            bindtap="showMemberOptions"
+            style="position: absolute; top: 4rpx; right: 4rpx; width: 40rpx; height: 40rpx; display: flex; align-items: center; justify-content: center; font-size: 24rpx; color: #999;">
+            •••
           </view>
         </view>
       </scroll-view>
@@ -205,11 +240,12 @@
     <view class="bottom-actions">
       <!-- 创建者专属操作 -->
       <view wx:if="{{family.isCreator}}" class="creator-actions">
+        <button class="bottom-btn normal" bindtap="changeFamilyAvatar">修改家庭图片</button>
         <button class="bottom-btn normal" bindtap="updateFamilyName">修改家庭名称</button>
         <button class="bottom-btn danger" bindtap="disbandFamily">解散家庭</button>
       </view>
       <!-- 普通成员操作 -->
-      <view wx:else>
+      <view wx:else class="member-actions">
         <button class="bottom-btn danger" bindtap="leaveFamily">退出家庭</button>
       </view>
     </view>
@@ -412,4 +448,13 @@
       </view>
     </view>
   </view>
+
+  <!-- 家长密码弹窗 -->
+  <parent-password-modal
+    wx:if="{{showPasswordModal}}"
+    is-first-time="{{isFirstTime}}"
+    bind:success="onPasswordSuccess"
+    bind:cancel="onPasswordCancel"
+    bind:close="onPasswordClose"
+  />
 </view>

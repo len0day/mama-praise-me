@@ -9,135 +9,7 @@
   background: #1C1C1E;
 }
 
-/* 家长模式状态栏 */
-.parent-mode-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20rpx 30rpx;
-  background: #FFFFFF;
-  margin: 20rpx;
-  border-radius: 16rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
-}
 
-.theme-dark .parent-mode-bar {
-  background: #2C2C2E;
-}
-
-.mode-info {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.mode-icon {
-  font-size: 32rpx;
-}
-
-.mode-text {
-  font-size: 28rpx;
-  font-weight: 500;
-  color: #333333;
-}
-
-.theme-dark .mode-text {
-  color: #FFFFFF;
-}
-
-.mode-switch-btn {
-  padding: 12rpx 24rpx;
-  background: linear-gradient(135deg, #FF9800, #FFB74D);
-  color: #FFFFFF;
-  border: none;
-  border-radius: 20rpx;
-  font-size: 24rpx;
-  font-weight: 500;
-}
-
-.mode-switch-btn:active {
-  opacity: 0.8;
-}
-
-/* 孩子卡片 */
-.child-card {
-  background: #FFFFFF;
-  margin: 20rpx;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-}
-
-.theme-dark .child-card {
-  background: #2C2C2E;
-}
-
-.child-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #FF9800, #FFB74D);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #FFFFFF;
-  font-size: 36rpx;
-  font-weight: bold;
-  margin-right: 20rpx;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.child-avatar image {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-}
-
-.child-info {
-  flex: 1;
-}
-
-.child-name {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333333;
-  margin-bottom: 10rpx;
-}
-
-.theme-dark .child-name {
-  color: #FFFFFF;
-}
-
-.child-stats {
-  display: flex;
-  gap: 10rpx;
-  font-size: 26rpx;
-  color: #666666;
-}
-
-.theme-dark .child-stats {
-  color: #AAAAAA;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-}
-
-.stat-divider {
-  margin: 0 5rpx;
-}
-
-/* 无孩子提示 */
-.no-child-tip {
-  text-align: center;
-  padding: 40rpx 20rpx;
-  color: #999999;
-  font-size: 28rpx;
-}
 
 /* 设置区域 */
 .settings-section {
@@ -264,138 +136,7 @@
   border-color: #FF9800;
 }
 
-/* 退出登录按钮 */
-.logout-btn {
-  background: #FFFFFF;
-  border-radius: 15rpx;
-  padding: 30rpx;
-  margin: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
-}
 
-.theme-dark .logout-btn {
-  background: #2C2C2E;
-}
-
-.logout-icon {
-  font-size: 32rpx;
-  margin-right: 10rpx;
-}
-
-.logout-text {
-  font-size: 30rpx;
-  color: #F44336;
-  font-weight: bold;
-}
-
-/* 用户信息卡片 */
-.login-tip-card {
-  display: flex;
-  align-items: center;
-  padding: 24rpx;
-  background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
-  margin: 20rpx;
-  border-radius: 20rpx;
-  border: 2rpx solid #FF9800;
-}
-
-.tip-icon {
-  font-size: 48rpx;
-  margin-right: 20rpx;
-}
-
-.tip-content {
-  flex: 1;
-}
-
-.tip-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #FF9800;
-  margin-bottom: 6rpx;
-}
-
-.tip-desc {
-  font-size: 24rpx;
-  color: #666666;
-}
-
-.user-info-card {
-  display: flex;
-  align-items: center;
-  padding: 30rpx;
-  background: #FFFFFF;
-  margin: 20rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-}
-
-.theme-dark .user-info-card {
-  background: #2C2C2E;
-}
-
-.user-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-right: 20rpx;
-  background: linear-gradient(135deg, #FF9800, #FFB74D);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.user-avatar image {
-  width: 100%;
-  height: 100%;
-}
-
-.avatar-placeholder {
-  font-size: 36rpx;
-  color: #FFFFFF;
-  font-weight: bold;
-}
-
-.user-details {
-  flex: 1;
-}
-
-.user-name {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333333;
-  margin-bottom: 6rpx;
-}
-
-.theme-dark .user-name {
-  color: #FFFFFF;
-}
-
-.user-openid {
-  font-size: 24rpx;
-  color: #4CAF50;
-}
-
-.logout-btn-small {
-  padding: 12rpx 24rpx;
-  background: #F5F5F5;
-  color: #F44336;
-  border: none;
-  border-radius: 12rpx;
-  font-size: 24rpx;
-}
-
-.theme-dark .logout-btn-small {
-  background: #1C1C1E;
-}
-
-.logout-item {
-  margin-top: 20rpx;
-}
 
 /* 修改密码弹窗样式 */
 .modal {
@@ -545,3 +286,205 @@
   color: #999999;
   font-size: 24rpx;
 }
+
+/* 用户信息卡片 */
+/* 统一账号卡片布局 */
+.user-info-card {
+  padding: 32rpx;
+  margin: 10rpx 20rpx 30rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  background: #FFFFFF;
+}
+
+.theme-dark .user-info-card {
+  background: #2C2C2E;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.2);
+}
+
+/* 未登录状态：表现得像个主操作按钮 */
+.user-info-card.logged-out {
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  box-shadow: 0 8rpx 20rpx rgba(255, 152, 0, 0.2);
+}
+
+.user-info-card.logged-out .user-avatar-placeholder {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.user-info-card.logged-out .user-name {
+  color: #FFFFFF;
+}
+
+.user-info-card.logged-out .meta-item {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.user-info-card.logged-out .item-arrow {
+  color: #FFFFFF;
+  font-size: 40rpx;
+}
+
+/* 已登录状态：质感平滑 */
+.user-info-card.logged-in {
+  border: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.theme-dark .user-info-card.logged-in {
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+}
+
+.user-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 50%;
+  border: 4rpx solid #FFFFFF;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+  background: #F5F5F5;
+}
+
+.user-avatar-placeholder {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-placeholder-text {
+  font-size: 44rpx;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+.avatar-edit-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #FF9800;
+  color: #FFFFFF;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 4rpx solid #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+}
+
+.theme-dark .avatar-edit-badge {
+  border-color: #2C2C2E;
+}
+
+.user-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 6rpx;
+}
+
+.user-name {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.theme-dark .user-name {
+  color: #FFFFFF;
+}
+
+.edit-nickname-btn {
+  font-size: 30rpx;
+  opacity: 0.6;
+}
+
+.user-meta {
+  display: flex;
+  align-items: center;
+}
+
+.meta-item {
+  font-size: 26rpx;
+  color: #999999;
+}
+
+.status-cloud {
+  color: #4CAF50;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.status-cloud::before {
+  content: "•";
+  font-size: 40rpx;
+}
+
+.status-local {
+  color: #FF9800;
+}
+
+.logout-btn-small {
+  margin: 0 !important;
+  padding: 10rpx 20rpx !important;
+  background: #F8F8F8 !important;
+  color: #999 !important;
+  font-size: 22rpx !important;
+  font-weight: normal !important;
+  border-radius: 10rpx !important;
+  width: auto !important;
+  min-height: auto !important;
+}
+
+.theme-dark .logout-btn-small {
+  background: #1C1C1E !important;
+  color: #666 !important;
+}
+
+.small-mode-btn {
+  margin: 0 !important;
+  padding: 12rpx 32rpx !important;
+  font-size: 24rpx !important;
+  line-height: 1 !important;
+  min-height: auto !important;
+  width: auto !important;
+  border-radius: 30rpx !important;
+  font-weight: 500 !important;
+}
+
+.small-mode-btn.enter {
+  background: linear-gradient(135deg, #FF9800, #FFB74D) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4rpx 10rpx rgba(255, 152, 0, 0.2);
+}
+
+.small-mode-btn.exit {
+  background: #F5F5F5 !important;
+  color: #666666 !important;
+}
+
+.theme-dark .small-mode-btn.exit {
+  background: #1C1C1E !important;
+  color: #AAAAAA !important;
+}
+

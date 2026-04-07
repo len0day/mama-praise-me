@@ -9,7 +9,12 @@ Page({
     i18n: {},
     redemptions: [],
     currentChild: null,
-    isLoading: false
+    isLoading: false,
+    showUseModal: false,  // 使用数量选择弹窗
+    selectedRedemption: null,  // 选中的兑换记录
+    useQuantity: 1,  // 使用数量
+    showHistoryModal: false,  // 使用历史弹窗
+    historyRedemption: null,  // 查看历史的兑换记录
   },
 
   onLoad() {
@@ -132,9 +137,13 @@ Page({
           })
         })
 
-        // 预处理数据：格式化时间
+        // 预处理数据：格式化时间和设置默认值
         const processedRedemptions = sortedRedemptions.map(r => ({
           ...r,
+          // 兼容旧数据：如果没有 quantity 字段，默认为 1
+          quantity: r.quantity || 1,
+          // 兼容旧数据：如果没有 remainingQuantity 字段，根据 usedAt 判断
+          remainingQuantity: r.remainingQuantity !== undefined ? r.remainingQuantity : (r.usedAt ? 0 : (r.quantity || 1)),
           formattedRedeemedAt: this.formatTime(r.redeemedAt),
           formattedUsedAt: r.usedAt ? this.formatTime(r.usedAt) : ''
         }))
@@ -188,20 +197,122 @@ Page({
       return
     }
 
+    // 检查是否有剩余数量
+    const remainingQuantity = redemption.remainingQuantity || redemption.quantity || 1
+
+    if (remainingQuantity > 1) {
+      // 如果有多个，显示数量选择弹窗
+      this.setData({
+        selectedRedemption: redemption,
+        useQuantity: 1,
+        showUseModal: true
+      })
+    } else {
+      // 只有一个，直接使用
+      this.confirmUsePrize(redemption, 1)
+    }
+  },
+
+  /**
+   * 关闭使用弹窗
+   */
+  closeUseModal() {
+    this.setData({
+      showUseModal: false,
+      selectedRedemption: null,
+      useQuantity: 1
+    })
+  },
+
+  /**
+   * 增加使用数量
+   */
+  increaseUseQuantity() {
+    const maxQuantity = this.data.selectedRedemption.remainingQuantity || this.data.selectedRedemption.quantity || 1
+    if (this.data.useQuantity < maxQuantity) {
+      this.setData({
+        useQuantity: this.data.useQuantity + 1
+      })
+    } else {
+      showToast(`最多只能使用 ${maxQuantity} 个`)
+    }
+  },
+
+  /**
+   * 减少使用数量
+   */
+  decreaseUseQuantity() {
+    if (this.data.useQuantity > 1) {
+      this.setData({
+        useQuantity: this.data.useQuantity - 1
+      })
+    }
+  },
+
+  /**
+   * 使用数量输入
+   */
+  onUseQuantityInput(e) {
+    const value = parseInt(e.detail.value) || 1
+    const maxQuantity = this.data.selectedRedemption.remainingQuantity || this.data.selectedRedemption.quantity || 1
+
+    if (value < 1) {
+      this.setData({ useQuantity: 1 })
+    } else if (value > maxQuantity) {
+      this.setData({ useQuantity: maxQuantity })
+      showToast(`最多只能使用 ${maxQuantity} 个`)
+    } else {
+      this.setData({ useQuantity: value })
+    }
+  },
+
+  /**
+   * 快捷选择使用数量
+   */
+  quickSelectUseQuantity(e) {
+    const qty = parseInt(e.currentTarget.dataset.qty)
+    const maxQuantity = this.data.selectedRedemption.remainingQuantity || this.data.selectedRedemption.quantity || 1
+
+    if (qty > maxQuantity) {
+      showToast(`最多只能使用 ${maxQuantity} 个`)
+      return
+    }
+
+    this.setData({ useQuantity: qty })
+  },
+
+  /**
+   * 确认使用奖品（从弹窗调用）
+   */
+  async confirmUseFromModal() {
+    const { selectedRedemption, useQuantity } = this.data
+    await this.confirmUsePrize(selectedRedemption, useQuantity)
+  },
+
+  /**
+   * 确认使用奖品
+   */
+  async confirmUsePrize(redemption, quantity) {
     const confirm = await showConfirm(
-      t('redemptions.useConfirm') + '\n' + redemption.prizeName
+      `确定要使用 ${quantity} 个"${redemption.prizeName}"吗？`
     )
-    if (!confirm) return
+    if (!confirm) {
+      this.closeUseModal()
+      return
+    }
 
     showLoading()
 
     try {
-      console.log('[奖品仓库] Calling cloud function with redemptionId:', redemptionid)
+      console.log('[奖品仓库] Calling cloud function with redemptionId:', redemption.redemptionId, 'quantity:', quantity)
       const res = await wx.cloud.callFunction({
         name: 'manageRedemptions',
         data: {
           action: 'usePrize',
-          data: { redemptionId: redemptionid }
+          data: {
+            redemptionId: redemption.redemptionId,
+            quantity: quantity
+          }
         }
       })
 
@@ -210,6 +321,7 @@ Page({
 
       if (res.result.success) {
         showToast(t('redemptions.useSuccess'))
+        this.closeUseModal()
         await this.loadRedemptions()
       } else {
         console.error('[奖品仓库] Cloud function error:', res.result.error)
@@ -220,6 +332,70 @@ Page({
       console.error('[奖品仓库] 使用失败:', err)
       showToast(t('toast.operationFailed'))
     }
+  },
+
+  /**
+   * 查看使用历史
+   */
+  viewHistory(e) {
+    const { redemptionid } = e.currentTarget.dataset
+    const redemption = this.data.redemptions.find(r => r.redemptionId === redemptionid)
+
+    if (!redemption) {
+      showToast('兑换记录不存在')
+      return
+    }
+
+    this.setData({
+      historyRedemption: redemption,
+      showHistoryModal: true
+    })
+  },
+
+  /**
+   * 关闭历史弹窗
+   */
+  closeHistoryModal() {
+    this.setData({
+      showHistoryModal: false,
+      historyRedemption: null
+    })
+  },
+
+  /**
+   * 格式化使用历史时间
+   */
+  formatHistoryTime(timestamp) {
+    if (!timestamp) return ''
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diff = now - date
+
+    // 小于1小时
+    if (diff < 3600000) {
+      const minutes = Math.floor(diff / 60000)
+      return minutes === 0 ? '刚刚' : `${minutes}分钟前`
+    }
+
+    // 小于24小时
+    if (diff < 86400000) {
+      const hours = Math.floor(diff / 3600000)
+      return `${hours}小时前`
+    }
+
+    // 小于7天
+    if (diff < 604800000) {
+      const days = Math.floor(diff / 86400000)
+      return `${days}天前`
+    }
+
+    // 其他情况显示完整日期
+    return date.toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   },
 
   /**

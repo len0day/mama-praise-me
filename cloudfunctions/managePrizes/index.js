@@ -71,9 +71,71 @@ exports.main = async (event, context) => {
         .orderBy('createdAt', 'desc')
         .get()
 
+      // 处理返回的奖品数据，收集所有fileID
+      const fileList = []
+      const prizesWithImage = res.data.map(prize => {
+        const result = {
+          prizeId: prize.prizeId,
+          name: prize.name,
+          description: prize.description,
+          coinCost: prize.coinCost,
+          category: prize.category,
+          stock: prize.stock,
+          familyId: prize.familyId,
+          isActive: prize.isActive,
+          createdAt: prize.createdAt,
+          updatedAt: prize.updatedAt
+        }
+
+        // 收集所有fileID
+        if (prize.image && prize.image.startsWith('cloud://')) {
+          result.image = prize.image
+          fileList.push(prize.image)
+        }
+
+        return result
+      })
+
+      // 使用getTempFileURL将fileID转换为临时下载URL（2小时有效）
+      let tempUrlMap = {}
+      if (fileList.length > 0) {
+        try {
+          const tempUrlRes = await cloud.getTempFileURL({
+            fileList: fileList
+          })
+          console.log('[managePrizes] getPrizes - 临时URL转换结果:', tempUrlRes)
+
+          // 建立fileID -> tempURL的映射
+          tempUrlRes.fileList.forEach((item, index) => {
+            if (item.status === 0) {
+              tempUrlMap[fileList[index]] = item.tempFileURL
+            }
+          })
+        } catch (err) {
+          console.error('[managePrizes] getPrizes - 临时URL转换失败:', err)
+        }
+      }
+
+      // 替换图片URL为临时URL
+      const processedPrizes = prizesWithImage.map(prize => {
+        if (prize.image && tempUrlMap[prize.image]) {
+          return {
+            ...prize,
+            image: tempUrlMap[prize.image]
+          }
+        }
+        return prize
+      })
+
+      console.log('[managePrizes] getPrizes - 返回奖品数据:', processedPrizes.map(p => ({
+        name: p.name,
+        hasImage: !!p.image,
+        imagePrefix: p.image ? p.image.substring(0, 50) : null
+      })))
+
       return {
         success: true,
-        prizes: res.data
+        prizes: processedPrizes
       }
     }
 
@@ -237,14 +299,21 @@ exports.main = async (event, context) => {
 
     // 兑换奖品
     if (action === 'redeemPrize') {
-      const { prizeId, childId, familyId } = data
+      const { prizeId, childId, familyId, quantity = 1 } = data
 
-      console.log('[managePrizes] redeemPrize - prizeId:', prizeId, 'childId:', childId, 'familyId:', familyId)
+      console.log('[managePrizes] redeemPrize - prizeId:', prizeId, 'childId:', childId, 'familyId:', familyId, 'quantity:', quantity)
 
       if (!childId || !familyId) {
         return {
           success: false,
           error: '缺少必要参数'
+        }
+      }
+
+      if (quantity < 1 || !Number.isInteger(quantity)) {
+        return {
+          success: false,
+          error: '兑换数量必须大于等于1'
         }
       }
 
@@ -295,21 +364,23 @@ exports.main = async (event, context) => {
       }
 
       const currentBalance = coinsRes.result.balance
+      const totalCost = prize.coinCost * quantity
 
       // 检查金币是否足够
-      if (currentBalance < prize.coinCost) {
+      if (currentBalance < totalCost) {
         return {
           success: false,
           error: '金币不足',
-          currentBalance: currentBalance
+          currentBalance: currentBalance,
+          required: totalCost
         }
       }
 
       // 检查库存
-      if (prize.stock !== -1 && prize.stock <= 0) {
+      if (prize.stock !== -1 && prize.stock < quantity) {
         return {
           success: false,
-          error: '库存不足'
+          error: `库存不足，当前库存: ${prize.stock}`
         }
       }
 
@@ -321,7 +392,7 @@ exports.main = async (event, context) => {
           data: {
             childId: childId,
             familyId: familyId,
-            amount: prize.coinCost,
+            amount: totalCost,
             prizeId: prizeId,
             prizeName: prize.name
           }
@@ -343,12 +414,12 @@ exports.main = async (event, context) => {
           })
           .update({
             data: {
-              stock: prize.stock - 1
+              stock: prize.stock - quantity
             }
           })
       }
 
-      // 创建兑换记录
+      // 创建兑换记录（支持数量）
       const redemptionId = generateRedemptionId()
       const redemptionData = {
         redemptionId: redemptionId,
@@ -358,6 +429,8 @@ exports.main = async (event, context) => {
         childId: childId,
         familyId: familyId,
         coinCost: prize.coinCost,
+        quantity: quantity,
+        remainingQuantity: quantity,
         status: 'pending',
         redeemedAt: new Date(),
         createdAt: new Date()
@@ -374,7 +447,8 @@ exports.main = async (event, context) => {
       return {
         success: true,
         newBalance: deductRes.result.newBalance,
-        redemptionId: redemptionId
+        redemptionId: redemptionId,
+        quantity: quantity
       }
     }
 
@@ -418,9 +492,47 @@ exports.main = async (event, context) => {
         .orderBy('redeemedAt', 'desc')
         .get()
 
+      // 处理返回的兑换数据，收集所有fileID
+      const fileList = []
+      const redemptionsWithImage = res.data.map(redemption => {
+        // 收集所有fileID
+        if (redemption.prizeImage && redemption.prizeImage.startsWith('cloud://')) {
+          fileList.push(redemption.prizeImage)
+        }
+        return redemption
+      })
+
+      // 使用getTempFileURL将fileID转换为临时下载URL
+      let tempUrlMap = {}
+      if (fileList.length > 0) {
+        try {
+          const tempUrlRes = await cloud.getTempFileURL({
+            fileList: fileList
+          })
+          tempUrlRes.fileList.forEach((item, index) => {
+            if (item.status === 0) {
+              tempUrlMap[fileList[index]] = item.tempFileURL
+            }
+          })
+        } catch (err) {
+          console.error('[managePrizes] getRedemptions - 临时URL转换失败:', err)
+        }
+      }
+
+      // 替换图片URL为临时URL
+      const processedRedemptions = redemptionsWithImage.map(redemption => {
+        if (redemption.prizeImage && tempUrlMap[redemption.prizeImage]) {
+          return {
+            ...redemption,
+            prizeImage: tempUrlMap[redemption.prizeImage]
+          }
+        }
+        return redemption
+      })
+
       return {
         success: true,
-        redemptions: res.data
+        redemptions: processedRedemptions
       }
     }
 

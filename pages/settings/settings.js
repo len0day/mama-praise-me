@@ -9,11 +9,13 @@ Page({
     isParentMode: false,
     showPasswordModal: false,
     showChangePasswordModal: false,
+    showEditNicknameModal: false,
     changePasswordForm: {
       oldPassword: '',
       newPassword: '',
       confirmPassword: ''
     },
+    editNicknameValue: '',
     showOldPassword: false,
     showNewPassword: false,
     showConfirmPassword: false,
@@ -42,6 +44,7 @@ Page({
 
     this.setData({
       currentChild: child,
+      childChar: child ? child.name.substring(0, 1) : '',
       isParentMode: app.isParentMode()
     })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
@@ -207,14 +210,40 @@ Page({
     showToast(t('settings.languageChanged'))
   },
 
-  /**
-   * 检查登录状态
-   */
-  checkLoginStatus() {
+  async checkLoginStatus() {
     const userInfo = wx.getStorageSync('userInfo')
+    const isLoggedIn = !!userInfo
+    
+    let displayName = '点击登录账号'
+    let displayChar = '👤'
+    let avatarUrl = ''
+    
+    if (isLoggedIn) {
+      displayName = userInfo.nickname || userInfo.nickName || '未设置昵称'
+      displayChar = displayName.substring(0, 1)
+      avatarUrl = userInfo.avatar || userInfo.avatarUrl || ''
+      
+      // 如果是云端ID，转换为临时URL
+      if (avatarUrl && avatarUrl.startsWith('cloud://')) {
+        try {
+          const res = await wx.cloud.getTempFileURL({
+            fileList: [avatarUrl]
+          })
+          if (res.fileList[0].status === 0) {
+            avatarUrl = res.fileList[0].tempFileURL
+          }
+        } catch (err) {
+          console.error('[设置] 转换头像URL失败:', err)
+        }
+      }
+    }
+
     this.setData({
       userInfo: userInfo || null,
-      isLoggedIn: !!userInfo
+      isLoggedIn: isLoggedIn,
+      displayName: displayName,
+      displayChar: displayChar,
+      userAvatarUrl: avatarUrl
     })
   },
 
@@ -257,11 +286,7 @@ Page({
           console.log('[设置] 已从云端加载用户设置，包括家长密码')
         }
 
-        this.setData({
-          userInfo: userData,
-          isLoggedIn: true
-        })
-
+        this.checkLoginStatus()
         showToast('登录成功')
 
         // 检查数据同步情况
@@ -615,10 +640,7 @@ Page({
     app.globalData.currentUserOpenid = null
     app.globalData.useCloudStorage = false
 
-    this.setData({
-      userInfo: null,
-      isLoggedIn: false
-    })
+    this.checkLoginStatus()
 
     showToast('已退出登录，数据将保存在本地')
 
@@ -743,6 +765,55 @@ Page({
   },
 
   /**
+   * 修复图片链接
+   */
+  async fixImageUrls() {
+    const confirm = await showConfirm('此功能将检查并标记需要重新上传的图片（头像和奖品图片）。是否继续？')
+    if (!confirm) return
+
+    showLoading('检查中...')
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'fixImageUrls',
+        data: {
+          action: 'checkImages'
+        }
+      })
+
+      hideLoading()
+
+      if (res.result.success) {
+        const { needUpdate, count } = res.result
+
+        if (count === 0) {
+          showToast('所有图片链接正常')
+          return
+        }
+
+        // 显示需要修复的图片列表
+        const message = needUpdate.map(item => {
+          const name = item.type === 'child' ? item.name : `奖品: ${item.name}`
+          return `${name}\n当前: ${item.type === 'child' ? item.currentAvatar : item.currentImage}`
+        }).join('\n\n')
+
+        wx.showModal({
+          title: `发现 ${count} 个图片需要修复`,
+          content: `这些图片使用了临时链接或非云存储链接，请重新上传：\n\n${message.substring(0, 200)}...`,
+          confirmText: '知道了',
+          showCancel: false
+        })
+      } else {
+        showToast('检查失败')
+      }
+    } catch (err) {
+      hideLoading()
+      console.error('[设置] 检查图片失败:', err)
+      showToast('检查失败')
+    }
+  },
+
+  /**
    * 阻止事件冒泡
    */
   stopPropagation() {
@@ -799,6 +870,154 @@ Page({
       title: '妈妈表扬我 - 帮助孩子建立良好习惯的任务奖励小程序',
       query: '',
       imageUrl: ''
+    }
+  },
+
+  /**
+   * 修改用户头像
+   */
+  async changeUserAvatar() {
+    if (!this.data.isLoggedIn) {
+      showToast('请先登录')
+      return
+    }
+
+    const that = this
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const filePath = res.tempFiles[0].tempFilePath
+        that.uploadUserAvatar(filePath)
+      }
+    })
+  },
+
+  /**
+   * 上传用户头像
+   */
+  async uploadUserAvatar(filePath) {
+    const that = this
+    const cloudPath = `user_avatars/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`
+
+    wx.showLoading({ title: '上传中...' })
+
+    try {
+      // 上传到云存储
+      const uploadRes = await wx.cloud.uploadFile({
+        cloudPath: cloudPath,
+        filePath: filePath
+      })
+
+      const fileID = uploadRes.fileID
+      console.log('[设置] 头像上传成功，fileID:', fileID)
+
+      // 更新到数据库
+      const updateRes = await wx.cloud.callFunction({
+        name: 'updateUserInfo',
+        data: {
+          avatar: fileID
+        }
+      })
+
+      wx.hideLoading()
+
+      if (updateRes.result.success) {
+        showToast('头像修改成功')
+
+        // 更新本地存储
+        const userInfo = that.data.userInfo
+        userInfo.avatar = fileID
+        wx.setStorageSync('userInfo', userInfo)
+
+        // 更新页面数据
+        that.checkLoginStatus()
+      } else {
+        showToast(updateRes.result.error || '修改失败')
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[设置] 上传头像失败:', err)
+      showToast('上传失败，请重试')
+    }
+  },
+
+  /**
+   * 编辑昵称
+   */
+  editNickname() {
+    if (!this.data.isLoggedIn) {
+      showToast('请先登录')
+      return
+    }
+
+    this.setData({
+      showEditNicknameModal: true,
+      editNicknameValue: this.data.userInfo?.nickname || ''
+    })
+  },
+
+  /**
+   * 关闭编辑昵称弹窗
+   */
+  closeEditNicknameModal() {
+    this.setData({
+      showEditNicknameModal: false,
+      editNicknameValue: ''
+    })
+  },
+
+  /**
+   * 昵称输入变化
+   */
+  onNicknameInputChange(e) {
+    this.setData({
+      editNicknameValue: e.detail.value
+    })
+  },
+
+  /**
+   * 确认修改昵称
+   */
+  async confirmEditNickname() {
+    const newNickname = this.data.editNicknameValue.trim()
+
+    if (!newNickname) {
+      showToast('请输入昵称')
+      return
+    }
+
+    wx.showLoading({ title: '保存中...' })
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'updateUserInfo',
+        data: {
+          nickname: newNickname
+        }
+      })
+
+      wx.hideLoading()
+
+      if (res.result.success) {
+        showToast('昵称修改成功')
+
+        // 更新本地存储
+        const userInfo = this.data.userInfo
+        userInfo.nickname = newNickname
+        wx.setStorageSync('userInfo', userInfo)
+        this.checkLoginStatus()
+
+        // 关闭弹窗
+        this.closeEditNicknameModal()
+      } else {
+        showToast(res.result.error || '修改失败')
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[设置] 修改昵称失败:', err)
+      showToast('修改失败，请重试')
     }
   }
 })

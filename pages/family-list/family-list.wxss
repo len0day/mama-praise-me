@@ -32,6 +32,18 @@
   color: #FFFFFF;
 }
 
+.sub-section-title {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #666666;
+  margin-bottom: 16rpx;
+  padding: 0 10rpx;
+}
+
+.theme-dark .sub-section-title {
+  color: #999999;
+}
+
 .add-btn {
   display: flex;
   align-items: center;
@@ -58,29 +70,61 @@
 /* 家庭卡片 */
 .family-card {
   background: #FFFFFF;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
   overflow: hidden;
+  margin-bottom: 16rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
 }
 
 .theme-dark .family-card {
   background: #2C2C2E;
 }
 
+/* 当前选中的家庭 */
+.family-card.current {
+  border-color: #FF9800;
+  box-shadow: 0 8rpx 24rpx rgba(255, 152, 0, 0.15);
+  background: linear-gradient(to bottom, #FFFFFF, #FFF9F0);
+}
+
+.theme-dark .family-card.current {
+  background: linear-gradient(to bottom, #2C2C2E, #322F2A);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3);
+}
+
+.family-card.current .family-icon {
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+}
+
 .family-main {
   display: flex;
   align-items: center;
-  padding: 30rpx;
+  padding: 44rpx 36rpx;
 }
 
 .family-icon {
-  width: 80rpx;
-  height: 80rpx;
-  font-size: 50rpx;
+  width: 100rpx;
+  height: 100rpx;
+  font-size: 52rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20rpx;
+  margin-right: 24rpx;
+  border-radius: 20rpx;
+  background: #F5F5F5;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.family-img {
+  width: 100%;
+  height: 100%;
+}
+
+.theme-dark .family-icon {
+  background: #3A3A3C;
 }
 
 .family-info {
@@ -90,15 +134,18 @@
   justify-content: center;
 }
 
+.family-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 6rpx;
+}
+
 .family-name {
-  font-size: 36rpx;
+  font-size: 34rpx;
   font-weight: bold;
   color: #333333 !important;
-  margin-bottom: 8rpx;
-  min-height: 44rpx;
   line-height: 1.2;
-  display: block;
-  width: 100%;
 }
 
 .theme-dark .family-name {
@@ -107,7 +154,165 @@
 
 .family-meta {
   display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+}
+
+.invite-code-text {
+  font-size: 24rpx;
+  color: #FF9800;
+  font-weight: 500;
+  margin-top: 4rpx;
+}
+
+.family-stats-row {
+  display: flex;
+  flex-direction: row;
   align-items: center;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+
+.family-stats {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.family-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
+  margin-left: 12rpx;
+  flex-shrink: 0;
+}
+
+.stats-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin-left: auto;
+}
+
+.stats-row {
+  display: flex;
+  flex-direction: row;
+  gap: 6rpx;
+  justify-content: flex-end;
+}
+
+.stat-tag {
+  padding: 6rpx 16rpx;
+  border-radius: 10rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.stat-tag.task {
+  background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+  color: #1976D2;
+}
+
+.stat-tag.prize {
+  background: linear-gradient(135deg, #F3E5F5, #E1BEE7);
+  color: #7B1FA2;
+}
+
+.stat-tag.child {
+  background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+  color: #388E3C;
+}
+
+.stat-tag.parent {
+  background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+  color: #FF9800;
+}
+
+.theme-dark .stat-tag.task {
+  background: linear-gradient(135deg, #2A3A4A, #3A4A5A);
+  color: #64B5F6;
+}
+
+.theme-dark .stat-tag.prize {
+  background: linear-gradient(135deg, #3A2A4A, #4A3A5A);
+  color: #BA68C8;
+}
+
+.theme-dark .stat-tag.child {
+  background: linear-gradient(135deg, #2A4A3A, #3A5A4A);
+  color: #81C784;
+}
+
+.theme-dark .stat-tag.parent {
+  background: linear-gradient(135deg, #4A3A2A, #5A4A3A);
+  color: #FFB74D;
+}
+
+.admin-badge {
+  padding: 6rpx 14rpx;
+  border-radius: 10rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  white-space: nowrap;
+}
+
+.admin-badge.creator {
+  background: #FF3B30 !important;
+}
+
+.expand-btn {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #F5F5F5;
+}
+
+.theme-dark .expand-btn {
+  background: #3A3A3C;
+}
+
+.expand-icon {
+  font-size: 20rpx;
+  color: #666666;
+  transition: transform 0.3s;
+}
+
+.expand-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.detail-btn {
+  width: 36rpx;
+  height: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #F5F5F5;
+  border: 1rpx solid #E0E0E0;
+}
+
+.theme-dark .detail-btn {
+  background: #3A3A3C;
+  border-color: #4A4A4C;
+}
+
+.detail-icon {
+  font-size: 24rpx;
+  color: #666666;
+  font-weight: normal;
+  line-height: 1;
+  transform: rotate(90deg);
+}
+
+.theme-dark .detail-icon {
+  color: #AAAAAA;
 }
 
 .role-badge {
@@ -115,11 +320,6 @@
   border-radius: 12rpx;
   font-size: 24rpx;
   font-weight: 500;
-}
-
-.role-badge.admin {
-  background: linear-gradient(135deg, #FF9800, #FFB74D);
-  color: #FFFFFF;
 }
 
 .role-badge.member {
@@ -133,11 +333,19 @@
 }
 
 .family-check {
-  width: 50rpx;
-  height: 50rpx;
+  width: 36rpx;
+  height: 36rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, #4CAF50, #81C784);
+  border-radius: 50%;
+}
+
+.check-icon {
+  color: #FFFFFF;
+  font-size: 20rpx;
+  font-weight: bold;
 }
 
 .check-icon {
@@ -146,23 +354,77 @@
   font-weight: bold;
 }
 
-/* 家庭详情 */
+/* 家庭详情（折叠内容） */
 .family-detail {
-  border-top: 2rpx solid #E5E5E5;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
 }
 
-.theme-dark .family-detail {
-  border-top-color: #3A3A3C;
+.family-detail.expanded {
+  max-height: 1000rpx;
+  transition: max-height 0.3s ease-in;
 }
 
-.sub-section-title {
+.admin-section {
+  padding: 16rpx 20rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.theme-dark .admin-section {
+  border-bottom-color: #2C2C2E;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 12rpx 0;
+}
+
+.detail-icon {
+  font-size: 32rpx;
+  width: 50rpx;
+  text-align: center;
+}
+
+.detail-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-title {
   font-size: 26rpx;
-  color: #666666;
-  padding: 20rpx 30rpx 10rpx;
+  color: #333333;
+  font-weight: 500;
 }
 
-.theme-dark .sub-section-title {
+.theme-dark .detail-title {
+  color: #FFFFFF;
+}
+
+.detail-value {
+  font-size: 24rpx;
+  color: #666666;
+}
+
+.theme-dark .detail-value {
   color: #AAAAAA;
+}
+
+.detail-arrow {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.children-section {
+  padding: 16rpx 20rpx;
+}
+
+.detail-header {
+  margin-bottom: 12rpx;
 }
 
 /* 无家庭状态 */
@@ -391,90 +653,6 @@
   font-weight: 500;
 }
 
-/* 家庭卡片大 */
-.family-card-large {
-  background: linear-gradient(135deg, #FF9800, #FFB74D);
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.3);
-}
-
-.family-header {
-  display: flex;
-  align-items: center;
-}
-
-.family-icon {
-  width: 80rpx;
-  height: 80rpx;
-  font-size: 50rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 20rpx;
-}
-
-.family-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.family-name {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #FFFFFF;
-  margin-bottom: 8rpx;
-}
-
-.family-meta {
-  display: flex;
-}
-
-.role-badge {
-  padding: 6rpx 16rpx;
-  border-radius: 12rpx;
-  font-size: 24rpx;
-  font-weight: 500;
-}
-
-.role-badge.admin {
-  background: rgba(255, 255, 255, 0.3);
-  color: #FFFFFF;
-}
-
-.role-badge.member {
-  background: rgba(255, 255, 255, 0.2);
-  color: #FFFFFF;
-}
-
-.family-arrow {
-  font-size: 48rpx;
-  color: #FFFFFF;
-  font-weight: 300;
-}
-
-.family-stats {
-  display: flex;
-  align-items: center;
-  margin-top: 20rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.3);
-}
-
-.stat-item {
-  font-size: 26rpx;
-  color: #FFFFFF;
-  opacity: 0.9;
-}
-
-.stat-divider {
-  margin: 0 12rpx;
-  color: #FFFFFF;
-  opacity: 0.5;
-}
 
 /* 管理员部分 */
 .admin-section {
@@ -834,3 +1012,126 @@
 .theme-dark .form-hint {
   color: #666666;
 }
+
+/* 成员信息部分 */
+.member-info-section {
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.member-info-card {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .member-info-card {
+  background: #2C2C2E;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.3);
+}
+
+.member-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.member-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  background: #F5F5F5;
+}
+
+.theme-dark .member-avatar {
+  background: #3A3A3C;
+}
+
+.member-avatar-placeholder {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-placeholder-text {
+  font-size: 48rpx;
+}
+
+.avatar-edit-hint {
+  position: absolute;
+  bottom: -8rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #FFFFFF;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  white-space: nowrap;
+}
+
+.member-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.member-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.detail-label {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.theme-dark .detail-label {
+  color: #999999;
+}
+
+.detail-value {
+  font-size: 28rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+.theme-dark .detail-value {
+  color: #FFFFFF;
+}
+
+.detail-value.role-badge {
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.detail-value.role-badge.admin {
+  background: #FFF3E0;
+  color: #FF9800;
+}
+
+.theme-dark .detail-value.role-badge.admin {
+  background: #3A3A3C;
+  color: #FF9800;
+}
+
+.detail-value.role-badge.member {
+  background: #E3F2FD;
+  color: #2196F3;
+}
+
+.theme-dark .detail-value.role-badge.member {
+  background: #3A3A3C;
+  color: #2196F3;
+}
+

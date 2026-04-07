@@ -2,45 +2,51 @@
 <view class="container {{themeClass}}">
   <custom-navbar title="{{i18n.settings.title || '设置'}}" showBack="{{false}}" />
 
-  <!-- 家长模式状态栏 -->
-  <view class="parent-mode-bar">
-    <view class="mode-info">
-      <text class="mode-icon">{{isParentMode ? '🔓' : '🔒'}}</text>
-      <text class="mode-text">{{isParentMode ? '当前模式：家长模式' : '当前模式：儿童模式'}}</text>
-    </view>
-    <button class="mode-switch-btn" bindtap="toggleParentMode">
-      {{isParentMode ? '退出家长模式' : '进入家长模式'}}
-    </button>
-  </view>
 
-  <!-- 当前孩子信息 -->
-  <view class="child-card" wx:if="{{currentChild}}">
-    <view class="child-avatar">
-      <image wx:if="{{currentChild.avatar}}" src="{{currentChild.avatar}}" mode="aspectFill" />
-      <text wx:else>{{currentChild.name.substring(0, 1)}}</text>
-    </view>
-    <view class="child-info">
-      <view class="child-name">{{currentChild.name}}</view>
-      <view class="child-stats">
-        <text class="stat-item">🪙 {{stats.totalCoins || 0}}</text>
-        <text class="stat-divider">·</text>
-        <text class="stat-item">✅ {{stats.completedTasks || 0}}</text>
-        <text class="stat-divider">·</text>
-        <text class="stat-item">🎁 {{stats.redeemedPrizes || 0}}</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- 无孩子提示 -->
-  <view class="no-child-tip" wx:if="{{!currentChild}}">
-    <text>{{i18n.common.noChild || '请先添加孩子以查看统计'}}</text>
-  </view>
 
   <!-- 设置选项 -->
   <view class="settings-section">
-    <!-- 数据统计 -->
-    <view class="section-title">{{i18n.settings.dataStatistics || '数据统计'}}</view>
+    <!-- 账号信息 (原用户信息与账号功能合并) -->
+    <view class="user-info-card {{isLoggedIn ? 'logged-in' : 'logged-out'}}" bindtap="{{!isLoggedIn ? 'login' : ''}}">
+      <view class="user-avatar-wrapper" catchtap="{{isLoggedIn ? 'changeUserAvatar' : ''}}">
+        <image class="user-avatar" wx:if="{{userAvatarUrl}}" src="{{userAvatarUrl}}" mode="aspectFill" />
+        <view class="user-avatar-placeholder" wx:else>
+          <text class="avatar-placeholder-text">{{displayChar}}</text>
+        </view>
+        <view class="avatar-edit-badge" wx:if="{{isLoggedIn}}">✏️</view>
+      </view>
+      <view class="user-details">
+        <view class="user-name-row">
+          <text class="user-name">{{displayName}}</text>
+          <text class="edit-nickname-btn" wx:if="{{isLoggedIn}}" catchtap="editNickname">✏️</text>
+        </view>
+        <view class="user-meta">
+          <text class="meta-item status-cloud" wx:if="{{isLoggedIn}}">已登录 · 数据云端同步</text>
+          <text class="meta-item status-local" wx:else>未登录 · 数据仅保存在本地</text>
+        </view>
+      </view>
+      <button class="logout-btn-small" wx:if="{{isLoggedIn}}" catchtap="logout">退出</button>
+      <view class="item-arrow" wx:if="{{!isLoggedIn}}">›</view>
+    </view>
 
+    <!-- 管理功能 -->
+    <view class="section-title" style="margin-top: 40rpx;">{{i18n.settings.management || '管理功能'}}</view>
+
+    <!-- 家长模式交互 -->
+    <view class="setting-item mode-item">
+      <view class="item-left">
+        <text class="item-icon">{{isParentMode ? '🔓' : '🔒'}}</text>
+        <view class="item-label-group">
+          <text class="item-label">当前模式：{{isParentMode ? '家长模式' : '儿童模式'}}</text>
+          <text class="item-desc">{{isParentMode ? '可管理任务与奖品' : '仅限查看任务与兑换奖品'}}</text>
+        </view>
+      </view>
+      <button class="small-mode-btn {{isParentMode ? 'exit' : 'enter'}}" bindtap="toggleParentMode">
+        {{isParentMode ? '退出家长模式' : '进入家长模式'}}
+      </button>
+    </view>
+
+    <!-- 孩子管理 -->
     <view class="setting-item" bindtap="goToChildren">
       <view class="item-left">
         <text class="item-icon">👶</text>
@@ -51,6 +57,49 @@
       </view>
       <view class="item-arrow">›</view>
     </view>
+
+    <!-- 修改家长密码 -->
+    <view class="setting-item" bindtap="showChangePasswordModal" wx:if="{{isParentMode}}">
+      <view class="item-left">
+        <text class="item-icon">🔐</text>
+        <text class="item-label">修改家长密码</text>
+      </view>
+      <view class="item-arrow">›</view>
+    </view>
+
+    <view class="setting-item" bindtap="goToFamily">
+      <view class="item-left">
+        <text class="item-icon">👨‍👩‍👧‍👦</text>
+        <text class="item-label">家庭管理</text>
+      </view>
+      <view class="item-arrow">›</view>
+    </view>
+
+    <view class="setting-item" bindtap="goToTasks">
+      <view class="item-left">
+        <text class="item-icon">📋</text>
+        <text class="item-label">{{i18n.settings.taskManagement || '任务管理'}}</text>
+      </view>
+      <view class="item-arrow">›</view>
+    </view>
+
+    <view class="setting-item" bindtap="goToPrizes">
+      <view class="item-left">
+        <text class="item-icon">🎁</text>
+        <text class="item-label">{{i18n.settings.prizeManagement || '奖品管理'}}</text>
+      </view>
+      <view class="item-arrow">›</view>
+    </view>
+
+    <!-- 修复图片链接 -->
+    <view class="setting-item" bindtap="fixImageUrls" wx:if="{{userInfo}}">
+      <view class="item-left">
+        <text class="item-icon">🖼️</text>
+        <text class="item-label">修复图片链接</text>
+      </view>
+      <view class="item-arrow">›</view>
+    </view>
+
 
     <!-- 系统设置 -->
     <view class="section-title" style="margin-top: 40rpx;">{{i18n.settings.systemSettings || '系统设置'}}</view>
@@ -109,86 +158,6 @@
           EN
         </view>
       </view>
-    </view>
-
-    <!-- 用户信息 -->
-    <view class="section-title" style="margin-top: 40rpx;">{{i18n.settings.account || '账号'}}</view>
-
-    <!-- 未登录状态 -->
-    <view class="login-tip-card" wx:if="{{!isLoggedIn}}">
-      <view class="tip-icon">☁️</view>
-      <view class="tip-content">
-        <view class="tip-title">未登录状态</view>
-        <view class="tip-desc">数据仅保存在本地，无法使用家庭功能</view>
-      </view>
-    </view>
-
-    <view class="user-info-card" wx:if="{{userInfo}}">
-      <view class="user-avatar">
-        <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" mode="aspectFill" />
-        <text wx:else class="avatar-placeholder">{{userInfo.nickName.substring(0, 1)}}</text>
-      </view>
-      <view class="user-details">
-        <view class="user-name">{{userInfo.nickName}}</view>
-        <view class="user-openid">已登录 · 数据已同步到云端</view>
-      </view>
-      <button class="logout-btn-small" bindtap="logout">退出</button>
-    </view>
-
-    <view class="setting-item" bindtap="login" wx:else>
-      <view class="item-left">
-        <text class="item-icon">🔑</text>
-        <view class="item-label-group">
-          <text class="item-label">登录账号</text>
-          <text class="item-desc">登录后可同步数据并使用家庭功能</text>
-        </view>
-      </view>
-      <view class="item-arrow">›</view>
-    </view>
-
-    <!-- 管理功能 -->
-    <view class="section-title" style="margin-top: 40rpx;">{{i18n.settings.management || '管理功能'}}</view>
-
-    <!-- 修改家长密码 -->
-    <view class="setting-item" bindtap="showChangePasswordModal" wx:if="{{isParentMode}}">
-      <view class="item-left">
-        <text class="item-icon">🔐</text>
-        <text class="item-label">修改家长密码</text>
-      </view>
-      <view class="item-arrow">›</view>
-    </view>
-
-    <view class="setting-item" bindtap="goToFamily">
-      <view class="item-left">
-        <text class="item-icon">👨‍👩‍👧‍👦</text>
-        <text class="item-label">家庭管理</text>
-      </view>
-      <view class="item-arrow">›</view>
-    </view>
-
-    <view class="setting-item" bindtap="goToTasks">
-      <view class="item-left">
-        <text class="item-icon">📋</text>
-        <text class="item-label">{{i18n.settings.taskManagement || '任务管理'}}</text>
-      </view>
-      <view class="item-arrow">›</view>
-    </view>
-
-    <view class="setting-item" bindtap="goToPrizes">
-      <view class="item-left">
-        <text class="item-icon">🎁</text>
-        <text class="item-label">{{i18n.settings.prizeManagement || '奖品管理'}}</text>
-      </view>
-      <view class="item-arrow">›</view>
-    </view>
-
-    <!-- 退出登录按钮（已登录时显示） -->
-    <view class="setting-item logout-item" bindtap="logout" wx:if="{{userInfo}}">
-      <view class="item-left">
-        <text class="item-icon">🚪</text>
-        <text class="item-label">{{i18n.settings.logout || '退出登录'}}</text>
-      </view>
-      <view class="item-arrow">›</view>
     </view>
   </view>
 
@@ -263,6 +232,31 @@
           <button class="modal-btn cancel" bindtap="closeChangePasswordModal">取消</button>
           <button class="modal-btn confirm" bindtap="confirmChangePassword">确定</button>
         </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 编辑昵称弹窗 -->
+  <view class="modal" wx:if="{{showEditNicknameModal}}">
+    <view class="modal-mask" catchtap="closeEditNicknameModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">修改昵称</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-group">
+          <view class="form-label">昵称</view>
+          <input
+            class="form-input"
+            value="{{editNicknameValue}}"
+            bindinput="onNicknameInputChange"
+            placeholder="请输入您的昵称"
+          />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeEditNicknameModal">取消</button>
+        <button class="modal-btn confirm" bindtap="confirmEditNickname">确定</button>
       </view>
     </view>
   </view>

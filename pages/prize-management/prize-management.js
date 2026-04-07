@@ -23,12 +23,13 @@ Page({
       category: 'other',
       stock: -1
     },
-    categoryIndex: 3,  // 默认选中"其他"（索引3）
+    categoryIndex: 4,  // 默认选中"其他"（索引4）
     categoryDisplayName: '其他',  // 分类显示名称
     categories: [
       { value: 'toys', label: '玩具' },
       { value: 'food', label: '食物' },
       { value: 'outings', label: '外出' },
+      { value: 'entertainment', label: '娱乐' },
       { value: 'other', label: '其他' }
     ]
   },
@@ -312,8 +313,9 @@ Page({
             cloudPath: `prize_images/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`,
             filePath: imageUrl
           })
+          // 直接保存fileID，这个ID在image组件中可以直接使用且不会过期
           imageUrl = uploadRes.fileID
-          console.log('[奖品管理] 图片上传成功:', imageUrl)
+          console.log('[奖品管理] 图片上传成功，fileID:', imageUrl)
         } catch (uploadErr) {
           console.error('[奖品管理] 图片上传失败:', uploadErr)
           imageUrl = ''

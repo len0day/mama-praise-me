@@ -14,13 +14,20 @@ Page({
     editingTask: null,
     currentFamily: null,  // 当前家庭
     currentChild: null,   // 当前儿童
-    taskTypeOptions: ['每日任务', '每周任务', '每月任务', '无期限任务'],
-    taskTypeIndex: 3,  // 默认选择"无期限任务"
+    allFamilies: [],      // 所有家庭列表
+    showFamilyPicker: false,  // 显示家庭选择器
+    currentFamilyChildren: [], // 当前家庭的儿童列表
+    showChildPicker: false,   // 显示儿童选择器
+    taskTypeOptions: ['每日任务', '每周任务', '每月任务', '自定义任务', '惩罚家长', '惩罚小孩'],
+    taskTypeIndex: 3,  // 默认选择"自定义任务"
     formData: {
       title: '',
       description: '',
       coinReward: 10,
-      taskType: 'permanent',
+      taskType: 'custom',
+      maxCompletions: null,  // 最大完成次数，null=无限
+      startDate: '',  // 开始日期 YYYY-MM-DD
+      endDate: '',    // 结束日期 YYYY-MM-DD
       weekStart: '',
       weekEnd: '',
       monthStart: '',
@@ -59,7 +66,8 @@ Page({
     if (!currentFamilyId || !currentChild) {
       this.setData({
         currentFamily: null,
-        currentChild: null
+        currentChild: null,
+        allFamilies: []
       })
       return
     }
@@ -70,14 +78,20 @@ Page({
       const family = localFamilies.find(f => f.familyId === currentFamilyId)
 
       if (family) {
+        // 加载当前家庭的儿童
+        const localChildren = wx.getStorageSync(`localChildren_${currentFamilyId}`) || []
+
         this.setData({
           currentFamily: family,
-          currentChild: currentChild
+          currentChild: currentChild,
+          allFamilies: localFamilies,
+          currentFamilyChildren: localChildren
         })
       } else {
         this.setData({
           currentFamily: null,
-          currentChild: null
+          currentChild: null,
+          allFamilies: []
         })
       }
       return
@@ -85,20 +99,37 @@ Page({
 
     // 已登录：从云端加载
     try {
-      // 获取家庭信息
-      const familyRes = await wx.cloud.callFunction({
-        name: 'manageFamilies',
-        data: {
-          action: 'getFamilyInfo',
-          data: { familyId: currentFamilyId }
-        }
-      })
+      // 并行获取：当前家庭信息和所有家庭列表
+      const [familyRes, familiesRes] = await Promise.all([
+        wx.cloud.callFunction({
+          name: 'manageFamilies',
+          data: {
+            action: 'getFamilyInfo',
+            data: { familyId: currentFamilyId }
+          }
+        }),
+        wx.cloud.callFunction({
+          name: 'manageFamilies',
+          data: {
+            action: 'getAllMyFamilies'
+          }
+        })
+      ])
 
       if (familyRes.result.success) {
         const family = familyRes.result.family
+        const allFamilies = familiesRes.result.success ? (familiesRes.result.families || []) : []
+
+        // 筛选当前家庭的儿童
+        const currentFamilyId = app.getCurrentFamilyId()
+        const allChildren = app.globalData.children || []
+        const familyChildren = allChildren.filter(child => child.familyId === currentFamilyId)
+
         this.setData({
           currentFamily: family,
-          currentChild: currentChild
+          currentChild: currentChild,
+          allFamilies: allFamilies,
+          currentFamilyChildren: familyChildren
         })
       }
     } catch (err) {
@@ -151,7 +182,9 @@ Page({
             'daily': '📅',
             'weekly': '📆',
             'monthly': '🗓️',
-            'permanent': '♾️'
+            'permanent': '♾️',
+            'penalty_parent': '🎁',
+            'penalty_child': '⚠️'
           }
           return {
             ...task,
@@ -186,7 +219,9 @@ Page({
         'daily': '📅',
         'weekly': '📆',
         'monthly': '🗓️',
-        'permanent': '♾️'
+        'permanent': '♾️',
+        'penalty_parent': '🎁',
+        'penalty_child': '⚠️'
       }
 
       const tasks = childTasks.map(task => ({
@@ -215,12 +250,15 @@ Page({
     this.setData({
       showAddModal: true,
       editingTask: null,
-      taskTypeIndex: 3,  // 默认选择"无期限任务"
+      taskTypeIndex: 3,  // 默认选择"自定义任务"
       formData: {
         title: '',
         description: '',
         coinReward: 10,
-        taskType: 'permanent',
+        taskType: 'custom',
+        maxCompletions: null,
+        startDate: '',
+        endDate: '',
         weekStart: this.formatDate(today),
         weekEnd: this.formatDate(weekEnd),
         monthStart: today.toISOString().substring(0, 7),
@@ -242,7 +280,7 @@ Page({
 
     if (task) {
       // 计算任务类型索引
-      const taskTypes = ['daily', 'weekly', 'monthly', 'permanent']
+      const taskTypes = ['daily', 'weekly', 'monthly', 'custom', 'penalty_parent', 'penalty_child']
       const taskTypeIndex = taskTypes.indexOf(task.taskType)
 
       this.setData({
@@ -254,6 +292,9 @@ Page({
           description: task.description,
           coinReward: task.coinReward,
           taskType: task.taskType,
+          maxCompletions: task.maxCompletions || null,
+          startDate: task.startDate || '',
+          endDate: task.endDate || '',
           weekStart: task.weekStart || '',
           weekEnd: task.weekEnd || '',
           monthStart: task.monthStart || '',
@@ -352,7 +393,7 @@ Page({
    */
   onTaskTypeChange(e) {
     const index = parseInt(e.detail.value)
-    const taskTypes = ['daily', 'weekly', 'monthly', 'permanent']
+    const taskTypes = ['daily', 'weekly', 'monthly', 'custom', 'penalty_parent', 'penalty_child']
     const taskType = taskTypes[index]
     this.setData({
       taskTypeIndex: index,
@@ -492,6 +533,9 @@ Page({
           description: formData.description,
           coinReward: parseInt(formData.coinReward) || 0,  // 确保是数字类型
           taskType: formData.taskType,
+          maxCompletions: formData.maxCompletions ? parseInt(formData.maxCompletions) : null,
+          startDate: formData.startDate || null,
+          endDate: formData.endDate || null,
           weekStart: formData.weekStart,
           weekEnd: formData.weekEnd,
           monthStart: formData.monthStart,
@@ -525,6 +569,77 @@ Page({
   },
 
   /**
+   * 显示儿童选择器
+   */
+  showChildPicker() {
+    // 获取儿童信息元素的位置
+    const query = wx.createSelectorQuery().in(this)
+    query.select('.info-item.with-arrow').boundingClientRect()
+    query.exec((res) => {
+      if (res && res[0]) {
+        const rect = res[0]
+        // 选择器显示在箭头下方
+        const pickerTop = rect.bottom + 8
+        this.setData({
+          childPickerTop: pickerTop
+        })
+      }
+    })
+
+    this.setData({ showChildPicker: true })
+  },
+
+  /**
+   * 隐藏儿童选择器
+   */
+  hideChildPicker() {
+    this.setData({
+      showChildPicker: false
+    })
+  },
+
+  /**
+   * 选择儿童
+   */
+  async selectChild(e) {
+    const { childid } = e.currentTarget.dataset
+
+    // 如果选择的是当前儿童，直接关闭
+    if (childid === this.data.currentChild.childId) {
+      this.hideChildPicker()
+      return
+    }
+
+    showLoading()
+
+    try {
+      // 切换儿童
+      app.saveCurrentChildId(childid)
+
+      // 从全局数据中获取新儿童
+      const newChild = app.getCurrentChild()
+
+      if (newChild) {
+        this.setData({ currentChild: newChild })
+
+        // 重新加载任务列表
+        await this.loadTasks()
+
+        hideLoading()
+        this.hideChildPicker()
+        showToast(`已切换到${newChild.name}`)
+      } else {
+        hideLoading()
+        showToast('切换失败')
+      }
+    } catch (err) {
+      hideLoading()
+      console.error('[任务管理] 切换儿童失败:', err)
+      showToast('切换失败')
+    }
+  },
+
+  /**
    * 阻止事件冒泡
    */
   stopPropagation() {
@@ -550,7 +665,9 @@ Page({
       'daily': '每日任务',
       'weekly': '每周任务',
       'monthly': '每月任务',
-      'permanent': '无期限任务'
+      'permanent': '无期限任务',
+      'penalty_parent': '惩罚家长',
+      'penalty_child': '惩罚小孩'
     }
     return types[type] || type
   },
@@ -656,6 +773,167 @@ Page({
     wx.navigateTo({
       url: '/pages/children/children'
     })
+  },
+
+  /**
+   * 显示家庭选择器
+   */
+  async showFamilyPicker() {
+    // 获取家庭信息元素的位置
+    const query = wx.createSelectorQuery().in(this)
+    query.select('.info-value-with-arrow').boundingClientRect()
+    query.exec((res) => {
+      if (res && res[0]) {
+        const rect = res[0]
+        // 选择器显示在箭头下方
+        const pickerTop = rect.bottom + 8
+        this.setData({
+          pickerTop: pickerTop
+        })
+      }
+    })
+
+    // 未登录：从本地加载家庭列表
+    if (!app.globalData.useCloudStorage) {
+      const localFamilies = wx.getStorageSync('localFamilies') || []
+      // 补充 isCreator 标记
+      const processedLocalFamilies = localFamilies.map(f => ({
+        ...f,
+        isCreator: f.isCreator !== undefined ? f.isCreator : (f.role === 'admin')
+      }))
+      this.setData({
+        allFamilies: processedLocalFamilies,
+        showFamilyPicker: true
+      })
+      return
+    }
+
+    // 已登录：从云端加载所有家庭
+    showLoading()
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'getAllMyFamilies'
+        }
+      })
+
+      hideLoading()
+
+      if (res.result.success) {
+        this.setData({
+          allFamilies: res.result.families || [],
+          showFamilyPicker: true
+        })
+      } else {
+        showToast(res.result.error || '加载家庭列表失败')
+      }
+    } catch (err) {
+      hideLoading()
+      console.error('[任务管理] 加载家庭列表失败:', err)
+      showToast('加载失败')
+    }
+  },
+
+  /**
+   * 隐藏家庭选择器
+   */
+  hideFamilyPicker() {
+    this.setData({
+      showFamilyPicker: false
+    })
+  },
+
+  /**
+   * 选择家庭
+   */
+  async selectFamily(e) {
+    const { familyid } = e.currentTarget.dataset
+
+    // 如果选择的是当前家庭，直接关闭
+    if (familyid === this.data.currentFamily?.familyId) {
+      this.hideFamilyPicker()
+      return
+    }
+
+    // 切换家庭
+    hideLoading()
+    try {
+      // 保存选择的家庭
+      app.saveCurrentFamilyId(familyid)
+
+      // 加载该家庭的儿童
+      const childrenRes = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'getFamilyChildren',
+          data: { familyId: familyid }
+        }
+      })
+
+      if (childrenRes.result.success) {
+        const children = childrenRes.result.children || []
+
+        if (children.length === 0) {
+          // 没有儿童，跳转到添加儿童页面
+          this.hideFamilyPicker()
+          wx.navigateTo({
+            url: '/pages/children/children'
+          })
+          return
+        }
+
+        // 选择第一个儿童
+        const firstChild = children[0]
+        app.saveCurrentChildId(firstChild.childId)
+
+        // 刷新页面数据
+        await this.loadFamilyAndChild()
+        await this.loadTasks()
+
+        this.hideFamilyPicker()
+        showToast(`已切换到${this.data.currentFamily?.name}`)
+      } else {
+        showToast('加载儿童失败')
+      }
+    } catch (err) {
+      console.error('[任务管理] 切换家庭失败:', err)
+      showToast('切换失败')
+    }
+
+    // 未登录：从本地加载
+    if (!app.globalData.useCloudStorage) {
+      const localFamilies = wx.getStorageSync('localFamilies') || []
+      const family = localFamilies.find(f => f.familyId === familyid)
+
+      if (family) {
+        const localChildren = wx.getStorageSync(`localChildren_${familyid}`) || []
+
+        if (localChildren.length === 0) {
+          this.hideFamilyPicker()
+          wx.navigateTo({
+            url: '/pages/children/children'
+          })
+          return
+        }
+
+        const firstChild = localChildren[0]
+        app.saveCurrentChildId(firstChild.childId)
+
+        await this.loadFamilyAndChild()
+        await this.loadTasks()
+
+        this.hideFamilyPicker()
+        showToast(`已切换到${family.name}`)
+      }
+    }
+  },
+
+  /**
+   * 阻止事件冒泡
+   */
+  stopPropagation() {
+    // 阻止点击事件冒泡
   },
 
   /**

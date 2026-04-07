@@ -114,42 +114,79 @@ exports.main = async (event, context) => {
         redemptions = oldRes.data
       }
 
-      // 为每个兑换记录补充奖品的完整信息
+      // 为每个兑换记录补充奖品的完整信息，并收集fileID
+      const fileList = []
       const redemptionsWithPrizeInfo = await Promise.all(
         redemptions.map(async (redemption) => {
-          // 如果已经有图片，直接返回
-          if (redemption.prizeImage) {
-            return redemption
-          }
+          let prizeImage = redemption.prizeImage
+          let prizeName = redemption.prizeName
 
           // 如果没有图片，从奖品表获取最新信息
-          try {
-            const prizeRes = await db.collection('prizes')
-              .where({
-                familyId: familyId,
-                prizeId: redemption.prizeId
-              })
-              .get()
+          if (!prizeImage) {
+            try {
+              const prizeRes = await db.collection('prizes')
+                .where({
+                  familyId: familyId,
+                  prizeId: redemption.prizeId
+                })
+                .get()
 
-            if (prizeRes.data.length > 0) {
-              const prize = prizeRes.data[0]
-              return {
-                ...redemption,
-                prizeImage: prize.image || '',
-                prizeName: prize.name || redemption.prizeName
+              if (prizeRes.data.length > 0) {
+                const prize = prizeRes.data[0]
+                prizeImage = prize.image || ''
+                prizeName = prize.name || prizeName
               }
+            } catch (err) {
+              console.error('[manageRedemptions] 获取奖品信息失败:', err)
             }
-          } catch (err) {
-            console.error('[manageRedemptions] 获取奖品信息失败:', err)
           }
 
-          return redemption
+          const result = {
+            ...redemption,
+            prizeImage: prizeImage,
+            prizeName: prizeName
+          }
+
+          // 收集fileID
+          if (prizeImage && prizeImage.startsWith('cloud://')) {
+            fileList.push(prizeImage)
+          }
+
+          return result
         })
       )
 
+      // 使用getTempFileURL将fileID转换为临时下载URL
+      let tempUrlMap = {}
+      if (fileList.length > 0) {
+        try {
+          const tempUrlRes = await cloud.getTempFileURL({
+            fileList: fileList
+          })
+          tempUrlRes.fileList.forEach((item, index) => {
+            if (item.status === 0) {
+              tempUrlMap[fileList[index]] = item.tempFileURL
+            }
+          })
+        } catch (err) {
+          console.error('[manageRedemptions] getRedemptions - 临时URL转换失败:', err)
+        }
+      }
+
+      // 替换图片URL为临时URL
+      const processedRedemptions = redemptionsWithPrizeInfo.map(r => {
+        if (r.prizeImage && tempUrlMap[r.prizeImage]) {
+          return {
+            ...r,
+            prizeImage: tempUrlMap[r.prizeImage]
+          }
+        }
+        return r
+      })
+
       return {
         success: true,
-        redemptions: redemptionsWithPrizeInfo
+        redemptions: processedRedemptions
       }
     }
 
@@ -435,9 +472,9 @@ exports.main = async (event, context) => {
 
     // 使用奖品
     if (action === 'usePrize') {
-      const { redemptionId } = data
+      const { redemptionId, quantity = 1 } = data
 
-      console.log('[manageRedemptions] usePrize - redemptionId:', redemptionId)
+      console.log('[manageRedemptions] usePrize - redemptionId:', redemptionId, 'quantity:', quantity)
 
       // 获取兑换记录（先尝试新系统 familyId，再尝试旧系统 openid）
       let res = await db.collection('redemptions')
@@ -457,32 +494,50 @@ exports.main = async (event, context) => {
       const redemption = res.data[0]
       console.log('[manageRedemptions] usePrize - 找到兑换记录:', JSON.stringify(redemption))
 
-      // 检查是否已使用
-      if (redemption.usedAt) {
+      // 获取剩余数量（兼容旧数据）
+      const remainingQuantity = redemption.remainingQuantity || redemption.quantity || 1
+
+      // 检查是否有足够剩余数量
+      if (remainingQuantity < quantity) {
         return {
           success: false,
-          error: '奖品已使用'
+          error: `剩余数量不足，当前剩余: ${remainingQuantity}`
         }
       }
 
-      // 检查状态：pending 或 completed 都可以使用
-      // pending: 待家长确认，completed: 已确认
-      if (redemption.status !== 'pending' && redemption.status !== 'completed') {
-        return {
-          success: false,
-          error: '奖品状态异常'
-        }
+      // 计算使用后的剩余数量
+      const newRemainingQuantity = remainingQuantity - quantity
+
+      // 准备更新数据
+      const updateData = {
+        updatedAt: new Date()
       }
 
-      // 更新使用时间
+      // 如果全部用完，设置 usedAt
+      if (newRemainingQuantity === 0) {
+        updateData.usedAt = new Date()
+        updateData.remainingQuantity = 0
+      } else {
+        // 部分使用，更新剩余数量
+        updateData.remainingQuantity = newRemainingQuantity
+      }
+
+      // 如果没有使用历史数组，初始化它
+      const usageHistory = redemption.usageHistory || []
+      usageHistory.push({
+        quantity: quantity,
+        usedAt: new Date(),
+        remainingAfter: newRemainingQuantity
+      })
+      updateData.usageHistory = usageHistory
+
+      // 更新兑换记录
       const updateRes = await db.collection('redemptions')
         .where({
           redemptionId: redemptionId
         })
         .update({
-          data: {
-            usedAt: new Date()
-          }
+          data: updateData
         })
 
       console.log('[manageRedemptions] usePrize - 更新结果:', updateRes.stats)
@@ -498,7 +553,8 @@ exports.main = async (event, context) => {
       console.log('[manageRedemptions] usePrize - 奖品使用成功')
 
       return {
-        success: true
+        success: true,
+        remainingQuantity: newRemainingQuantity
       }
     }
 

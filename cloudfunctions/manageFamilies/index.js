@@ -57,6 +57,7 @@ exports.main = async (event, context) => {
       await db.collection('families').add({
         data: {
           openid: OPENID,
+          creatorOpenid: OPENID, // 明确标注创建者
           familyId: familyId,
           name: name.trim(),
           inviteCode: generateInviteCode(),
@@ -82,8 +83,9 @@ exports.main = async (event, context) => {
         family: {
           familyId: familyId,
           name: name.trim(),
-          inviteCode: null, // 不返回邀请码，需要单独查询
-          role: 'admin'
+          inviteCode: null,
+          role: 'admin',
+          isCreator: true
         }
       }
     }
@@ -124,14 +126,28 @@ exports.main = async (event, context) => {
 
       const family = familyRes.data[0]
       const member = memberRes.data[0]
+      
+      let avatarUrl = family.avatar || ''
+      if (avatarUrl && avatarUrl.startsWith('cloud://')) {
+        try {
+          const res = await cloud.getTempFileURL({ fileList: [avatarUrl] })
+          if (res.fileList[0].status === 0) {
+            avatarUrl = res.fileList[0].tempFileURL
+          }
+        } catch (err) {
+          console.error('[manageFamilies] getFamilyInfo - 转换家庭头像URL失败:', err)
+        }
+      }
 
       return {
         success: true,
         family: {
           familyId: family.familyId,
           name: family.name,
+          avatar: avatarUrl,
           inviteCode: member.role === 'admin' ? family.inviteCode : null,
           role: member.role,
+          isCreator: family.creatorOpenid === OPENID || family.openid === OPENID,
           createdAt: family.createdAt
         }
       }
@@ -185,6 +201,72 @@ exports.main = async (event, context) => {
 
       console.log('[getAllMyFamilies] 最终家庭列表:', familiesRes.data.length)
 
+      // 获取所有家庭的任务、奖品、成员和儿童数量
+      const familyIds = familiesRes.data.map(f => f.familyId)
+      console.log('[getAllMyFamilies] 查询的家庭IDs:', familyIds)
+
+      const [tasksRes, prizesRes, membersRes, childrenRes] = await Promise.all([
+        db.collection('tasks').where({ familyId: _.in(familyIds) }).get(),
+        db.collection('prizes').where({ familyId: _.in(familyIds) }).get(),
+        db.collection('family_members').where({ familyId: _.in(familyIds), status: 'active' }).get(),
+        db.collection('children').where({ familyId: _.in(familyIds) }).get()
+      ])
+
+      console.log('[getAllMyFamilies] 任务查询结果:', tasksRes.data.length)
+      console.log('[getAllMyFamilies] 奖品查询结果:', prizesRes.data.length)
+      console.log('[getAllMyFamilies] 成员查询结果:', membersRes.data.length)
+      console.log('[getAllMyFamilies] 儿童查询结果:', childrenRes.data.length)
+
+      // 建立familyId -> 数量的映射
+      const taskCountMap = {}
+      tasksRes.data.forEach(task => {
+        taskCountMap[task.familyId] = (taskCountMap[task.familyId] || 0) + 1
+      })
+
+      const prizeCountMap = {}
+      prizesRes.data.forEach(prize => {
+        prizeCountMap[prize.familyId] = (prizeCountMap[prize.familyId] || 0) + 1
+      })
+
+      const childCountMap = {}
+      childrenRes.data.forEach(child => {
+        childCountMap[child.familyId] = (childCountMap[child.familyId] || 0) + 1
+      })
+
+      const parentCountMap = {}
+      membersRes.data.forEach(member => {
+        parentCountMap[member.familyId] = (parentCountMap[member.familyId] || 0) + 1
+      })
+
+      console.log('[getAllMyFamilies] 统计映射:', {
+        taskCountMap,
+        prizeCountMap,
+        childCountMap,
+        parentCountMap
+      })
+
+      // 提取家庭详情中的 avatar 并转换为临时URL
+      const fileList = []
+      familiesRes.data.forEach(f => {
+        if (f.avatar && f.avatar.startsWith('cloud://')) {
+          fileList.push(f.avatar)
+        }
+      })
+
+      let tempUrlMap = {}
+      if (fileList.length > 0) {
+        try {
+          const tempUrlRes = await cloud.getTempFileURL({ fileList })
+          tempUrlRes.fileList.forEach((item, index) => {
+            if (item.status === 0) {
+              tempUrlMap[fileList[index]] = item.tempFileURL
+            }
+          })
+        } catch (err) {
+          console.error('[manageFamilies] getAllMyFamilies - 转换图片URL失败:', err)
+        }
+      }
+
       const families = familiesRes.data.map(family => {
         // 判断用户在该家庭中的角色
         const member = memberRes.data.find(m => m.familyId === family.familyId)
@@ -193,8 +275,15 @@ exports.main = async (event, context) => {
         return {
           familyId: family.familyId,
           name: family.name,
+          avatar: (family.avatar && tempUrlMap[family.avatar]) ? tempUrlMap[family.avatar] : (family.avatar || ''),
           inviteCode: (member?.role === 'admin' || isOwner) ? family.inviteCode : null,
           role: member?.role || (isOwner ? 'admin' : 'member'),
+          isCreator: isOwner,
+          myNickname: member?.nickname || null,
+          taskCount: taskCountMap[family.familyId] || 0,
+          prizeCount: prizeCountMap[family.familyId] || 0,
+          childCount: childCountMap[family.familyId] || 0,
+          parentCount: parentCountMap[family.familyId] || 0,
           createdAt: family.createdAt
         }
       })
@@ -270,18 +359,21 @@ exports.main = async (event, context) => {
           name: family.name,
           inviteCode: (member?.role === 'admin' || isOwner) ? family.inviteCode : null,
           role: member?.role || (isOwner ? 'admin' : 'member'),
+          isCreator: isOwner,
           createdAt: family.createdAt
         },
         members: allMembersRes.data.length > 0 ? allMembersRes.data.map(m => ({
           openid: m.openid,
           nickname: m.nickname,
           role: m.role,
-          isMe: m.openid === OPENID
+          isMe: m.openid === OPENID,
+          isCreator: m.openid === (family.creatorOpenid || family.openid)
         })) : [{
           openid: OPENID,
           nickname: '创建者',
           role: 'admin',
-          isMe: true
+          isMe: true,
+          isCreator: true
         }]
       }
     }
@@ -631,6 +723,60 @@ exports.main = async (event, context) => {
       }
     }
 
+    // 设置成员角色（仅管理员）
+    if (action === 'setMemberRole') {
+      const { familyId, memberOpenid, role } = data
+
+      // 验证权限
+      const adminRes = await db.collection('family_members')
+        .where({
+          openid: OPENID,
+          familyId: familyId,
+          role: 'admin',
+          status: 'active'
+        })
+        .get()
+
+      if (adminRes.data.length === 0) {
+        return {
+          success: false,
+          error: '无权限修改成员角色'
+        }
+      }
+
+      // 自己不能修改自己的角色
+      if (memberOpenid === OPENID) {
+        return {
+          success: false,
+          error: '不能修改自己的角色'
+        }
+      }
+
+      if (!['admin', 'member'].includes(role)) {
+        return {
+          success: false,
+          error: '无效的角色'
+        }
+      }
+
+      await db.collection('family_members')
+        .where({
+          openid: memberOpenid,
+          familyId: familyId
+        })
+        .update({
+          data: {
+            role: role,
+            updatedAt: new Date()
+          }
+        })
+
+      return {
+        success: true,
+        message: '角色已更新'
+      }
+    }
+
     // 退出家庭
     if (action === 'leaveFamily') {
       const { familyId } = data
@@ -851,16 +997,66 @@ exports.main = async (event, context) => {
         console.log('[manageFamilies] getFamilyChildren - coinsMap:', coinsMap)
       }
 
-      // 为每个儿童添加 familyCoins 字段
-      const enrichedChildren = childrenRes.data.map(child => ({
-        ...child,
-        familyCoins: coinsMap[child.childId] || 0
-      }))
+      // 为每个儿童添加 familyCoins 字段，并处理头像URL
+      const fileList = []
+      const childrenWithAvatar = childrenRes.data.map(child => {
+        const result = {
+          childId: child.childId,
+          name: child.name,
+          gender: child.gender,
+          age: child.age,
+          familyId: child.familyId,
+          familyCoins: coinsMap[child.childId] || 0,
+          createdAt: child.createdAt,
+          updatedAt: child.updatedAt
+        }
+
+        // 收集所有fileID
+        if (child.avatar && child.avatar.startsWith('cloud://')) {
+          result.avatar = child.avatar
+          fileList.push(child.avatar)
+        }
+
+        return result
+      })
+
+      // 使用getTempFileURL将fileID转换为临时下载URL（2小时有效）
+      let tempUrlMap = {}
+      if (fileList.length > 0) {
+        try {
+          const tempUrlRes = await cloud.getTempFileURL({
+            fileList: fileList
+          })
+          console.log('[manageFamilies] getFamilyChildren - 临时URL转换结果:', tempUrlRes)
+
+          // 建立fileID -> tempURL的映射
+          tempUrlRes.fileList.forEach((item, index) => {
+            if (item.status === 0) {
+              tempUrlMap[fileList[index]] = item.tempFileURL
+            }
+          })
+        } catch (err) {
+          console.error('[manageFamilies] getFamilyChildren - 临时URL转换失败:', err)
+        }
+      }
+
+      // 替换头像URL为临时URL
+      const enrichedChildren = childrenWithAvatar.map(child => {
+        if (child.avatar && tempUrlMap[child.avatar]) {
+          return {
+            ...child,
+            avatar: tempUrlMap[child.avatar]
+          }
+        }
+        return child
+      })
 
       console.log('[manageFamilies] getFamilyChildren - enrichedChildren:', enrichedChildren.map(c => ({
         name: c.name,
         childId: c.childId,
-        familyCoins: c.familyCoins
+        familyCoins: c.familyCoins,
+        hasAvatar: !!c.avatar,
+        avatarPrefix: c.avatar ? c.avatar.substring(0, 50) : null
       })))
 
       return {
@@ -897,14 +1093,128 @@ exports.main = async (event, context) => {
         })
         .get()
 
+      // 获取家庭信息以确定创建者
+      const familyRes = await db.collection('families')
+        .where({ familyId: familyId })
+        .get()
+      const creatorOpenid = familyRes.data.length > 0 ? (familyRes.data[0].creatorOpenid || familyRes.data[0].openid) : null
+
+      // 为成员提取fileID并转换为临时URL
+      const fileList = []
+      allMembersRes.data.forEach(m => {
+        if (m.avatar && m.avatar.startsWith('cloud://')) {
+          fileList.push(m.avatar)
+        }
+      })
+
+      let tempUrlMap = {}
+      if (fileList.length > 0) {
+        try {
+          const tempUrlRes = await cloud.getTempFileURL({
+            fileList: fileList
+          })
+          tempUrlRes.fileList.forEach((item, index) => {
+            if (item.status === 0) {
+              tempUrlMap[fileList[index]] = item.tempFileURL
+            }
+          })
+        } catch (err) {
+          console.error('[manageFamilies] getFamilyMembers - 临时URL转换失败:', err)
+        }
+      }
+
       return {
         success: true,
         members: allMembersRes.data.map(m => ({
           openid: m.openid,
           nickname: m.nickname,
           role: m.role,
-          isMe: m.openid === OPENID
+          avatar: (m.avatar && tempUrlMap[m.avatar]) ? tempUrlMap[m.avatar] : m.avatar,
+          isMe: m.openid === OPENID,
+          isCreator: m.openid === creatorOpenid
         }))
+      }
+    }
+
+    // 更新成员头像
+    if (action === 'updateMemberAvatar') {
+      const { familyId, avatar } = data
+
+      if (!avatar) {
+        return {
+          success: false,
+          error: '头像不能为空'
+        }
+      }
+
+      // 验证是否是家庭成员
+      const memberRes = await db.collection('family_members')
+        .where({
+          openid: OPENID,
+          familyId: familyId,
+          status: 'active'
+        })
+        .get()
+
+      if (memberRes.data.length === 0) {
+        return {
+          success: false,
+          error: '您不是该家庭成员'
+        }
+      }
+
+      // 更新头像
+      await db.collection('family_members')
+        .doc(memberRes.data[0]._id)
+        .update({
+          data: {
+            avatar: avatar
+          }
+        })
+
+      return {
+        success: true
+      }
+    }
+
+    // 更新成员昵称
+    if (action === 'updateMemberNickname') {
+      const { familyId, nickname } = data
+
+      if (!nickname || !nickname.trim()) {
+        return {
+          success: false,
+          error: '称呼不能为空'
+        }
+      }
+
+      // 验证是否是家庭成员
+      const memberRes = await db.collection('family_members')
+        .where({
+          openid: OPENID,
+          familyId: familyId,
+          status: 'active'
+        })
+        .get()
+
+      if (memberRes.data.length === 0) {
+        return {
+          success: false,
+          error: '您不是该家庭成员'
+        }
+      }
+
+      // 更新昵称
+      await db.collection('family_members')
+        .doc(memberRes.data[0]._id)
+        .update({
+          data: {
+            nickname: nickname.trim()
+          }
+        })
+
+      return {
+        success: true
       }
     }
 
@@ -1020,6 +1330,50 @@ exports.main = async (event, context) => {
       return {
         success: true,
         message: '家庭已解散，金币数据已保留'
+      }
+    }
+
+    // 修改家庭头像（仅创建者）
+    if (action === 'updateFamilyAvatar') {
+      const { familyId, avatar } = data
+
+      if (!avatar) {
+        return {
+          success: false,
+          error: '头像地址不能为空'
+        }
+      }
+
+      // 验证是否是家庭创建者
+      const familyRes = await db.collection('families')
+        .where({
+          familyId: familyId,
+          creatorOpenid: OPENID
+        })
+        .get()
+
+      if (familyRes.data.length === 0) {
+        return {
+          success: false,
+          error: '只有家庭创建者可以修改家庭头像'
+        }
+      }
+
+      // 更新头像
+      await db.collection('families')
+        .where({
+          familyId: familyId
+        })
+        .update({
+          data: {
+            avatar: avatar,
+            updatedAt: new Date()
+          }
+        })
+
+      return {
+        success: true,
+        message: '家庭头像已更新'
       }
     }
 

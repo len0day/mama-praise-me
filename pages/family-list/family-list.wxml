@@ -10,47 +10,59 @@
 
     <view class="families-list">
       <view
-        class="family-card"
+        class="family-card {{currentFamilyId === item.familyId ? 'current' : ''}}"
         wx:for="{{families}}"
         wx:key="familyId"
         bindtap="onFamilyTap"
         data-familyid="{{item.familyId}}">
 
         <view class="family-main">
-          <view class="family-icon">🏠</view>
+          <view class="family-icon">
+            <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="family-img" />
+            <text wx:else>🏠</text>
+          </view>
           <view class="family-info">
-            <view class="family-name">{{item.name}}</view>
-            <view class="family-meta">
-              <text class="role-badge {{item.role}}" wx:if="{{item.role === 'admin'}}">管理员</text>
-              <text class="role-badge member" wx:else>成员</text>
+            <view class="family-name-row">
+              <text class="family-name">{{item.name}}</text>
+              <text class="admin-badge creator" wx:if="{{item.isCreator}}">创建者</text>
+              <text class="admin-badge" wx:elif="{{item.role === 'admin'}}">管理员</text>
+            </view>
+            <view class="family-meta" wx:if="{{item.inviteCode}}">
+              <text class="invite-code-text">邀请码: {{item.inviteCode}}</text>
             </view>
           </view>
-          <view class="family-check" wx:if="{{currentFamilyId === item.familyId}}">
-            <text class="check-icon">✓</text>
+          <view class="family-right">
+            <view class="stats-tags" wx:if="{{currentFamilyId === item.familyId}}">
+              <view class="stats-row">
+                <text class="stat-tag task">{{item.taskCount || 0}}任务</text>
+                <text class="stat-tag prize">{{item.prizeCount || 0}}奖品</text>
+              </view>
+              <view class="stats-row">
+                <text class="stat-tag child">{{item.childCount || 0}}孩子</text>
+                <text class="stat-tag parent">{{item.parentCount || 0}}家长</text>
+              </view>
+            </view>
           </view>
         </view>
 
-        <!-- 当前家庭的详细信息 -->
-        <view class="family-detail" wx:if="{{currentFamilyId === item.familyId && myFamily}}">
-          <!-- 管理员功能（仅登录用户显示邀请功能） -->
+        <!-- 折叠内容（儿童列表） -->
+        <view class="family-detail {{expandedFamilyId === item.familyId ? 'expanded' : ''}}" wx:if="{{currentFamilyId === item.familyId && myFamily}}">
+          <!-- 管理员功能 -->
           <view class="admin-section" wx:if="{{myFamily.role === 'admin'}}">
-            <view class="action-list">
-              <view class="action-item" wx:if="{{myFamily.inviteCode}}" bindtap="showInviteCode" catchtap="">
-                <text class="action-icon">📋</text>
-                <text class="action-text">邀请码: {{myFamily.inviteCode}}</text>
-              </view>
-
-              <view class="action-item" bindtap="showChildModal" catchtap="">
-                <text class="action-icon">👶</text>
-                <text class="action-text">分配儿童</text>
-                <text class="action-arrow">›</text>
+            <view class="detail-item" bindtap="showChildModal" catchtap="">
+              <text class="detail-icon">👶</text>
+              <view class="detail-content">
+                <text class="detail-title">分配儿童</text>
+                <text class="detail-arrow">›</text>
               </view>
             </view>
           </view>
 
           <!-- 家庭儿童 -->
           <view class="children-section">
-            <view class="sub-section-title">家庭儿童 ({{familyChildren.length}})</view>
+            <view class="detail-header">
+              <text class="detail-title">家庭儿童 ({{familyChildren.length}})</text>
+            </view>
 
             <!-- 有儿童时显示列表 -->
             <view class="child-list" wx:if="{{familyChildren.length > 0}}">
@@ -78,9 +90,7 @@
 
             <!-- 无儿童时显示提示 -->
             <view class="empty-children" wx:if="{{familyChildren.length === 0}}">
-              <text class="empty-icon">👶</text>
-              <text class="empty-text">还没有添加儿童</text>
-              <button class="add-child-btn" bindtap="goToAddChild">去添加儿童</button>
+              <text class="empty-text">暂无儿童</text>
             </view>
           </view>
         </view>
@@ -298,6 +308,32 @@
       <view class="modal-footer">
         <button class="modal-btn cancel" bindtap="closeAssignChildModal">取消</button>
         <button class="modal-btn confirm" bindtap="confirmAssignChild">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 修改称呼弹窗 -->
+  <view class="modal" wx:if="{{showEditNicknameModal}}">
+    <view class="modal-mask" catchtap="closeEditNicknameModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">修改家庭中的称呼</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-group">
+          <view class="form-label">称呼</view>
+          <input
+            class="form-input"
+            value="{{editNicknameValue}}"
+            bindinput="onNicknameInputChange"
+            placeholder="请输入您在这个家庭中的称呼"
+          />
+          <view class="form-hint">例如：爸爸、妈妈、爷爷等</view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeEditNicknameModal">取消</button>
+        <button class="modal-btn confirm" bindtap="confirmEditNickname">确定</button>
       </view>
     </view>
   </view>

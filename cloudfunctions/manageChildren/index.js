@@ -37,9 +37,62 @@ exports.main = async (event, context) => {
         .orderBy('createdAt', 'asc')
         .get()
 
+      // 处理返回的儿童数据，收集所有fileID
+      const fileList = []
+      const childrenWithAvatar = res.data.map(child => {
+        const result = {
+          childId: child.childId,
+          name: child.name,
+          gender: child.gender,
+          age: child.age,
+          familyId: child.familyId,
+          createdAt: child.createdAt,
+          updatedAt: child.updatedAt
+        }
+
+        // 收集所有fileID
+        if (child.avatar && child.avatar.startsWith('cloud://')) {
+          result.avatar = child.avatar
+          fileList.push(child.avatar)
+        }
+
+        return result
+      })
+
+      // 使用getTempFileURL将fileID转换为临时下载URL（2小时有效）
+      let tempUrlMap = {}
+      if (fileList.length > 0) {
+        try {
+          const tempUrlRes = await cloud.getTempFileURL({
+            fileList: fileList
+          })
+          console.log('[manageChildren] getChildren - 临时URL转换结果:', tempUrlRes)
+
+          // 建立fileID -> tempURL的映射
+          tempUrlRes.fileList.forEach((item, index) => {
+            if (item.status === 0) {
+              tempUrlMap[fileList[index]] = item.tempFileURL
+            }
+          })
+        } catch (err) {
+          console.error('[manageChildren] getChildren - 临时URL转换失败:', err)
+        }
+      }
+
+      // 替换头像URL为临时URL
+      const processedChildren = childrenWithAvatar.map(child => {
+        if (child.avatar && tempUrlMap[child.avatar]) {
+          return {
+            ...child,
+            avatar: tempUrlMap[child.avatar]
+          }
+        }
+        return child
+      })
+
       return {
         success: true,
-        children: res.data
+        children: processedChildren
       }
     }
 

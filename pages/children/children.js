@@ -425,10 +425,12 @@ Page({
       filePath: filePath,
       success: (res) => {
         hideLoading()
+        // 直接保存fileID，这个ID在image组件中可以直接使用且不会过期
         that.setData({
           'formData.avatar': res.fileID
         })
         showToast('头像上传成功')
+        console.log('[孩子管理] 头像fileID:', res.fileID)
       },
       fail: (err) => {
         hideLoading()

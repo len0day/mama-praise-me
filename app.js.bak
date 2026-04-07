@@ -420,70 +420,19 @@ App({
    */
   async loadChildrenFromCloud() {
     try {
-      // 加载我创建的所有儿童
-      const myChildrenRes = await wx.cloud.callFunction({
+      const res = await wx.cloud.callFunction({
         name: 'manageChildren',
         data: {
           action: 'getChildren'
         }
       })
 
-      const allChildren = []
-      const childIds = new Set() // 用于去重
-
-      if (myChildrenRes.result.success) {
-        const myChildren = myChildrenRes.result.children || []
-        console.log('[妈妈表扬我] 我创建的儿童数据样例:', myChildren.map(c => ({
-          name: c.name,
-          hasAvatar: !!c.avatar,
-          avatarPrefix: c.avatar ? c.avatar.substring(0, 50) : null,
-          avatarType: typeof c.avatar
-        })))
-        myChildren.forEach(child => {
-          if (!childIds.has(child.childId)) {
-            childIds.add(child.childId)
-            allChildren.push(child)
-          }
-        })
-        console.log('[妈妈表扬我] ✓ 从云端加载了我创建的', myChildren.length, '个孩子')
+      if (res.result.success) {
+        this.globalData.children = res.result.children || []
+        console.log('[妈妈表扬我] ✓ 从云端加载了', this.globalData.children.length, '个孩子')
+        return this.globalData.children
       }
-
-      // 如果有当前家庭，也加载该家庭的孩子（包括其他成员创建的）
-      const currentFamilyId = this.globalData.currentFamilyId
-      if (currentFamilyId) {
-        try {
-          const familyChildrenRes = await wx.cloud.callFunction({
-            name: 'manageFamilies',
-            data: {
-              action: 'getFamilyChildren',
-              data: { familyId: currentFamilyId }
-            }
-          })
-
-          if (familyChildrenRes.result.success) {
-            const familyChildren = familyChildrenRes.result.children || []
-            console.log('[妈妈表扬我] 家庭儿童数据样例:', familyChildren.map(c => ({
-              name: c.name,
-              hasAvatar: !!c.avatar,
-              avatarPrefix: c.avatar ? c.avatar.substring(0, 50) : null,
-              avatarType: typeof c.avatar
-            })))
-            familyChildren.forEach(child => {
-              if (!childIds.has(child.childId)) {
-                childIds.add(child.childId)
-                allChildren.push(child)
-              }
-            })
-            console.log('[妈妈表扬我] ✓ 从云端加载了当前家庭的', familyChildren.length, '个孩子')
-          }
-        } catch (err) {
-          console.warn('[妈妈表扬我] 加载家庭孩子失败（可能还没加入家庭）:', err)
-        }
-      }
-
-      this.globalData.children = allChildren
-      console.log('[妈妈表扬我] ✓ 总共加载了', allChildren.length, '个孩子')
-      return allChildren
+      return []
     } catch (err) {
       console.error('[妈妈表扬我] 加载孩子数据失败:', err)
       return []
@@ -526,7 +475,10 @@ App({
     // 如果找不到孩子（可能被删除），返回null
     console.log('[妈妈表扬我] 找不到当前选中的孩子')
     return null
+  },
+    }
 
+    return null
   },
 
   /**
@@ -608,6 +560,7 @@ App({
       console.log('[妈妈表扬我] ✓ 切换到孩子:', child.name)
     }
   },
+
   /**
    * 进入家长模式
    * @param {string} password - 家长密码

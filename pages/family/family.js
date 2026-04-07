@@ -9,6 +9,7 @@ Page({
     i18n: {},
     family: null,
     members: [],
+    myMemberInfo: null,  // 我在当前家庭中的信息
     invitations: [],
     familyChildren: [],
     myChildren: [],
@@ -27,7 +28,10 @@ Page({
       nickname: '',
       creatorNickname: '',  // 创建家庭时的身份
       role: 'member'  // 默认为家人
-    }
+    },
+    isParentMode: false,
+    showPasswordModal: false,
+    isFirstTime: false
   },
 
   onLoad() {
@@ -81,9 +85,13 @@ Page({
         console.log('[家庭] 加载到的家庭信息:', family)
         console.log('[家庭] 家庭名称:', family.name)
 
+        // 找到当前用户在家庭中的信息
+        const myMemberInfo = members.find(m => m.isMe)
+
         this.setData({
           family: family,
-          members: members
+          members: members,
+          myMemberInfo: myMemberInfo || { role: 'member', nickname: '' }
         }, () => {
           // setData 回调
           console.log('[家庭] setData 完成，当前 family:', this.data.family)
@@ -251,6 +259,60 @@ Page({
       }
     } catch (err) {
       console.error('[家庭] 加载额外数据失败:', err)
+    }
+  },
+
+  /**
+   * 修改家庭头像（仅创建者）
+   */
+  async changeFamilyAvatar() {
+    if (!this.data.family || !this.data.family.isCreator) return
+
+    try {
+      const chooseRes = await wx.chooseImage({
+        count: 1,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera']
+      })
+
+      const tempFilePath = chooseRes.tempFilePaths[0]
+      showLoading('正在上传...')
+
+      // 上传图片到云存储
+      const cloudPath = `family_avatars/${this.data.family.familyId}_${Date.now()}.jpg`
+      const uploadRes = await wx.cloud.uploadFile({
+        cloudPath,
+        filePath: tempFilePath
+      })
+
+      const fileID = uploadRes.fileID
+
+      // 更新家庭头像记录
+      const updateRes = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'updateFamilyAvatar',
+          data: {
+            familyId: this.data.family.familyId,
+            avatar: fileID
+          }
+        }
+      })
+
+      if (updateRes.result.success) {
+        showToast('家庭头像已更新')
+        // 重新加载家庭数据以刷新头像
+        this.loadFamilyDataById(this.data.family.familyId)
+      } else {
+        showToast(updateRes.result.error || '更新失败')
+      }
+    } catch (err) {
+      if (err.errMsg !== 'chooseImage:fail cancel') {
+        console.error('[家庭] 修改头像失败:', err)
+        showToast('修改失败')
+      }
+    } finally {
+      hideLoading()
     }
   },
 
@@ -615,6 +677,149 @@ Page({
   },
 
   /**
+   * 检查家长权限
+   */
+  checkParentPermission() {
+    if (!app.isParentMode()) {
+      showToast('此功能需要家长权限')
+      setTimeout(() => {
+        this.setData({
+          showPasswordModal: true,
+          isFirstTime: !app.hasParentPassword()
+        })
+      }, 500)
+      return false
+    }
+    return true
+  },
+
+  onPasswordSuccess() {
+    this.setData({
+      isParentMode: true,
+      showPasswordModal: false
+    })
+    showToast('已进入家长模式')
+  },
+
+  onPasswordCancel() {
+    this.setData({ showPasswordModal: false })
+  },
+
+  onPasswordClose() {
+    this.setData({ showPasswordModal: false })
+  },
+
+  /**
+   * 显示成员管理选项
+   */
+  showMemberOptions(e) {
+    if (!this.checkParentPermission()) return
+    const { memberopenid, nickname, role } = e.currentTarget.dataset
+
+    const itemList = [
+      role === 'admin' ? '取消管理员' : '设为管理员',
+      '移除成员'
+    ]
+
+    wx.showActionSheet({
+      itemList,
+      itemColor: '#333333',
+      success: async (res) => {
+        if (res.tapIndex === 0) {
+          // 修改角色
+          const newRole = role === 'admin' ? 'member' : 'admin'
+          this.changeMemberRole(memberopenid, nickname, newRole)
+        } else if (res.tapIndex === 1) {
+          // 移除成员
+          this.doRemoveMember(memberopenid, nickname)
+        }
+      }
+    })
+  },
+
+  /**
+   * 修改成员角色
+   */
+  async changeMemberRole(memberOpenid, nickname, newRole) {
+    const roleName = newRole === 'admin' ? '管理员' : '普通成员'
+    const confirm = await showConfirm(`确定要将"${nickname}"设为${roleName}吗？`)
+    if (!confirm) return
+
+    showLoading()
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'setMemberRole',
+          data: {
+            familyId: this.data.family.familyId,
+            memberOpenid: memberOpenid,
+            role: newRole
+          }
+        }
+      })
+
+      hideLoading()
+
+      if (res.result.success) {
+        showToast(res.result.message || '设置成功')
+        if (this.data.family && this.data.family.familyId) {
+          await this.loadFamilyDataById(this.data.family.familyId)
+        } else {
+          await this.loadFamilyData()
+        }
+      } else {
+        showToast(res.result.error || t('toast.operationFailed'))
+      }
+    } catch (err) {
+      hideLoading()
+      console.error('[家庭] 修改成员角色失败:', err)
+      showToast(t('toast.operationFailed'))
+    }
+  },
+
+  /**
+   * 实际执行移除
+   */
+  async doRemoveMember(memberOpenid, nickname) {
+    const confirm = await showConfirm(`确定要将"${nickname}"移出家庭吗？`)
+    if (!confirm) return
+
+    showLoading()
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'removeMember',
+          data: {
+            familyId: this.data.family.familyId,
+            memberOpenid: memberOpenid
+          }
+        }
+      })
+
+      hideLoading()
+
+      if (res.result.success) {
+        showToast(res.result.message)
+        if (this.data.family && this.data.family.familyId) {
+          await this.loadFamilyDataById(this.data.family.familyId)
+        } else {
+          await this.loadFamilyData()
+        }
+      } else {
+        showToast(res.result.error || t('toast.operationFailed'))
+      }
+    } catch (err) {
+      hideLoading()
+      console.error('[家庭] 移除成员失败:', err)
+      showToast(t('toast.operationFailed'))
+    }
+  },
+
+  /**
    * 退出家庭
    */
   async leaveFamily() {
@@ -946,5 +1151,144 @@ Page({
     const minute = date.getMinutes().toString().padStart(2, '0')
 
     return `${month}-${day} ${hour}:${minute}`
+  },
+
+  /**
+   * 修改成员头像
+   */
+  async changeMemberAvatar() {
+    if (!app.globalData.useCloudStorage) {
+      showToast('请先登录')
+      return
+    }
+
+    const that = this
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const filePath = res.tempFiles[0].tempFilePath
+        that.uploadMemberAvatar(filePath)
+      }
+    })
+  },
+
+  /**
+   * 上传成员头像
+   */
+  async uploadMemberAvatar(filePath) {
+    const that = this
+    const cloudPath = `member_avatars/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`
+
+    showLoading('上传中...')
+
+    try {
+      // 上传到云存储
+      const uploadRes = await wx.cloud.uploadFile({
+        cloudPath: cloudPath,
+        filePath: filePath
+      })
+
+      const fileID = uploadRes.fileID
+      console.log('[家庭详情] 头像上传成功，fileID:', fileID)
+
+      // 更新到数据库
+      const updateRes = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'updateMemberAvatar',
+          data: {
+            familyId: that.data.family.familyId,
+            avatar: fileID
+          }
+        }
+      })
+
+      hideLoading()
+
+      if (updateRes.result.success) {
+        showToast('头像修改成功')
+
+        // 更新本地数据
+        const updatedMember = {
+          ...that.data.myMemberInfo,
+          avatar: fileID
+        }
+        that.setData({ myMemberInfo: updatedMember })
+
+        // 重新加载成员列表
+        await that.loadFamilyDataById(that.data.family.familyId)
+      } else {
+        showToast(updateRes.result.error || '修改失败')
+      }
+    } catch (err) {
+      hideLoading()
+      console.error('[家庭详情] 上传头像失败:', err)
+      showToast('上传失败，请重试')
+    }
+  },
+
+  /**
+   * 编辑成员昵称
+   */
+  editMemberNickname() {
+    if (!app.globalData.useCloudStorage) {
+      showToast('请先登录')
+      return
+    }
+
+    wx.showModal({
+      title: '修改称呼',
+      editable: true,
+      placeholderText: this.data.myMemberInfo?.nickname || '',
+      success: async (res) => {
+        if (res.confirm && res.content) {
+          const newNickname = res.content.trim()
+
+          if (!newNickname) {
+            showToast('请输入称呼')
+            return
+          }
+
+          showLoading()
+
+          try {
+            const updateRes = await wx.cloud.callFunction({
+              name: 'manageFamilies',
+              data: {
+                action: 'updateMemberNickname',
+                data: {
+                  familyId: that.data.family.familyId,
+                  nickname: newNickname
+                }
+              }
+            })
+
+            hideLoading()
+
+            if (updateRes.result.success) {
+              showToast('称呼修改成功')
+
+              // 更新本地数据
+              const updatedMember = {
+                ...that.data.myMemberInfo,
+                nickname: newNickname
+              }
+              that.setData({ myMemberInfo: updatedMember })
+
+              // 重新加载成员列表
+              await that.loadFamilyDataById(that.data.family.familyId)
+            } else {
+              showToast(updateRes.result.error || '修改失败')
+            }
+          } catch (err) {
+            hideLoading()
+            console.error('[家庭详情] 修改称呼失败:', err)
+            showToast('修改失败')
+          }
+        }
+      }
+    })
   }
 })

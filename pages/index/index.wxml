@@ -5,12 +5,28 @@
 
   <!-- 当前孩子信息 -->
   <view class="child-info" wx:if="{{currentChild}}">
+    <!-- 家庭背景图 -->
+    <image 
+      wx:if="{{currentFamily && currentFamily.avatar}}"
+      src="{{currentFamily.avatar}}"
+      mode="aspectFill"
+      class="home-family-bg"
+    />
     <view class="child-avatar">
       <image wx:if="{{currentChild.avatar}}" src="{{currentChild.avatar}}" mode="aspectFill" />
       <text wx:else>{{currentChild.name.substring(0, 1)}}</text>
     </view>
     <view class="child-details">
-      <view class="child-name">{{currentChild.name}} - {{currentChild.familyName || '家庭'}}</view>
+      <view class="child-name-row">
+        <view class="child-name" bindtap="showFamilyPickerUI">
+          {{currentChild.familyName || '家庭'}}
+          <text class="dropdown-arrow">▼</text>
+        </view>
+        <view class="child-name {{currentFamilyChildren.length > 1 ? 'with-arrow' : ''}}" bindtap="currentFamilyChildren.length > 1 ? showChildPicker : ''">
+          {{currentChild.name}}
+          <text class="dropdown-arrow" wx:if="{{currentFamilyChildren.length > 1}}">▼</text>
+        </view>
+      </view>
       <view class="child-coins">
         <text class="coin-icon">🪙</text>
         <text>{{currentChild.familyCoins || 0}}</text>
@@ -18,6 +34,53 @@
     </view>
     <view class="task-manage-btn" bindtap="goToTasks">
       <text>📝</text>
+    </view>
+  </view>
+
+  <!-- 家庭选择弹窗 -->
+  <view class="picker-modal" wx:if="{{showFamilyPicker}}" catchtap="hideFamilyPicker">
+    <view class="picker-content" style="top: {{pickerTop}}px;" catchtap="stopPropagation">
+      <view class="picker-header">
+        <text class="picker-title">选择家庭</text>
+        <text class="picker-close" bindtap="hideFamilyPicker">✕</text>
+      </view>
+      <view class="picker-list">
+        <view
+          class="picker-item"
+          wx:for="{{allFamilies}}"
+          wx:key="familyId"
+          bindtap="selectFamily"
+          data-familyid="{{item.familyId}}">
+          <view class="picker-item-info" style="display: flex; align-items: center; gap: 12rpx;">
+            <view class="picker-item-name">{{item.name}}</view>
+            <view class="picker-role-badge {{item.isCreator ? 'creator' : item.role}}" style="padding: 4rpx 12rpx; border-radius: 8rpx; font-size: 20rpx; font-weight: 500;">
+              {{item.isCreator ? '创建者' : (item.role === 'admin' ? '管理员' : '成员')}}
+            </view>
+          </view>
+          <view class="picker-item-check" wx:if="{{currentFamilyId === item.familyId}}">✓</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 儿童选择弹窗 -->
+  <view class="picker-modal" wx:if="{{showChildPicker}}" catchtap="hideChildPicker">
+    <view class="picker-content" style="top: {{childPickerTop}}px;" catchtap="stopPropagation">
+      <view class="picker-header">
+        <text class="picker-title">选择儿童</text>
+        <text class="picker-close" bindtap="hideChildPicker">✕</text>
+      </view>
+      <view class="picker-list">
+        <view
+          class="picker-item"
+          wx:for="{{currentFamilyChildren}}"
+          wx:key="childId"
+          bindtap="selectChild"
+          data-childid="{{item.childId}}">
+          <view class="picker-item-name">{{item.name}}</view>
+          <view class="picker-item-check" wx:if="{{currentChild.childId === item.childId}}">✓</view>
+        </view>
+      </view>
     </view>
   </view>
 
@@ -39,6 +102,48 @@
   <view class="tasks-container" wx:if="{{currentChild}}">
     <view class="section-title">{{i18n.tasks.todayTasks || '今日任务'}}</view>
 
+    <!-- 任务分类筛选 -->
+    <view class="task-filter-bar">
+      <view
+        class="filter-item {{currentFilter === 'all' ? 'active' : ''}}"
+        data-filter="all"
+        bindtap="onFilterChange">
+        全部
+      </view>
+      <view
+        class="filter-item {{currentFilter === 'custom' ? 'active' : ''}}"
+        data-filter="custom"
+        bindtap="onFilterChange">
+        限时
+      </view>
+      <view
+        class="filter-item {{currentFilter === 'daily' ? 'active' : ''}}"
+        data-filter="daily"
+        bindtap="onFilterChange">
+        每日
+      </view>
+      <view
+        class="filter-item {{currentFilter === 'weekly' ? 'active' : ''}}"
+        data-filter="weekly"
+        bindtap="onFilterChange">
+        每周
+      </view>
+      <view
+        class="filter-item {{currentFilter === 'monthly' ? 'active' : ''}}"
+        data-filter="monthly"
+        bindtap="onFilterChange">
+        每月
+      </view>
+      <view style="flex-grow: 1;"></view>
+      <view
+        class="filter-item {{currentFilter === 'penalty' ? 'active' : ''}}"
+        data-filter="penalty"
+        bindtap="onFilterChange"
+        style="color: #ff4d4f;">
+        惩罚
+      </view>
+    </view>
+
     <!-- 加载中 -->
     <view class="loading" wx:if="{{isLoading}}">
       <text>{{i18n.common.loading || '加载中...'}}</text>
@@ -47,25 +152,57 @@
     <!-- 任务列表 -->
     <view class="task-list" wx:if="{{!isLoading}}">
       <view
-        class="task-item {{item.completed ? 'completed' : ''}}"
+        class="task-item {{item.taskClass}}"
         wx:for="{{tasks}}"
         wx:key="taskId"
         data-taskid="{{item.taskId}}"
-        bindtap="completeTask">
+        bindtap="{{item.canComplete !== false ? 'completeTask' : ''}}">
+        <!-- 挑战任务装饰元素 -->
+        <view class="challenge-decoration" wx:if="{{item.badgeType === 'challenge' || item.badgeType === 'upcoming'}}">
+          <text class="decoration-icon">⭐</text>
+        </view>
+
+        <!-- 右上角状态信息 -->
+        <view class="task-status-top" wx:if="{{item.taskStatus && item.taskStatus.statusText}}">
+          {{item.taskStatus.statusText}}
+        </view>
+
         <view class="task-content">
           <view class="task-header">
-            <view class="task-type">{{item.taskType === 'daily' ? '📅' : (item.taskType === 'weekly' ? '📆' : '🗓️')}}</view>
+            <!-- 用任务类型标签替换图标 -->
+            <view class="task-badge-inline {{item.badgeType}}">{{item.badgeText}}</view>
             <view class="task-title">{{item.title}}</view>
           </view>
           <view class="task-desc" wx:if="{{item.description}}">{{item.description}}</view>
-          <view class="task-reward">
+          <view class="task-reward" wx:if="{{item.taskType === 'penalty_child'}}" style="color: #E53935;">
+            <text class="coin-icon">🪙</text>
+            <text>-{{item.coinReward}}</text>
+          </view>
+          <view class="task-reward" wx:elif="{{item.taskType === 'penalty_parent'}}" style="color: #4CAF50;">
+            <text class="coin-icon">🪙</text>
+            <text>+{{item.coinReward}}</text>
+          </view>
+          <view class="task-reward" wx:else>
             <text class="coin-icon">🪙</text>
             <text>+{{item.coinReward}}</text>
           </view>
         </view>
         <view class="task-status">
-          <text wx:if="{{item.completed}}">✅</text>
-          <text wx:else>⭕</text>
+          <block wx:if="{{item.completed}}">
+            <text>✅</text>
+          </block>
+          <block wx:elif="{{item.taskStatus && item.taskStatus.status === 'completed'}}">
+            <text>✅</text>
+          </block>
+          <block wx:elif="{{item.taskStatus && item.taskStatus.status === 'expired'}}">
+            <text>🔚</text>
+          </block>
+          <block wx:elif="{{item.taskStatus && item.taskStatus.status === 'pending'}}">
+            <text>⏳</text>
+          </block>
+          <block wx:else>
+            <text>⭕</text>
+          </block>
         </view>
       </view>
 

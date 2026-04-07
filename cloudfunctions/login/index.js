@@ -86,7 +86,6 @@ exports.main = async (event, context) => {
       }
 
     } else {
-      // 老用户，只更新最后登录时间，不覆盖自定义昵称和头像
       user = userRes.data[0]
 
       // ✅ 优化：仅在必要时更新updatedAt，且不需要等待结果
@@ -98,23 +97,22 @@ exports.main = async (event, context) => {
         console.warn('更新登录时间失败（可忽略）:', err)
       })
 
-      console.log('老用户登录，数据库中的头像:', user.avatarUrl)
-      console.log('老用户登录，自定义头像:', user.customAvatarUrl)
+      console.log('[login] 老用户登录，命中记录:', user._id)
     }
 
-    // 返回用户信息（不返回敏感信息）
-    // 优先使用自定义头像，如果没有则使用微信头像
-    const finalAvatarUrl = user.customAvatarUrl || user.avatarUrl
-
-    console.log('返回给前端的头像:', finalAvatarUrl)
+    // 统一字段优先级：优先使用用户在设置中自定义的 nickname 和 avatar
+    const finalNickname = user.nickname || user.nickName || '新用户'
+    const finalAvatar = user.avatar || user.customAvatarUrl || user.avatarUrl || ''
 
     return {
       success: true,
       data: {
         openid: user.openid,
         userId: user._id,
-        nickName: user.nickName,
-        avatarUrl: finalAvatarUrl,  // 优先返回自定义头像
+        nickname: finalNickname, // 使用统一的 nickname 字段
+        nickName: finalNickname, // 兼容旧代码
+        avatar: finalAvatar,     // 使用统一的 avatar 字段
+        avatarUrl: finalAvatar,  // 兼容旧代码
         gender: user.gender,
         totalDownloads: user.totalDownloads,
         lastDownloadTime: user.lastDownloadTime,

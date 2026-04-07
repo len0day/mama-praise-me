@@ -1,6 +1,7 @@
 {
   "usingComponents": {
-    "custom-navbar": "/components/custom-navbar/custom-navbar"
+    "custom-navbar": "/components/custom-navbar/custom-navbar",
+    "parent-password-modal": "/components/parent-password-modal/parent-password-modal"
   },
   "navigationBarTitleText": "家庭管理"
 }

@@ -53,23 +53,43 @@
               <text class="redeem-time">兑换于 {{item.formattedRedeemedAt}}</text>
             </view>
 
+            <!-- 剩余数量 -->
+            <view class="remaining-quantity" wx:if="{{item.quantity && item.quantity > 1}}">
+              <text class="quantity-label">剩余：</text>
+              <text class="quantity-value">{{item.remainingQuantity || item.quantity}}</text>
+              <text class="quantity-slash">/</text>
+              <text class="quantity-total">{{item.quantity}}</text>
+            </view>
+
             <!-- 使用状态和按钮行 -->
             <view class="status-action-row">
+              <!-- 查看历史按钮（有使用历史的奖品） -->
+              <button
+                class="history-btn-inline"
+                wx:if="{{item.usageHistory && item.usageHistory.length > 0}}"
+                data-redemptionid="{{item.redemptionId}}"
+                bindtap="viewHistory">
+                历史
+              </button>
               <!-- 使用状态 -->
               <view class="use-status" wx:if="{{item.usedAt}}">
                 <text class="status-icon">✓</text>
                 <text class="status-text">{{i18n.redemptions.used || '已使用'}}</text>
                 <text class="use-time">{{item.formattedUsedAt}}</text>
               </view>
-              <view class="use-status ready" wx:else>
+              <view class="use-status ready" wx:elif="{{item.remainingQuantity === undefined || item.remainingQuantity === null || item.remainingQuantity > 0}}">
                 <text class="status-icon">🎁</text>
                 <text class="status-text">{{i18n.redemptions.notUsed || '待使用'}}</text>
+              </view>
+              <view class="use-status used" wx:else>
+                <text class="status-icon">✓</text>
+                <text class="status-text">已用完</text>
               </view>
 
               <!-- 使用按钮 -->
               <button
                 class="use-btn-inline"
-                wx:if="{{!item.usedAt}}"
+                wx:if="{{item.remainingQuantity === undefined || item.remainingQuantity === null || item.remainingQuantity > 0}}"
                 data-redemptionid="{{item.redemptionId}}"
                 bindtap="usePrize">
                 {{i18n.redemptions.use || '使用'}}
@@ -83,6 +103,93 @@
       <view class="empty-state" wx:if="{{redemptions.length === 0}}">
         <text class="empty-icon">🎁</text>
         <text class="empty-text">{{i18n.redemptions.noPrizes || '暂无已兑换的奖品'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 使用数量选择弹窗 -->
+  <view class="modal" wx:if="{{showUseModal}}">
+    <view class="modal-mask" catchtap="closeUseModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">选择使用数量</text>
+        <text class="modal-close" bindtap="closeUseModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="prize-summary">
+          <image class="prize-thumb" wx:if="{{selectedRedemption.prizeImage}}" src="{{selectedRedemption.prizeImage}}" mode="aspectFill" />
+          <text class="prize-thumb" wx:else>🎁</text>
+          <view class="prize-summary-info">
+            <view class="prize-summary-name">{{selectedRedemption.prizeName}}</view>
+            <view class="prize-summary-quantity">剩余: {{selectedRedemption.remainingQuantity || selectedRedemption.quantity}} / {{selectedRedemption.quantity}}</view>
+          </view>
+        </view>
+
+        <view class="quantity-selector">
+          <view class="quantity-label">使用数量</view>
+          <view class="quantity-controls">
+            <button class="quantity-btn" bindtap="decreaseUseQuantity" disabled="{{useQuantity <= 1}}">-</button>
+            <input class="quantity-input" type="number" value="{{useQuantity}}" bindinput="onUseQuantityInput" />
+            <button class="quantity-btn" bindtap="increaseUseQuantity">+</button>
+          </view>
+        </view>
+
+        <view class="quick-quantity">
+          <text class="quick-label">快捷选择：</text>
+          <view class="quick-btn" data-qty="1" bindtap="quickSelectUseQuantity">1</view>
+          <view class="quick-btn" data-qty="3" bindtap="quickSelectUseQuantity">3</view>
+          <view class="quick-btn" data-qty="5" bindtap="quickSelectUseQuantity">5</view>
+          <view class="quick-btn" data-qty="{{selectedRedemption.remainingQuantity || selectedRedemption.quantity}}" bindtap="quickSelectUseQuantity">全部</view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeUseModal">取消</button>
+        <button class="modal-btn confirm" bindtap="confirmUseFromModal">确认使用</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 使用历史弹窗 -->
+  <view class="modal" wx:if="{{showHistoryModal}}">
+    <view class="modal-mask" catchtap="closeHistoryModal"></view>
+    <view class="modal-content history-modal">
+      <view class="modal-header">
+        <text class="modal-title">使用历史</text>
+        <text class="modal-close" bindtap="closeHistoryModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="history-prize-info">
+          <image class="history-prize-image" wx:if="{{historyRedemption.prizeImage}}" src="{{historyRedemption.prizeImage}}" mode="aspectFill" />
+          <text class="history-prize-image" wx:else>🎁</text>
+          <view class="history-prize-details">
+            <view class="history-prize-name">{{historyRedemption.prizeName}}</view>
+            <view class="history-prize-summary">
+              <text>共兑换 {{historyRedemption.quantity || 1}} 个</text>
+              <text>剩余 {{historyRedemption.remainingQuantity || 0}} 个</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="history-list">
+          <view class="history-title">使用记录</view>
+          <view class="history-item" wx:for="{{historyRedemption.usageHistory}}" wx:key="index">
+            <view class="history-item-left">
+              <view class="history-quantity">使用 {{item.quantity}} 个</view>
+              <view class="history-time">{{formatHistoryTime(item.usedAt)}}</view>
+            </view>
+            <view class="history-item-right">
+              <text class="history-remaining">剩余 {{item.remainingAfter}}</text>
+            </view>
+          </view>
+
+          <view class="history-empty" wx:if="{{!historyRedemption.usageHistory || historyRedemption.usageHistory.length === 0}}">
+            <text class="history-empty-icon">📋</text>
+            <text class="history-empty-text">暂无使用记录</text>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn confirm" bindtap="closeHistoryModal">关闭</button>
       </view>
     </view>
   </view>
