@@ -976,6 +976,9 @@ Page({
     wx.navigateTo({
       url: '/pages/children/children'
     })
+  },
+
+  /**
    * 跳转到家庭页面
    */
   goToFamily() {
