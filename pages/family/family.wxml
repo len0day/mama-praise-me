@@ -1,5 +1,5 @@
 <!--pages/family/family.wxml-->
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} style-{{themeStyle}}">
   <custom-navbar title="{{family ? family.name : '家庭'}}" showBack="{{true}}" />
 
   <!-- 无家庭时的提示 -->

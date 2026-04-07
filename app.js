@@ -26,6 +26,7 @@ App({
     isParentMode: false,              // 当前是否为家长模式
     settings: {
       theme: 'light',
+      themeStyle: 'default',   // default / girl
       fontSize: 'medium',
       locale: 'zh-CN',
       parentPassword: null            // 家长密码（null表示未设置）

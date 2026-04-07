@@ -99,15 +99,36 @@
   border: 2rpx solid transparent;
 }
 
-.theme-dark .theme-option {
-  background: #1C1C1E;
+.theme-dark .theme-option, .theme-dark .style-option {
+  background: #3A3A3C;
   color: #AAAAAA;
 }
 
-.theme-option.active {
-  background: linear-gradient(135deg, #FF9800, #FFB74D);
+.theme-option.active, .style-option.active {
+  background: #FF9800;
   color: #FFFFFF;
   border-color: #FF9800;
+}
+
+.theme-dark .theme-option.active, .theme-dark .style-option.active {
+  background: #FF9800;
+  color: #FFFFFF;
+  border-color: #FF9800;
+}
+
+/* 风格选择器 */
+.style-selector {
+  display: flex;
+  gap: 15rpx;
+}
+
+.style-option {
+  padding: 12rpx 24rpx;
+  background: #F5F5F5;
+  border-radius: 20rpx;
+  font-size: 26rpx;
+  color: #666666;
+  border: 2rpx solid transparent;
 }
 
 /* 语言选择器 */

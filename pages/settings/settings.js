@@ -191,6 +191,23 @@ Page({
   },
 
   /**
+   * 切换主题风格
+   */
+  async switchThemeStyle(e) {
+    const { style } = e.currentTarget.dataset
+
+    this.setData({
+      'settings.themeStyle': style
+    })
+
+    app.globalData.settings.themeStyle = style
+    app.applyTheme()
+    app.saveSettingsToStorage()
+
+    showToast('风格已切换')
+  },
+
+  /**
    * 切换语言
    */
   async switchLanguage(e) {

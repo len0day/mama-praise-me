@@ -131,6 +131,27 @@
         </view>
       </view>
     </view>
+    <!-- 风格切换 -->
+    <view class="setting-item">
+      <view class="item-left">
+        <text class="item-icon">✨</text>
+        <text class="item-label">主题风格</text>
+      </view>
+      <view class="style-selector">
+        <view
+          class="style-option {{settings.themeStyle === 'default' ? 'active' : ''}}"
+          data-style="default"
+          bindtap="switchThemeStyle">
+          默认
+        </view>
+        <view
+          class="style-option {{settings.themeStyle === 'girl' ? 'active' : ''}}"
+          data-style="girl"
+          bindtap="switchThemeStyle">
+          童趣
+        </view>
+      </view>
+    </view>
 
     <!-- 语言切换 -->
     <view class="setting-item">

@@ -1,5 +1,5 @@
 <!--pages/index/index.wxml-->
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} style-{{themeStyle}}">
   <!-- 自定义导航栏 -->
   <custom-navbar title="{{i18n.tasks.title || '任务'}}" showBack="{{false}}" />
 
@@ -33,7 +33,7 @@
       </view>
     </view>
     <view class="task-manage-btn" bindtap="goToTasks">
-      <text>📝</text>
+      <text class="manage-text">管理</text>
     </view>
   </view>
 
@@ -152,7 +152,7 @@
     <!-- 任务列表 -->
     <view class="task-list" wx:if="{{!isLoading}}">
       <view
-        class="task-item {{item.taskClass}}"
+        class="task-item {{item.taskClass}} {{item.taskType}} {{animatingTaskId === item.taskId ? 'popping' : ''}} {{spawningTaskId === item.taskId ? 'spawning' : ''}}"
         wx:for="{{tasks}}"
         wx:key="taskId"
         data-taskid="{{item.taskId}}"
@@ -162,18 +162,22 @@
           <text class="decoration-icon">⭐</text>
         </view>
 
-        <!-- 右上角状态信息 -->
-        <view class="task-status-top" wx:if="{{item.taskStatus && item.taskStatus.statusText}}">
-          {{item.taskStatus.statusText}}
-        </view>
 
-        <view class="task-content">
-          <view class="task-header">
-            <!-- 用任务类型标签替换图标 -->
+        <view class="task-info-left">
+          <view class="task-header-row">
             <view class="task-badge-inline {{item.badgeType}}">{{item.badgeText}}</view>
             <view class="task-title">{{item.title}}</view>
           </view>
           <view class="task-desc" wx:if="{{item.description}}">{{item.description}}</view>
+        </view>
+
+        <view class="task-info-right">
+          <!-- 气球内的胶囊状态 -->
+          <view class="task-status-top" wx:if="{{item.taskStatus && item.taskStatus.statusText}}">
+            {{item.taskStatus.statusText}}
+          </view>
+          
+          <!-- 气球内的奖励 -->
           <view class="task-reward" wx:if="{{item.taskType === 'penalty_child'}}" style="color: #E53935;">
             <text class="coin-icon">🪙</text>
             <text>-{{item.coinReward}}</text>
@@ -186,23 +190,6 @@
             <text class="coin-icon">🪙</text>
             <text>+{{item.coinReward}}</text>
           </view>
-        </view>
-        <view class="task-status">
-          <block wx:if="{{item.completed}}">
-            <text>✅</text>
-          </block>
-          <block wx:elif="{{item.taskStatus && item.taskStatus.status === 'completed'}}">
-            <text>✅</text>
-          </block>
-          <block wx:elif="{{item.taskStatus && item.taskStatus.status === 'expired'}}">
-            <text>🔚</text>
-          </block>
-          <block wx:elif="{{item.taskStatus && item.taskStatus.status === 'pending'}}">
-            <text>⏳</text>
-          </block>
-          <block wx:else>
-            <text>⭕</text>
-          </block>
         </view>
       </view>
 

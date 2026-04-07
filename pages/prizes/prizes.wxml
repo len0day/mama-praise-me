@@ -1,4 +1,4 @@
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} style-{{themeStyle}}">
   <custom-navbar title="{{i18n.prizes.title || '奖品商城'}}" showBack="{{false}}" />
 
   <!-- 需要创建家庭提示 -->
@@ -30,6 +30,9 @@
           <text class="stat-text">我的奖品</text>
         </view>
       </view>
+    </view>
+    <view class="manage-btn" bindtap="goToPrizeManagement">
+      <text class="manage-text">管理</text>
     </view>
   </view>
 
@@ -68,7 +71,7 @@
       wx:for="{{prizes}}"
       wx:key="prizeId"
       wx:if="{{currentCategory === 'all' || item.category === currentCategory}}">
-      <view class="prize-card {{item.affordable ? '' : 'disabled'}}">
+      <view class="prize-card {{item.affordable ? '' : 'disabled'}} {{celebratingPrizeId === item.prizeId ? 'celebrate' : ''}}">
         <view class="prize-image">
           <image wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" />
           <text wx:else class="placeholder-icon">🎁</text>
@@ -96,12 +99,6 @@
       <text class="empty-icon">🎁</text>
       <text class="empty-text">暂无奖品</text>
     </view>
-  </view>
-
-  <!-- 浮动管理按钮 -->
-  <view class="manage-float-btn" bindtap="goToPrizeManagement">
-    <text class="manage-icon">⚙️</text>
-    <text class="manage-text">管理</text>
   </view>
 
   <!-- 兑换数量选择弹窗 -->

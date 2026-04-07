@@ -17,11 +17,17 @@ Page({
     showChildPicker: false, // 显示儿童选择器
     currentFilter: 'all',   // 当前任务分类筛选
     allTasks: [],           // 所有任务（用于筛选）
-    currentFamily: null      // 当前选中的家庭详情 (包含背景图)
+    currentFamily: null,      // 当前选中的家庭详情 (包含背景图)
+    themeStyle: 'default',   // 当前主题风格
+    animatingTaskId: null,   // 正在执行爆炸动画的任务ID
+    spawningTaskId: null     // 正在执行新生动画的任务ID
   },
 
   onLoad() {
-    this.setData({ themeClass: app.globalData.themeClass })
+    this.setData({ 
+      themeClass: app.globalData.themeClass,
+      themeStyle: app.globalData.settings.themeStyle || 'default'
+    })
   },
 
   async onShow() {
@@ -132,6 +138,11 @@ Page({
     console.log('[首页] enrichedChild.familyCoins:', enrichedChild.familyCoins)
     this.setData({ currentChild: enrichedChild, needFamily: false, currentFamilyId: app.getCurrentFamilyId() })
     console.log('[首页] setData completed')
+
+    this.setData({ 
+      themeClass: app.globalData.themeClass,
+      themeStyle: app.globalData.settings.themeStyle || 'default'
+    })
 
     // 加载数据
     await this.loadData()
@@ -657,6 +668,13 @@ Page({
         todayCompletions: todayCompletions
       }, () => {
         this.filterTasks()
+
+        // 刷新完成后，如果存在正在「重生」的任务，1秒后清除其状态
+        if (this.data.spawningTaskId) {
+          setTimeout(() => {
+            this.setData({ spawningTaskId: null })
+          }, 1000)
+        }
       })
 
     } catch (err) {
@@ -767,6 +785,14 @@ Page({
         showToast('请先进入家长模式再执行惩罚')
         return
       }
+    }
+
+    // 加入风格化动画（少女风格：气球破裂）
+    if (this.data.themeStyle === 'girl') {
+      this.setData({ animatingTaskId: taskid })
+      await new Promise(resolve => setTimeout(resolve, 600)) // 等待动画完成（稍微变长一点点更稳）
+      this.setData({ animatingTaskId: null, spawningTaskId: taskid })
+      // 这里的 spawningTaskId 会在数据刷新后触发新生动画
     }
 
     showLoading('处理中...')

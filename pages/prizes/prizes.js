@@ -23,11 +23,16 @@ Page({
       { value: 'outings', label: '外出' },
       { value: 'entertainment', label: '娱乐' },
       { value: 'other', label: '其他' }
-    ]
+    ],
+    themeStyle: 'default',
+    celebratingPrizeId: null
   },
 
   onLoad() {
-    this.setData({ themeClass: app.globalData.themeClass })
+    this.setData({ 
+      themeClass: app.globalData.themeClass,
+      themeStyle: app.globalData.settings.themeStyle || 'default'
+    })
   },
 
   async onShow() {
@@ -72,6 +77,12 @@ Page({
       this.getTabBar().setData({ selected: 1 })
       this.getTabBar().applyTheme()
     }
+
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: app.globalData.settings.themeStyle || 'default'
+    })
+
     this.loadPrizes()
   },
 
@@ -440,8 +451,20 @@ Page({
       hideLoading()
 
       if (res.result.success) {
-        showToast(t('prizes.redeemSuccess'))
+        const prizeId = selectedPrize.prizeId
         this.closeRedeemModal()
+        
+        // 加入动画效果
+        if (this.data.themeStyle === 'girl') {
+          this.setData({ celebratingPrizeId: prizeId })
+          setTimeout(() => {
+            this.setData({ celebratingPrizeId: null })
+          }, 1000)
+          showToast('🎈 兑换成功！太棒了！')
+        } else {
+          showToast(t('prizes.redeemSuccess'))
+        }
+        
         await this.loadPrizes()
         // 更新全局孩子数据
         const index = app.globalData.children.findIndex(c => c.childId === currentChild.childId)

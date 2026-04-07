@@ -6,7 +6,7 @@ const { showToast, showLoading, hideLoading, showConfirm } = require('../../util
 Page({
   data: {
     themeClass: 'theme-light',
-    i18n: {},
+    themeStyle: 'default',
     family: null,
     members: [],
     myMemberInfo: null,  // 我在当前家庭中的信息
@@ -34,12 +34,20 @@ Page({
     isFirstTime: false
   },
 
-  onLoad() {
-    this.setData({ themeClass: app.globalData.themeClass })
+  onLoad(options) {
+    this.setData({ 
+      themeClass: app.globalData.themeClass,
+      themeStyle: app.globalData.settings.themeStyle || 'default'
+    })
     this.loadI18n()
   },
 
   onShow() {
+    this.setData({ 
+      themeClass: app.globalData.themeClass,
+      themeStyle: app.globalData.settings.themeStyle || 'default'
+    })
+
     // 获取当前选中的家庭ID
     const currentFamilyId = app.getCurrentFamilyId()
     console.log('[家庭] 当前家庭ID:', currentFamilyId)
