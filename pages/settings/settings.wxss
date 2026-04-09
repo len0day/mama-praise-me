@@ -6,7 +6,11 @@
 }
 
 .theme-dark.container {
-  background: #1C1C1E;
+  background: #1C1C1E !important;
+}
+
+page.theme-dark {
+  background: #1C1C1E !important;
 }
 
 
@@ -40,7 +44,12 @@
 }
 
 .theme-dark .setting-item {
-  background: #2C2C2E;
+  background: #2C2C2E !important;
+}
+
+/* 简约深色主题的容器背景 */
+.theme-dark.container {
+  background: #1C1C1E !important;
 }
 
 .item-left {
@@ -119,10 +128,50 @@
 /* 风格选择器 */
 .style-selector {
   display: flex;
-  gap: 15rpx;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  max-width: 290rpx;
+  justify-content: flex-end;
+}
+
+/* 第一行选项：中性、男孩、女孩、可爱 */
+.style-selector .style-option:nth-child(1),
+.style-selector .style-option:nth-child(2),
+.style-selector .style-option:nth-child(3),
+.style-selector .style-option:nth-child(4) {
+  width: 60rpx;
+}
+
+/* 第二行选项：简约浅色、简约深色 */
+.style-selector .style-option:nth-child(5),
+.style-selector .style-option:nth-child(6) {
+  width: 70rpx;
+  margin-top: 8rpx;
+}
+
+/* 第二行的两个选项间距更小 */
+.style-selector .style-option:nth-child(6) {
+  margin-left: -4rpx;
 }
 
 .style-option {
+  padding: 6rpx 8rpx;
+  background: #F5F5F5;
+  border-radius: 14rpx;
+  font-size: 20rpx;
+  color: #666666;
+  border: 2rpx solid transparent;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* 色调选择器 */
+.color-tone-selector {
+  display: flex;
+  gap: 15rpx;
+}
+
+.color-tone-option {
   padding: 12rpx 24rpx;
   background: #F5F5F5;
   border-radius: 20rpx;
@@ -155,6 +204,25 @@
   background: linear-gradient(135deg, #FF9800, #FFB74D);
   color: #FFFFFF;
   border-color: #FF9800;
+}
+
+.theme-dark .color-tone-option {
+  background: #1C1C1E;
+  color: #AAAAAA;
+}
+
+.color-tone-option.active {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1) !important;
+  color: #666666 !important;
+  font-weight: 600 !important;
+  border-color: #FF69B4 !important;
+}
+
+.theme-dark .color-tone-option.active {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1) !important;
+  color: #AAAAAA !important;
+  font-weight: 600 !important;
+  border-color: #FF69B4 !important;
 }
 
 
@@ -410,6 +478,10 @@
   border-color: #2C2C2E;
 }
 
+.style-girl .avatar-edit-badge {
+  border: none !important;
+}
+
 .user-details {
   flex: 1;
   display: flex;
@@ -507,5 +579,149 @@
 .theme-dark .small-mode-btn.exit {
   background: #1C1C1E !important;
   color: #AAAAAA !important;
+}
+
+/* 童趣模式 (Girl Style) */
+.container.style-girl {
+  background: #FFF0F5;
+}
+
+.style-girl .section-title {
+  color: #C2185B;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .setting-item {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 35rpx;
+  margin-bottom: 20rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl.theme-dark .setting-item {
+  background: rgba(58, 42, 58, 0.6);
+  border-color: rgba(93, 58, 93, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(93, 58, 93, 0.9),
+    0 10rpx 25rpx rgba(255, 20, 147, 0.2);
+}
+
+.style-girl .item-icon {
+  color: #FF69B4;
+}
+
+.style-girl .item-label {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .item-value {
+  color: #880E4F;
+  font-weight: 600;
+}
+
+.style-girl .switch {
+  transform: scale(1.1);
+}
+
+.style-girl .logout-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.theme-dark .logout-btn {
+  background: linear-gradient(135deg, #C2185B, #880E4F);
+  border-color: rgba(255, 105, 180, 0.3);
+}
+
+.style-girl .user-info-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 100rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  padding: 20rpx 40rpx;
+  margin: 30rpx 40rpx;
+  backdrop-filter: blur(10px);
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 182, 193, 0.3),
+    inset 10rpx 10rpx 25rpx rgba(255, 255, 255, 0.9),
+    0 15rpx 35rpx rgba(255, 182, 193, 0.2);
+}
+
+.style-girl .user-avatar-wrapper {
+  background: transparent !important;
+  box-shadow: 0 4rpx 15rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .user-avatar-wrapper image.user-avatar {
+  border: none !important;
+  background: transparent !important;
+}
+
+.style-girl .user-avatar {
+  border: none !important;
+  background: transparent !important;
+}
+
+.style-girl .user-avatar-placeholder {
+  border: none !important;
+  background: transparent !important;
+}
+
+.style-girl .user-avatar-placeholder {
+  border: none !important;
+  background: transparent !important;
+}
+
+.style-girl .user-name {
+  color: #C2185B !important;
+  font-weight: 900 !important;
+  text-shadow: 1rpx 1rpx 0 #FFF, 2rpx 2rpx 10rpx rgba(255, 182, 193, 0.5);
+}
+
+.style-girl .user-meta {
+  color: #880E4F;
+}
+
+.style-girl .small-mode-btn.enter {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .small-mode-btn.exit {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 105, 180, 0.3);
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 30rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 182, 193, 0.3),
+    0 20rpx 50rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .modal-title {
+  color: #C2185B;
+  font-weight: 900;
 }
 

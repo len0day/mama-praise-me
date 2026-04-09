@@ -1,5 +1,5 @@
 <!--pages/settings/settings.wxml-->
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
   <custom-navbar title="{{i18n.settings.title || '设置'}}" showBack="{{false}}" />
 
 
@@ -104,51 +104,48 @@
     <!-- 系统设置 -->
     <view class="section-title" style="margin-top: 40rpx;">{{i18n.settings.systemSettings || '系统设置'}}</view>
 
-    <!-- 主题切换 -->
+    <!-- 主题风格切换 -->
     <view class="setting-item">
       <view class="item-left">
         <text class="item-icon">🎨</text>
-        <text class="item-label">{{i18n.settings.theme || '主题'}}</text>
-      </view>
-      <view class="theme-selector">
-        <view
-          class="theme-option {{settings.theme === 'light' ? 'active' : ''}}"
-          data-theme="light"
-          bindtap="switchTheme">
-          {{i18n.settings.lightTheme || '浅色'}}
-        </view>
-        <view
-          class="theme-option {{settings.theme === 'dark' ? 'active' : ''}}"
-          data-theme="dark"
-          bindtap="switchTheme">
-          {{i18n.settings.darkTheme || '深色'}}
-        </view>
-        <view
-          class="theme-option {{settings.theme === 'system' ? 'active' : ''}}"
-          data-theme="system"
-          bindtap="switchTheme">
-          {{i18n.settings.systemTheme || '跟随系统'}}
-        </view>
-      </view>
-    </view>
-    <!-- 风格切换 -->
-    <view class="setting-item">
-      <view class="item-left">
-        <text class="item-icon">✨</text>
         <text class="item-label">主题风格</text>
       </view>
       <view class="style-selector">
         <view
-          class="style-option {{settings.themeStyle === 'default' ? 'active' : ''}}"
-          data-style="default"
+          class="style-option {{settings.themeStyle === 'neutral' ? 'active' : ''}}"
+          data-style="neutral"
           bindtap="switchThemeStyle">
-          默认
+          中性
+        </view>
+        <view
+          class="style-option {{settings.themeStyle === 'boy' ? 'active' : ''}}"
+          data-style="boy"
+          bindtap="switchThemeStyle">
+          男孩
         </view>
         <view
           class="style-option {{settings.themeStyle === 'girl' ? 'active' : ''}}"
           data-style="girl"
           bindtap="switchThemeStyle">
-          童趣
+          女孩
+        </view>
+        <view
+          class="style-option {{settings.themeStyle === 'cute' ? 'active' : ''}}"
+          data-style="cute"
+          bindtap="switchThemeStyle">
+          可爱
+        </view>
+        <view
+          class="style-option {{settings.themeStyle === 'simple-light' ? 'active' : ''}}"
+          data-style="simple-light"
+          bindtap="switchThemeStyle">
+          简约浅色
+        </view>
+        <view
+          class="style-option {{settings.themeStyle === 'simple-dark' ? 'active' : ''}}"
+          data-style="simple-dark"
+          bindtap="switchThemeStyle">
+          简约深色
         </view>
       </view>
     </view>

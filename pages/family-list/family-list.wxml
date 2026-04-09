@@ -1,5 +1,5 @@
 <!--pages/family-list/family-list.wxml-->
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
   <custom-navbar title="家庭" showBack="{{false}}" />
 
   <!-- 家庭列表 -->

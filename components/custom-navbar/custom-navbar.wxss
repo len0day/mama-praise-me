@@ -278,3 +278,89 @@
 .theme-dark .navbar-user-name {
   color: #fff !important;
 }
+
+/* 童趣模式 (Girl Style) */
+.style-girl .custom-navbar {
+  background: linear-gradient(180deg, #FFE4E1 0%, #FFC0CB 50%, #FFB6C1 100%) !important;
+  box-shadow: 0 4rpx 15rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .custom-navbar.transparent-with-slot {
+  background: linear-gradient(to bottom,
+    rgba(255, 228, 225, 0.95) 0%,
+    rgba(255, 192, 203, 0.85) 40%,
+    rgba(255, 240, 245, 1) 70%,
+    rgba(255, 240, 245, 1) 100%) !important;
+}
+
+.style-girl .navbar-content {
+  background: transparent;
+}
+
+.style-girl .navbar-title {
+  color: #C2185B !important;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8);
+}
+
+.style-girl .navbar-back,
+.style-girl .navbar-home,
+.style-girl .navbar-settings {
+  color: #C2185B;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8);
+}
+
+.style-girl .navbar-login-btn {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2rpx solid rgba(255, 105, 180, 0.3);
+  color: #C2185B !important;
+  font-weight: 700;
+}
+
+.style-girl .navbar-login-text {
+  color: #C2185B !important;
+  font-weight: 700;
+}
+
+.style-girl .navbar-user-name {
+  color: #C2185B !important;
+  font-weight: 700;
+}
+
+.style-girl.theme-dark .custom-navbar {
+  background: linear-gradient(180deg, #FFB6C1 0%, #FF69B4 50%, #C2185B 100%) !important;
+}
+
+.style-girl.theme-dark .custom-navbar.transparent-with-slot {
+  background: linear-gradient(to bottom,
+    rgba(255, 182, 193, 0.9) 0%,
+    rgba(255, 105, 180, 0.7) 40%,
+    rgba(45, 27, 34, 1) 70%,
+    rgba(45, 27, 34, 1) 100%) !important;
+}
+
+.style-girl.theme-dark .navbar-title {
+  color: #FFFFFF !important;
+  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.style-girl.theme-dark .navbar-back,
+.style-girl.theme-dark .navbar-home,
+.style-girl.theme-dark .navbar-settings {
+  color: #FFFFFF;
+  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.style-girl.theme-dark .navbar-login-btn {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #FFFFFF !important;
+}
+
+.style-girl.theme-dark .navbar-login-text {
+  color: #FFFFFF !important;
+}
+
+.style-girl.theme-dark .navbar-user-name {
+  color: #FFFFFF !important;
+}

@@ -6,6 +6,8 @@ const { showToast, showConfirm } = require('../../utils/util.js')
 Page({
   data: {
     themeClass: 'theme-light',
+    themeStyle: 'default',
+    colorTone: 'girl',
     isParentMode: false,
     showPasswordModal: false,
     showChangePasswordModal: false,
@@ -28,8 +30,13 @@ Page({
   },
 
   onLoad() {
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
     this.setData({
       themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme,
       isParentMode: app.isParentMode(),
       settings: app.globalData.settings
     })
@@ -42,13 +49,19 @@ Page({
     console.log('[设置] onShow - currentChild:', child)
     console.log('[设置] onShow - currentChild.name:', child ? child.name : 'null')
 
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
     this.setData({
       currentChild: child,
       childChar: child ? child.name.substring(0, 1) : '',
-      isParentMode: app.isParentMode()
+      isParentMode: app.isParentMode(),
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
     })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 3 })
+      this.getTabBar().setData({ selected: 4 })
       this.getTabBar().applyTheme()
     }
     this.loadStats()
@@ -166,31 +179,6 @@ Page({
   },
 
   /**
-   * 切换主题
-   */
-  async switchTheme(e) {
-    const { theme } = e.currentTarget.dataset
-
-    this.setData({
-      'settings.theme': theme
-    })
-
-    app.globalData.settings.theme = theme
-    app.applyTheme()
-    app.saveSettingsToStorage()
-
-    // 更新当前页面主题
-    this.setData({ themeClass: app.globalData.themeClass })
-
-    // 更新TabBar主题
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().applyTheme()
-    }
-
-    showToast(t('settings.themeChanged'))
-  },
-
-  /**
    * 切换主题风格
    */
   async switchThemeStyle(e) {
@@ -203,6 +191,20 @@ Page({
     app.globalData.settings.themeStyle = style
     app.applyTheme()
     app.saveSettingsToStorage()
+
+    // 更新当前页面主题
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(style)
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: app.globalData.themeStyle,
+      colorTone: app.globalData.colorTone,
+      isFunTheme: isFunTheme
+    })
+
+    // 更新TabBar主题
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().applyTheme()
+    }
 
     showToast('风格已切换')
   },
@@ -293,14 +295,18 @@ Page({
         app.globalData.currentUserOpenid = userData.openid
         app.globalData.useCloudStorage = true
 
-        // 加载用户设置（包括家长密码）
+        // 加载用户设置（包括家长密码，但保留本地的主题设置）
         if (userData.settings) {
+          // 保存本地的主题设置
+          const localThemeStyle = app.globalData.settings.themeStyle
+
           app.globalData.settings = {
-            ...app.globalData.settings,
-            ...userData.settings
+            ...userData.settings,
+            ...app.globalData.settings,  // 本地设置优先，包括主题
+            themeStyle: localThemeStyle  // 确保本地主题不被覆盖
           }
           app.saveSettingsToStorage()
-          console.log('[设置] 已从云端加载用户设置，包括家长密码')
+          console.log('[设置] 已从云端加载用户设置，保留本地主题:', localThemeStyle)
         }
 
         this.checkLoginStatus()

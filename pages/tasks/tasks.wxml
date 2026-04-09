@@ -1,5 +1,5 @@
 <!--pages/tasks/tasks.wxml-->
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
   <custom-navbar title="{{i18n.tasks.title || '任务管理'}}" showBack="{{true}}" />
 
   <!-- 家长模式状态栏 -->
@@ -216,6 +216,17 @@
           placeholder="留空表示只能完成1次" />
         <view class="form-tip" style="margin-top: 8rpx; font-size: 24rpx; color: #999;">
           设置后可在这期内多次完成任务
+        </view>
+      </view>
+
+      <!-- 每日任务：结束时间 -->
+      <view class="form-group" wx:if="{{formData.taskType === 'daily'}}">
+        <view class="form-label">结束时间（可选）</view>
+        <picker mode="time" value="{{formData.endTime}}" data-field="endTime" end="23:59" bindchange="onDateChange">
+          <view class="form-picker">{{formData.endTime || '未设置'}}</view>
+        </picker>
+        <view class="form-tip" style="margin-top: 8rpx; font-size: 22rpx; color: #999;">
+          设置后过了此时间任务将显示已过期
         </view>
       </view>
 

@@ -6,10 +6,13 @@ const { showToast, showLoading, hideLoading, showConfirm } = require('../../util
 Page({
   data: {
     themeClass: 'theme-light',
+    themeStyle: 'default',
+    colorTone: 'girl',
     currentChild: null,
     tasks: [],
     todayCompletions: [],
     isLoading: false,
+    userInfo: null,          // 用户信息
     allFamilies: [],        // 所有家庭列表
     showFamilyPicker: false, // 显示家庭选择器
     currentFamilyId: null,   // 当前家庭ID
@@ -18,24 +21,89 @@ Page({
     currentFilter: 'all',   // 当前任务分类筛选
     allTasks: [],           // 所有任务（用于筛选）
     currentFamily: null,      // 当前选中的家庭详情 (包含背景图)
-    themeStyle: 'default',   // 当前主题风格
     animatingTaskId: null,   // 正在执行爆炸动画的任务ID
-    spawningTaskId: null     // 正在执行新生动画的任务ID
+    spawningTaskId: null,    // 正在执行新生动画的任务ID
+    enableFloatAnimation: true,  // 童趣模式飘动动画开关
+    taskListClass: '',        // 任务列表样式类
+    availableFilters: [],     // 可用的分类列表
+    statsRange: 'today',     // 统计范围：today/month/year/all
+    statsRangeOptions: ['today', 'month', 'year', 'all'],  // 统计范围选项
+    calendarItems: [],      // 日历选项列表
+    selectedCalendarId: '', // 选中的日历项ID
+    selectedDate: null,     // 选中的日期对象
+    selectedCalendarLabel: {}, // 选中的日历标签（用于静态显示）
+    coinStats: {             // 金币统计
+      redeemCount: 0,        // 兑换次数
+      spentCoins: 0,         // 消耗金币
+      earnCount: 0,          // 奖励次数
+      earnedCoins: 0,        // 获得金币
+      penaltyCoins: 0        // 惩罚金币
+    },
+    taskProgress: {          // 任务进度
+      total: 0,              // 总任务数
+      completed: 0,          // 已完成任务数
+      percentage: 0          // 完成百分比
+    },
+    countdownTimer: null,    // 倒计时更新定时器
+    showThemeMenu: false     // 主题快捷菜单显示状态
   },
 
   onLoad() {
-    this.setData({ 
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    // 从 app.globalData 和本地存储加载用户信息
+    let userInfo = null
+    if (app.globalData.useCloudStorage && app.globalData.currentUserOpenid) {
+      userInfo = wx.getStorageSync('userInfo') || null
+    }
+    this.setData({
       themeClass: app.globalData.themeClass,
-      themeStyle: app.globalData.settings.themeStyle || 'default'
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme,
+      isLoading: true,  // 页面加载时开始加载状态
+      userInfo: userInfo
     })
+
+    // 读取飘动动画设置
+    try {
+      const enableFloatAnimation = wx.getStorageSync('enableFloatAnimation')
+      if (enableFloatAnimation !== undefined) {
+        this.setData({
+          enableFloatAnimation,
+          taskListClass: enableFloatAnimation ? '' : 'no-float-gap'
+        })
+      }
+    } catch (err) {
+      console.error('[首页] 读取飘动动画设置失败:', err)
+    }
   },
 
   async onShow() {
+    // 刷新用户信息
+    let userInfo = null
+    if (app.globalData.useCloudStorage && app.globalData.currentUserOpenid) {
+      userInfo = wx.getStorageSync('userInfo') || null
+    }
+
+    // 先更新主题，让用户立即看到主题变化
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme,
+      userInfo: userInfo
+    })
+
     // 刷新TabBar主题
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 })
       this.getTabBar().applyTheme()
     }
+
+    this.setData({ isLoading: true })
 
     // 检查是否有家庭
     if (!app.getCurrentFamilyId()) {
@@ -52,28 +120,15 @@ Page({
     // 加载孩子数据（根据登录状态自动选择本地或云端）
     await app.loadChildren()
 
-    console.log('[首页] === 开始检查孩子数据 ===')
-    console.log('[首页] app.globalData.currentFamilyId:', app.globalData.currentFamilyId)
-    console.log('[首页] app.globalData.currentChildId:', app.globalData.currentChildId)
-    console.log('[首页] app.globalData.children:', app.globalData.children)
-    console.log('[首页] app.globalData.children.length:', app.globalData.children ? app.globalData.children.length : 0)
-
     // 获取当前孩子（会自动选择）
     let currentChild = app.getCurrentChild()
-    console.log('[首页] getCurrentChild() 返回:', currentChild)
 
     // 如果没有选中的孩子，尝试自动选择当前家庭的儿童
     if (!currentChild) {
       const currentFamilyId = app.getCurrentFamilyId()
       const allChildren = app.globalData.children || []
 
-      console.log('[首页] 没有选中的孩子，尝试自动选择')
-      console.log('[首页] 当前家庭ID:', currentFamilyId)
-      console.log('[首页] 所有儿童:', allChildren)
-      console.log('[首页] 所有儿童数量:', allChildren.length)
-
       if (!currentFamilyId) {
-        console.error('[首页] 当前家庭ID为空！')
         this.setData({
           currentChild: null,
           tasks: [],
@@ -87,22 +142,14 @@ Page({
       // 筛选当前家庭的儿童
       const familyChildren = allChildren.filter(child => {
         const childFamilyId = child.familyId || currentFamilyId
-        console.log('[首页] 检查儿童:', child.name, 'familyId:', child.familyId, '匹配:', childFamilyId === currentFamilyId)
         return childFamilyId === currentFamilyId
       })
-
-      console.log('[首页] 当前家庭的儿童:', familyChildren)
-      console.log('[首页] 当前家庭的儿童数量:', familyChildren.length)
 
       if (familyChildren.length > 0) {
         // 自动选择第一个儿童
         const firstChild = familyChildren[0]
-        console.log('[首页] 选择第一个儿童:', firstChild)
         app.saveCurrentChildId(firstChild.childId)
         currentChild = firstChild
-        console.log('[首页] 自动选择完成，currentChildId:', app.globalData.currentChildId)
-      } else {
-        console.warn('[首页] 当前家庭没有儿童！')
       }
     }
 
@@ -111,7 +158,13 @@ Page({
     // 如果还是没有孩子，显示添加孩子提示
     if (!currentChild) {
       console.warn('[首页] 仍然没有孩子，显示添加提示')
+      const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+      const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
       this.setData({
+        themeClass: app.globalData.themeClass,
+        themeStyle: themeStyle,
+        colorTone: app.globalData.colorTone || 'neutral',
+        isFunTheme: isFunTheme,
         currentChild: null,
         tasks: [],
         todayCompletions: [],
@@ -133,18 +186,24 @@ Page({
     }
     // 加载家庭名称和金币余额
     const enrichedChild = await this.enrichChildInfo(childWithFamilyId)
-    console.log('[首页] enrichedChild:', enrichedChild)
-    console.log('[首页] enrichedChild.familyName:', enrichedChild.familyName)
-    console.log('[首页] enrichedChild.familyCoins:', enrichedChild.familyCoins)
-    this.setData({ currentChild: enrichedChild, needFamily: false, currentFamilyId: app.getCurrentFamilyId() })
-    console.log('[首页] setData completed')
 
-    this.setData({ 
+    // 生成日历选项
+    this.generateCalendarItems()
+
+    // 一次性设置所有数据，减少 setData 调用次数
+    const themeStyle2 = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme2 = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle2)
+    this.setData({
       themeClass: app.globalData.themeClass,
-      themeStyle: app.globalData.settings.themeStyle || 'default'
+      themeStyle: themeStyle2,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme2,
+      currentChild: enrichedChild,
+      needFamily: false,
+      currentFamilyId: app.getCurrentFamilyId()
     })
 
-    // 加载数据
+    // 加载数据（包含计算金币统计）
     await this.loadData()
   },
 
@@ -156,9 +215,6 @@ Page({
       // 获取当前家庭ID
       const currentFamilyId = app.getCurrentFamilyId()
 
-      console.log('[首页] 当前家庭ID:', currentFamilyId)
-      console.log('[首页] 儿童家庭ID:', child.familyId)
-
       // 确保 child 有 familyId
       const childWithFamilyId = {
         ...child,
@@ -167,7 +223,6 @@ Page({
 
       // 如果儿童的家庭ID和当前家庭ID不一致，不显示
       if (currentFamilyId && childWithFamilyId.familyId !== currentFamilyId) {
-        console.warn('[首页] 儿童不属于当前家庭')
         return child
       }
 
@@ -188,9 +243,6 @@ Page({
         // 从本地获取金币
         const localCoinBalances = wx.getStorageSync(`localCoinBalances_${currentFamilyId}`) || {}
         familyCoins = parseInt(localCoinBalances[child.childId]) || 0
-
-        console.log('[首页] 本地家庭名称:', familyName)
-        console.log('[首页] 本地金币余额:', familyCoins, typeof familyCoins)
 
         return {
           ...child,
@@ -222,9 +274,6 @@ Page({
 
       familyName = familyRes.result.success ? familyRes.result.family.name : '家庭'
       familyCoins = coinsRes.result.success ? parseInt(coinsRes.result.balance) || 0 : 0
-
-      console.log('[首页] 家庭名称:', familyName)
-      console.log('[首页] 金币余额:', familyCoins, typeof familyCoins)
 
       return {
         ...child,
@@ -298,8 +347,24 @@ Page({
     const currentFamilyId = app.getCurrentFamilyId()
     const currentChild = app.getCurrentChild()
 
+    console.log('[首页] loadData() - currentFamilyId:', currentFamilyId, 'currentChild:', currentChild)
+    console.log('[首页] loadData() - this.data.currentChild:', this.data.currentChild)
+    console.log('[首页] loadData() - app.globalData.currentChildId:', app.globalData.currentChildId)
+    console.log('[首页] loadData() - app.globalData.children:', app.globalData.children)
+
     if (!currentFamilyId || !currentChild) {
       // 没有家庭或孩子，显示空状态
+      console.warn('[首页] loadData() - 缺少家庭或孩子，清空数据')
+      // 如果页面已经有 currentChild 数据，不要清空它（避免主题切换时日历消失）
+      if (this.data.currentChild) {
+        console.log('[首页] loadData() - 页面已有 currentChild，不清空，只清空任务数据')
+        this.setData({
+          tasks: [],
+          todayCompletions: [],
+          isLoading: false
+        })
+        return
+      }
       this.setData({
         tasks: [],
         todayCompletions: [],
@@ -357,8 +422,70 @@ Page({
         )
         completed = todayCompletions.length > 0
 
-        // 如果设置了最大完成次数，计算剩余次数
-        if (task.maxCompletions && task.maxCompletions > 1) {
+        // 调试：打印每日任务的 endTime
+        console.log('[首页] 每日任务:', task.title, 'endTime:', task.endTime, 'completed:', completed)
+
+        // 检查是否设置了结束时间（无论是否完成都要计算倒计时）
+        if (task.endTime) {
+          console.log('[首页] 计算倒计时 - endTime:', task.endTime)
+          const now = new Date()
+          const [hours, minutes] = task.endTime.split(':')
+          const endTimeToday = new Date(today)
+          endTimeToday.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+
+          console.log('[首页] 当前时间:', now.toLocaleString(), '结束时间:', endTimeToday.toLocaleString())
+
+          if (now > endTimeToday) {
+            // 已过期
+            console.log('[首页] 任务已过期')
+            taskStatus = {
+              status: 'expired',
+              statusText: '已过期',
+              endTime: task.endTime
+            }
+            completed = false // 过期任务不算完成，但也不能点击
+          } else {
+            // 计算倒计时
+            const timeDiff = endTimeToday.getTime() - now.getTime()
+            const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60))
+            const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
+            const secondsLeft = Math.floor((timeDiff % (1000 * 60)) / 1000)
+
+            let countdownText
+            if (hoursLeft > 0) {
+              countdownText = `${hoursLeft}小时${minutesLeft}分${secondsLeft}秒`
+            } else if (minutesLeft > 0) {
+              countdownText = `${minutesLeft}分${secondsLeft}秒`
+            } else {
+              countdownText = `${secondsLeft}秒`
+            }
+
+            console.log('[首页] 倒计时:', countdownText, 'timeDiff:', timeDiff)
+
+            // 如果设置了最大完成次数，计算剩余次数
+            if (task.maxCompletions && task.maxCompletions > 1) {
+              const remaining = task.maxCompletions - todayCompletions.length
+              taskStatus = {
+                status: remaining > 0 ? 'active' : 'completed',
+                statusText: remaining > 0 ? `${countdownText}·剩余${remaining}次` : `${countdownText}·已完成`,
+                remaining: remaining,
+                countdown: countdownText,
+                endTime: task.endTime
+              }
+              completed = remaining <= 0
+            } else {
+              // 没有设置最大完成次数，显示倒计时
+              taskStatus = {
+                status: 'active',
+                statusText: `在${countdownText}前完成后`,
+                countdown: countdownText,
+                endTime: task.endTime
+              }
+              console.log('[首页] 设置 taskStatus:', taskStatus)
+            }
+          }
+        } else if (task.maxCompletions && task.maxCompletions > 1) {
+          // 没有设置结束时间，但有最大完成次数
           const remaining = task.maxCompletions - todayCompletions.length
           taskStatus = {
             status: remaining > 0 ? 'active' : 'completed',
@@ -413,7 +540,11 @@ Page({
 
       // 计算 CSS 类
       const taskClass = []
-      if (completed || (taskStatus && (taskStatus.status === 'completed' || taskStatus.status === 'expired' || taskStatus.status === 'ended'))) {
+      if (taskStatus && taskStatus.status === 'expired') {
+        // 过期任务单独添加 expired 类
+        taskClass.push('expired')
+      } else if (completed || (taskStatus && (taskStatus.status === 'completed' || taskStatus.status === 'ended'))) {
+        // 已完成任务添加 completed 类
         taskClass.push('completed')
       }
       if (taskStatus && taskStatus.status === 'pending') {
@@ -434,7 +565,19 @@ Page({
       // 计算任务标签
       const { badgeText, badgeType } = this.getTaskBadge({ ...task, taskStatus })
 
-      return { ...task, completed: completed, taskStatus: taskStatus, taskClass: taskClass.join(' '), canComplete: canComplete, badgeText, badgeType }
+      // 判断任务分类：常规 vs 活动
+      let categoryClass = ''
+      if (task.taskType === 'custom' &&
+          (!task.maxCompletions || task.maxCompletions === -1) &&
+          (!task.startDate || !task.endDate)) {
+        // 常规任务：没有次数和时间限制的自定义任务
+        categoryClass = 'normal'
+      } else {
+        // 活动任务：其他所有任务
+        categoryClass = 'activity'
+      }
+
+      return { ...task, completed: completed, taskStatus: taskStatus, taskClass: taskClass.join(' '), canComplete: canComplete, badgeText, badgeType, categoryClass }
     }).filter(task => {
       // 过滤掉应该隐藏的自定义任务
       if (task.taskType === 'custom' && task.taskStatus && task.taskStatus.shouldHide) {
@@ -475,13 +618,27 @@ Page({
     const todayCompletions = childCompletions.filter(c => c.completedDate === today)
 
     // 保存所有任务并应用筛选
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
     this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme,
       allTasks: tasks,
       todayCompletions: todayCompletions,
-      isLoading: false
+      isLoading: false,
+      enableFloatAnimation: this.data.enableFloatAnimation,
+      taskListClass: this.data.taskListClass
     }, () => {
       this.filterTasks()
     })
+
+    // 计算金币统计
+    this.calculateCoinStats()
+
+    // 启动倒计时更新定时器
+    this.startCountdownTimer()
   },
 
   /**
@@ -538,8 +695,71 @@ Page({
             )
             completed = todayCompletions.length > 0
 
-            // 如果设置了最大完成次数，计算剩余次数
-            if (task.maxCompletions && task.maxCompletions > 1) {
+            // 调试：打印每日任务的 endTime
+            console.log('[首页 云端] 每日任务:', task.title, 'endTime:', task.endTime, 'completed:', completed)
+
+            // 检查是否设置了结束时间（无论是否完成都要计算倒计时）
+            if (task.endTime) {
+              console.log('[首页 云端] 进入倒计时计算')
+              console.log('[首页 云端] 计算倒计时 - endTime:', task.endTime)
+              const now = new Date()
+              const [hours, minutes] = task.endTime.split(':')
+              const endTimeToday = new Date(today)
+              endTimeToday.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+
+              console.log('[首页 云端] 当前时间:', now.toLocaleString(), '结束时间:', endTimeToday.toLocaleString())
+
+              if (now > endTimeToday) {
+                // 已过期
+                console.log('[首页 云端] 任务已过期')
+                taskStatus = {
+                  status: 'expired',
+                  statusText: '已过期',
+                  endTime: task.endTime
+                }
+                completed = false // 过期任务不算完成，但也不能点击
+              } else {
+                // 计算倒计时
+                const timeDiff = endTimeToday.getTime() - now.getTime()
+                const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60))
+                const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
+                const secondsLeft = Math.floor((timeDiff % (1000 * 60)) / 1000)
+
+                let countdownText
+                if (hoursLeft > 0) {
+                  countdownText = `${hoursLeft}小时${minutesLeft}分${secondsLeft}秒`
+                } else if (minutesLeft > 0) {
+                  countdownText = `${minutesLeft}分${secondsLeft}秒`
+                } else {
+                  countdownText = `${secondsLeft}秒`
+                }
+
+                console.log('[首页 云端] 倒计时:', countdownText, 'timeDiff:', timeDiff)
+
+                // 如果设置了最大完成次数，计算剩余次数
+                if (task.maxCompletions && task.maxCompletions > 1) {
+                  const remaining = task.maxCompletions - todayCompletions.length
+                  taskStatus = {
+                    status: remaining > 0 ? 'active' : 'completed',
+                    statusText: remaining > 0 ? `${countdownText}·剩余${remaining}次` : `${countdownText}·已完成`,
+                    remaining: remaining,
+                    countdown: countdownText,
+                    endTime: task.endTime
+                  }
+                  completed = remaining <= 0
+                } else {
+                  // 没有设置最大完成次数，显示倒计时
+                  taskStatus = {
+                    status: 'active',
+                    statusText: `${countdownText}后截止`,
+                    countdown: countdownText,
+                    endTime: task.endTime
+                  }
+                  console.log('[首页 云端] 设置 taskStatus:', taskStatus)
+                }
+              }
+            } else if (task.maxCompletions && task.maxCompletions > 1) {
+              // 没有设置结束时间，但有最大完成次数
               const remaining = task.maxCompletions - todayCompletions.length
               taskStatus = {
                 status: remaining > 0 ? 'active' : 'completed',
@@ -615,6 +835,18 @@ Page({
           // 计算任务标签
           const { badgeText, badgeType } = this.getTaskBadge({ ...task, taskStatus })
 
+          // 判断任务分类：常规 vs 活动
+          let categoryClass = ''
+          if (task.taskType === 'custom' &&
+              (!task.maxCompletions || task.maxCompletions === -1) &&
+              (!task.startDate || !task.endDate)) {
+            // 常规任务：没有次数和时间限制的自定义任务
+            categoryClass = 'normal'
+          } else {
+            // 活动任务：其他所有任务
+            categoryClass = 'activity'
+          }
+
           return {
             ...task,
             completed: completed,
@@ -622,7 +854,8 @@ Page({
             taskClass: taskClass.join(' '),
             canComplete: canComplete,
             badgeText,
-            badgeType
+            badgeType,
+            categoryClass
           }
         }).filter(task => {
           // 过滤掉应该隐藏的自定义任务
@@ -632,14 +865,28 @@ Page({
           return true
         }).sort((a, b) => {
           // 排序逻辑：状态优先
-          // 顺序：进行中 > 未开始 > 已完成/已结束
-          const aCompleted = a.completed || (a.taskStatus && (a.taskStatus.status === 'completed' || a.taskStatus.status === 'expired' || a.taskStatus.status === 'ended'))
-          const bCompleted = b.completed || (b.taskStatus && (b.taskStatus.status === 'completed' || b.taskStatus.status === 'expired' || b.taskStatus.status === 'ended'))
+          // 顺序：进行中 > 未开始 > 已完成 > 已过期
+
+          // 判断是否已过期
+          const aExpired = a.taskStatus && a.taskStatus.status === 'expired'
+          const bExpired = b.taskStatus && b.taskStatus.status === 'expired'
+
+          // 判断是否已完成
+          const aCompleted = (a.completed || (a.taskStatus && (a.taskStatus.status === 'completed' || a.taskStatus.status === 'ended'))) && !aExpired
+          const bCompleted = (b.completed || (b.taskStatus && (b.taskStatus.status === 'completed' || b.taskStatus.status === 'ended'))) && !bExpired
+
           const aPending = a.taskStatus && a.taskStatus.status === 'pending'
           const bPending = b.taskStatus && b.taskStatus.status === 'pending'
 
-          // 如果两个任务状态不同，按优先级排序
-          // 优先级：进行中 > 未开始 > 已完成
+          // 优先级判断
+          if (aExpired && !bExpired) {
+            return 1  // a已过期，b未过期，a在后
+          }
+          if (!aExpired && bExpired) {
+            return -1  // a未过期，b已过期，a在前
+          }
+
+          // 都是未完成状态（未过期）
           if (!aCompleted && !bCompleted) {
             // 都是未完成状态
             if (aPending && !bPending) {
@@ -657,13 +904,19 @@ Page({
             return aCompleted ? 1 : -1  // 未完成在前
           }
 
-          // 都已完成，按金币倒序
+          // 都已完成或都已过期，按金币倒序
           return (b.coinReward || 0) - (a.coinReward || 0)
         })
       }
 
       // 保存所有任务并应用筛选
+      const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+      const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
       this.setData({
+        themeClass: app.globalData.themeClass,
+        themeStyle: themeStyle,
+        colorTone: app.globalData.colorTone || 'neutral',
+        isFunTheme: isFunTheme,
         allTasks: tasks,
         todayCompletions: todayCompletions
       }, () => {
@@ -677,11 +930,27 @@ Page({
         }
       })
 
+      // 计算金币统计
+      await this.calculateCoinStats()
+
+      // 启动倒计时更新定时器
+      this.startCountdownTimer()
+
     } catch (err) {
       console.error('[首页] 加载数据失败:', err)
       showToast(t('toast.operationFailed'))
     } finally {
-      this.setData({ isLoading: false })
+      const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+      const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+      this.setData({
+        themeClass: app.globalData.themeClass,
+        themeStyle: themeStyle,
+        colorTone: app.globalData.colorTone || 'neutral',
+        isFunTheme: isFunTheme,
+        isLoading: false,
+        enableFloatAnimation: this.data.enableFloatAnimation,
+        taskListClass: this.data.taskListClass
+      })
     }
   },
 
@@ -700,6 +969,12 @@ Page({
     const task = this.data.tasks.find(t => t.taskId === taskid)
     if (!task) {
       showToast('任务不存在')
+      return
+    }
+
+    // 检查任务是否已过期
+    if (task.taskStatus && task.taskStatus.status === 'expired') {
+      showToast('任务已过期')
       return
     }
 
@@ -894,6 +1169,22 @@ Page({
       coinBalances[childId] = newBalance
       wx.setStorageSync(coinBalanceKey, coinBalances)
 
+      // 创建金币记录
+      const coinRecordKey = `localCoinRecords_${currentFamilyId}`
+      const coinRecords = wx.getStorageSync(coinRecordKey) || []
+      coinRecords.push({
+        recordId: `coin_record_${Date.now()}`,
+        childId: childId,
+        familyId: currentFamilyId,
+        amount: finalCoinEarned,
+        type: task.taskType === 'penalty_parent' || task.taskType === 'penalty_child' ? 'penalty' : 'task_complete',
+        relatedId: taskId,
+        description: task.title,
+        balanceAfter: newBalance,
+        createdAt: new Date().toISOString()
+      })
+      wx.setStorageSync(coinRecordKey, coinRecords)
+
       hideLoading()
       if (task.taskType === 'penalty_child') {
          showToast(`操作成功！扣除了 ${Math.abs(finalCoinEarned)} 金币`)
@@ -1010,6 +1301,15 @@ Page({
   goToFamily() {
     wx.switchTab({
       url: '/pages/family-list/family-list'
+    })
+  },
+
+  /**
+   * 跳转到管理儿童页面
+   */
+  goToChildren() {
+    wx.navigateTo({
+      url: '/pages/children/children'
     })
   },
 
@@ -1303,23 +1603,149 @@ Page({
     if (currentFilter === 'penalty') {
       // 惩罚任务视图：仅显示惩罚任务
       filteredTasks = allTasks.filter(task => task.taskType === 'penalty_parent' || task.taskType === 'penalty_child')
+    } else if (currentFilter === 'normal') {
+      // 常规任务：没有次数限制和时间限制的自定义任务
+      filteredTasks = allTasks.filter(task => {
+        return task.taskType === 'custom' &&
+               (!task.maxCompletions || task.maxCompletions === -1) &&
+               (!task.startDate || !task.endDate)
+      })
+    } else if (currentFilter === 'activity') {
+      // 活动任务：只有自定义任务中有时间限制或次数限制的
+      filteredTasks = allTasks.filter(task => {
+        if (task.taskType !== 'custom') return false
+        // 自定义任务：有次数限制或时间限制的才算活动
+        return (task.maxCompletions && task.maxCompletions !== -1) ||
+               (task.startDate && task.endDate)
+      })
+    } else if (currentFilter === 'all') {
+      // 全部任务：排除惩罚任务
+      filteredTasks = allTasks.filter(task => task.taskType !== 'penalty_parent' && task.taskType !== 'penalty_child')
     } else {
-      // 其他视图：首先排除惩罚任务
-      let normalTasks = allTasks.filter(task => task.taskType !== 'penalty_parent' && task.taskType !== 'penalty_child')
-
-      if (currentFilter === 'all') {
-        filteredTasks = normalTasks
-      } else if (currentFilter === 'custom') {
-        // 限时挑战：包括所有自定义任务
-        filteredTasks = normalTasks.filter(task => task.taskType === 'custom')
-      } else {
-        // 其他筛选：daily, weekly, monthly
-        filteredTasks = normalTasks.filter(task => task.taskType === currentFilter)
-      }
+      // 其他筛选：daily, weekly, monthly
+      filteredTasks = allTasks.filter(task => task.taskType === currentFilter)
     }
 
-    this.setData({ tasks: filteredTasks })
-    console.log('[首页] 筛选后任务数量:', filteredTasks.length)
+    // 对筛选后的任务进行排序：未完成在前，已完成在后
+    filteredTasks.sort((a, b) => {
+      // 判断任务是否已完成
+      const aCompleted = a.completed || (a.taskStatus && (a.taskStatus.status === 'completed' || a.taskStatus.status === 'expired' || a.taskStatus.status === 'ended'))
+      const bCompleted = b.completed || (b.taskStatus && (b.taskStatus.status === 'completed' || b.taskStatus.status === 'expired' || b.taskStatus.status === 'ended'))
+
+      // 一个已完成，一个未完成
+      if (aCompleted !== bCompleted) {
+        return aCompleted ? 1 : -1  // 未完成在前
+      }
+
+      // 都未完成，按金币倒序
+      if (!aCompleted && !bCompleted) {
+        return (b.coinReward || 0) - (a.coinReward || 0)
+      }
+
+      // 都已完成，按金币倒序
+      return (b.coinReward || 0) - (a.coinReward || 0)
+    })
+
+    // 计算可用的分类
+    const availableFilters = ['all']
+    const hasPenalty = allTasks.some(task => task.taskType === 'penalty_parent' || task.taskType === 'penalty_child')
+
+    // 检查常规任务
+    const hasNormal = allTasks.some(task => {
+      return task.taskType === 'custom' &&
+             (!task.maxCompletions || task.maxCompletions === -1) &&
+             (!task.startDate || !task.endDate)
+    })
+    if (hasNormal) availableFilters.push('normal')
+
+    // 检查活动任务
+    const hasActivity = allTasks.some(task => {
+      if (task.taskType !== 'custom') return false
+      return (task.maxCompletions && task.maxCompletions !== -1) ||
+             (task.startDate && task.endDate)
+    })
+    if (hasActivity) availableFilters.push('activity')
+
+    // 检查周期性任务
+    const hasDaily = allTasks.some(task => task.taskType === 'daily')
+    if (hasDaily) availableFilters.push('daily')
+
+    const hasWeekly = allTasks.some(task => task.taskType === 'weekly')
+    if (hasWeekly) availableFilters.push('weekly')
+
+    const hasMonthly = allTasks.some(task => task.taskType === 'monthly')
+    if (hasMonthly) availableFilters.push('monthly')
+
+    // 惩罚任务始终添加到最后（即使没有也显示）
+    availableFilters.push('penalty')
+
+    this.setData({
+      tasks: filteredTasks,
+      availableFilters,
+      hasPenalty
+    })
+
+    // 计算任务进度
+    this.calculateTaskProgress()
+  },
+
+  /**
+   * 计算任务进度
+   */
+  calculateTaskProgress() {
+    const { allTasks, currentFilter } = this.data
+
+    // 根据当前筛选确定要计算的任务列表
+    let tasksToCount = []
+    if (currentFilter === 'penalty') {
+      // 惩罚任务不显示进度
+      this.setData({
+        taskProgress: {
+          total: 0,
+          completed: 0,
+          percentage: 0
+        }
+      })
+      return
+    } else if (currentFilter === 'all') {
+      // 全部：排除惩罚任务
+      tasksToCount = allTasks.filter(task => task.taskType !== 'penalty_parent' && task.taskType !== 'penalty_child')
+    } else if (currentFilter === 'normal') {
+      // 常规任务
+      tasksToCount = allTasks.filter(task => {
+        return task.taskType === 'custom' &&
+               (!task.maxCompletions || task.maxCompletions === -1) &&
+               (!task.startDate || !task.endDate)
+      })
+    } else if (currentFilter === 'activity') {
+      // 活动任务
+      tasksToCount = allTasks.filter(task => {
+        if (task.taskType !== 'custom') return false
+        return (task.maxCompletions && task.maxCompletions !== -1) ||
+               (task.startDate && task.endDate)
+      })
+    } else {
+      // daily, weekly, monthly
+      tasksToCount = allTasks.filter(task => task.taskType === currentFilter)
+    }
+
+    // 计算总任务数和完成数
+    // 注意：多次可完成任务只算一次，当天完成一次就算完成
+    const total = tasksToCount.length
+    const completed = tasksToCount.filter(task => task.completed).length
+
+    // 计算百分比
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0
+
+    console.log('[首页] 任务进度:', { total, completed, percentage, filter: currentFilter })
+
+    this.setData({
+      taskProgress: {
+        total,
+        completed,
+        percentage
+      }
+    })
   },
 
   /**
@@ -1336,10 +1762,20 @@ Page({
       return { badgeText: '限时挑战', badgeType: 'challenge' }
     }
 
+    // 每日任务：检查是否有倒计时
+    if (taskType === 'daily') {
+      if (taskStatus && taskStatus.countdown) {
+        // 有倒计时，显示倒计时胶囊
+        if (taskStatus.status === 'expired') {
+          return { badgeText: '已过期', badgeType: 'expired' }
+        }
+        return { badgeText: taskStatus.countdown, badgeType: 'countdown' }
+      }
+      return { badgeText: '每日任务', badgeType: 'daily' }
+    }
+
     // 周期性任务
     switch (taskType) {
-      case 'daily':
-        return { badgeText: '每日任务', badgeType: 'daily' }
       case 'weekly':
         return { badgeText: '每周任务', badgeType: 'weekly' }
       case 'monthly':
@@ -1376,5 +1812,660 @@ Page({
       query: '',
       imageUrl: ''
     }
+  },
+
+  /**
+   * 启动倒计时更新定时器
+   */
+  startCountdownTimer() {
+    // 清除旧的定时器
+    this.stopCountdownTimer()
+
+    console.log('[定时器] 启动倒计时定时器')
+
+    // 每秒更新一次倒计时
+    this.data.countdownTimer = setInterval(() => {
+      console.log('[定时器] 执行定时任务')
+      this.updateTaskCountdowns()
+    }, 1000) // 1秒
+  },
+
+  /**
+   * 停止倒计时更新定时器
+   */
+  stopCountdownTimer() {
+    if (this.data.countdownTimer) {
+      clearInterval(this.data.countdownTimer)
+      this.setData({ countdownTimer: null })
+    }
+  },
+
+  /**
+   * 更新所有任务的倒计时（轻量级更新，只更新文本）
+   */
+  updateTaskCountdowns() {
+    const { tasks } = this.data
+    if (!tasks || tasks.length === 0) return
+
+    const { getLocalDateString } = require('../../utils/util.js')
+    const today = getLocalDateString(new Date())
+    const now = new Date()
+
+    // 构建更新数据
+    const updateData = {}
+    let needsUpdate = false
+
+    tasks.forEach((task, index) => {
+      if (task.taskType === 'daily' && task.endTime && !task.completed && task.taskStatus && task.taskStatus.countdown) {
+
+
+        // 重新计算倒计时
+        const [hours, minutes] = task.endTime.split(':')
+        const endTimeToday = new Date(today)
+        endTimeToday.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+
+        if (now <= endTimeToday) {
+          // 还没过期，更新倒计时
+          const timeDiff = endTimeToday.getTime() - now.getTime()
+          const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60))
+          const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
+          const secondsLeft = Math.floor((timeDiff % (1000 * 60)) / 1000)
+
+          let countdownText
+          if (hoursLeft > 0) {
+            countdownText = `${hoursLeft}小时${minutesLeft}分${secondsLeft}秒`
+          } else if (minutesLeft > 0) {
+            countdownText = `${minutesLeft}分${secondsLeft}秒`
+          } else {
+            countdownText = `${secondsLeft}秒`
+          }
+
+    
+
+          // 更新 taskStatus
+          const newStatusText = task.taskType === 'daily' && task.endTime
+            ? `${countdownText}后截止`
+            : task.taskStatus.statusText
+
+          updateData[`tasks[${index}].taskStatus.countdown`] = countdownText
+          updateData[`tasks[${index}].taskStatus.statusText`] = newStatusText
+          needsUpdate = true
+        }
+      }
+    })
+
+    // 批量更新
+    if (needsUpdate) {
+      this.setData(updateData)
+    } else {
+    }
+  },
+
+  /**
+   * 页面隐藏时清除定时器
+   */
+  onHide() {
+    this.stopCountdownTimer()
+  },
+
+  /**
+   * 页面卸载时清除定时器
+   */
+  onUnload() {
+    this.stopCountdownTimer()
+  },
+
+  /**
+   * 切换飘动动画
+   */
+  onFloatAnimationToggle(e) {
+    const enable = !this.data.enableFloatAnimation
+    this.setData({
+      enableFloatAnimation: enable,
+      taskListClass: enable ? '' : 'no-float-gap'
+    })
+
+    // 保存到本地存储
+    try {
+      wx.setStorageSync('enableFloatAnimation', enable)
+    } catch (err) {
+      console.error('[首页] 保存飘动动画设置失败:', err)
+    }
+  },
+
+  /**
+   * 切换统计范围
+   */
+  onStatsRangeChange(e) {
+    const { range } = e.currentTarget.dataset
+    console.log('[首页] 切换统计范围:', range)
+
+    this.setData({ statsRange: range })
+    this.generateCalendarItems()
+    this.calculateCoinStats()
+  },
+
+  /**
+   * 生成日历选项
+   */
+  generateCalendarItems() {
+    const { statsRange } = this.data
+    const { getLocalDateString } = require('../../utils/util.js')
+    const today = new Date()
+    const todayStr = getLocalDateString(today)
+
+    let items = []
+    let selectedId = ''
+
+    if (statsRange === 'today') {
+      // 生成最近30天的日期
+      const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(today)
+        date.setDate(date.getDate() - i)
+        const dateStr = getLocalDateString(date)
+        const day = date.getDate()
+        const weekDay = weekDays[date.getDay()]
+        const id = `day-${dateStr}`
+
+        items.push({
+          id: id,
+          main: `${day}日`,
+          sub: weekDay,
+          date: dateStr,
+          type: 'day',
+          isSelected: dateStr === todayStr
+        })
+
+        if (dateStr === todayStr) {
+          selectedId = id
+        }
+      }
+    } else if (statsRange === 'month') {
+      // 生成最近12个月
+      const currentYear = today.getFullYear()
+      const currentMonth = today.getMonth() + 1
+
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(today.getFullYear(), today.getMonth() - i, 1)
+        const year = date.getFullYear()
+        const month = date.getMonth() + 1
+        const monthStr = `${year}-${month.toString().padStart(2, '0')}`
+        const id = `month-${monthStr}`
+
+        items.push({
+          id: id,
+          main: `${month}月`,
+          sub: `${year}年`,
+          date: monthStr,
+          type: 'month',
+          isSelected: year === currentYear && month === currentMonth
+        })
+
+        if (year === currentYear && month === currentMonth) {
+          selectedId = id
+        }
+      }
+    } else if (statsRange === 'year') {
+      // 生成最近10年
+      const currentYear = today.getFullYear()
+
+      for (let i = 9; i >= 0; i--) {
+        const year = currentYear - i
+        const id = `year-${year}`
+
+        items.push({
+          id: id,
+          main: `${year}年`,
+          sub: '',
+          date: `${year}`,
+          type: 'year',
+          isSelected: year === currentYear,
+          isYearItem: true  // 标记为年份项目
+        })
+
+        if (year === currentYear) {
+          selectedId = id
+        }
+      }
+    } else if (statsRange === 'all') {
+      // 全部模式：显示最近10年，默认不选中任何年份
+      const currentYear = today.getFullYear()
+
+      for (let i = 9; i >= 0; i--) {
+        const year = currentYear - i
+        const id = `year-${year}`
+
+        items.push({
+          id: id,
+          main: `${year}年`,
+          sub: '',
+          date: `${year}`,
+          type: 'year',
+          isSelected: false,  // 全部模式默认不选中
+          isYearItem: true  // 标记为年份项目
+        })
+      }
+
+      // 全部模式不设置 selectedId，让用户自己选择
+      selectedId = ''
+    }
+
+    // 设置选中的日期
+    const selectedItem = items.find(item => item.isSelected)
+    this.setData({
+      calendarItems: items,
+      selectedCalendarId: selectedId,
+      selectedDate: selectedItem ? selectedItem.date : null,
+      selectedCalendarLabel: selectedItem ? { main: selectedItem.main, sub: selectedItem.sub } : { main: '', sub: '' }
+    })
+
+    console.log('[首页] 生成日历选项:', {
+      range: statsRange,
+      itemCount: items.length,
+      selectedId: selectedId,
+      selectedItem: selectedItem,
+      allItems: items.slice(0, 3) // 只打印前3个，避免日志太长
+    })
+  },
+
+  /**
+   * 选择日历项
+   */
+  onCalendarItemSelect(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[首页] 选择日历项:', item)
+
+    // 如果当前是"全部"模式，点击年份后切换到"本年"模式
+    if (this.data.statsRange === 'all' && item.type === 'year') {
+      console.log('[首页] 全部模式下点击年份，切换到本年模式')
+
+      // 切换到本年模式
+      this.setData({
+        statsRange: 'year'
+      })
+
+      // 重新生成本年模式的日历，并选中点击的年份
+      const { getLocalDateString } = require('../../utils/util.js')
+      const today = new Date()
+      const selectedYear = parseInt(item.date)
+
+      const items = []
+      let selectedId = ''
+
+      // 生成最近10年
+      for (let i = 9; i >= 0; i--) {
+        const year = today.getFullYear() - i
+        const id = `year-${year}`
+
+        items.push({
+          id: id,
+          main: `${year}年`,
+          sub: '',
+          date: `${year}`,
+          type: 'year',
+          isSelected: year === selectedYear,
+          isYearItem: true
+        })
+
+        if (year === selectedYear) {
+          selectedId = id
+        }
+      }
+
+      this.setData({
+        calendarItems: items,
+        selectedCalendarId: selectedId,
+        selectedDate: item.date
+      })
+
+      // 重新计算统计数据
+      this.calculateCoinStats()
+      return
+    }
+
+    // 更新选中状态
+    const items = this.data.calendarItems.map(i => ({
+      ...i,
+      isSelected: i.id === item.id
+    }))
+
+    this.setData({
+      calendarItems: items,
+      selectedCalendarId: item.id,
+      selectedDate: item.date
+    })
+
+    // 重新计算统计数据
+    this.calculateCoinStats()
+  },
+
+  /**
+   * 计算金币统计
+   */
+  async calculateCoinStats() {
+    try {
+      const currentChild = app.getCurrentChild()
+      const currentFamilyId = app.getCurrentFamilyId()
+
+      if (!currentChild || !currentFamilyId) {
+        console.log('[首页] 缺少currentChild或familyId，跳过统计')
+        return
+      }
+
+      const currentChildId = currentChild.childId
+      const statsRange = this.data.statsRange
+      const selectedDate = this.data.selectedDate
+
+      console.log('[首页] 计算金币统计 - childId:', currentChildId, 'familyId:', currentFamilyId, 'range:', statsRange, 'selectedDate:', selectedDate)
+
+      let coinRecords = []
+
+      // 如果登录了，从云端获取
+      if (app.globalData.useCloudStorage) {
+        console.log('[首页] 从云端获取金币记录')
+        const res = await wx.cloud.callFunction({
+          name: 'manageFamilyCoins',
+          data: {
+            action: 'getCoinRecords',
+            data: {
+              childId: currentChildId,
+              familyId: currentFamilyId,
+              limit: 1000  // 获取更多记录以支持范围筛选
+            }
+          }
+        })
+
+        console.log('[首页] 云端返回:', res.result)
+
+        if (res.result && res.result.success) {
+          coinRecords = res.result.records || []
+          console.log('[首页] 获取到金币记录数:', coinRecords.length)
+        }
+      } else {
+        // 从本地存储获取
+        console.log('[首页] 从本地获取金币记录')
+        const storageKey = `localCoinRecords_${currentFamilyId}`
+        const localRecords = wx.getStorageSync(storageKey) || []
+        coinRecords = localRecords.filter(record => record.childId === currentChildId)
+        console.log('[首页] 本地金币记录数:', coinRecords.length)
+      }
+
+      // 根据统计范围和选中日期筛选记录
+      const { getLocalDateString } = require('../../utils/util.js')
+      const today = getLocalDateString(new Date())
+
+      console.log('[首页] 筛选范围 - statsRange:', statsRange, 'selectedDate:', selectedDate)
+
+      const filteredRecords = coinRecords.filter(record => {
+        if (!record.createdAt) return false
+
+        const recordDate = new Date(record.createdAt)
+        const recordDateStr = getLocalDateString(recordDate)
+        const recordMonth = recordDateStr.substring(0, 7)  // YYYY-MM
+        const recordYear = recordDateStr.substring(0, 4)    // YYYY
+
+        // 根据选中的日期筛选
+        if (selectedDate) {
+          if (statsRange === 'today') {
+            // 按天筛选
+            return recordDateStr === selectedDate
+          } else if (statsRange === 'month') {
+            // 按月筛选
+            return recordMonth === selectedDate
+          } else if (statsRange === 'year') {
+            // 按年筛选
+            return recordYear === selectedDate
+          }
+        }
+
+        // 如果没有选中日期，使用默认行为（今天/当月/本年）
+        const currentMonth = today.substring(0, 7)
+        const currentYear = today.substring(0, 4)
+
+        if (statsRange === 'today') {
+          return recordDateStr === today
+        } else if (statsRange === 'month') {
+          return recordMonth === currentMonth
+        } else if (statsRange === 'year') {
+          return recordYear === currentYear
+        } else {
+          // 'all' - 不筛选
+          return true
+        }
+      })
+
+      console.log('[首页] 筛选后金币记录数:', filteredRecords.length)
+
+      // 计算统计数据
+      const stats = {
+        redeemCount: 0,        // 兑换次数
+        spentCoins: 0,         // 消耗金币
+        earnCount: 0,          // 奖励次数
+        earnedCoins: 0,        // 获得金币
+        penaltyCoins: 0        // 惩罚金币
+      }
+
+      console.log('[首页] 开始处理金币记录，总记录数:', filteredRecords.length)
+
+      filteredRecords.forEach((record, index) => {
+        const amount = record.amount || 0
+        console.log(`[首页] 记录 ${index + 1}:`, {
+          type: record.type,
+          amount: amount,
+          amountType: typeof amount,
+          description: record.description,
+          relatedId: record.relatedId
+        })
+
+        if (record.type === 'prize_redeem') {
+          // 兑换奖品
+          stats.redeemCount++
+          stats.spentCoins += Math.abs(amount)
+          console.log(`[首页] 兑换奖品累计: 次数=${stats.redeemCount}, 金币=${stats.spentCoins}`)
+        } else if (record.type === 'task_complete') {
+          // 完成任务：根据amount正负来判断是奖励还是惩罚
+          if (amount >= 0) {
+            // 正数：正常完成任务获得金币
+            stats.earnCount++
+            stats.earnedCoins += amount
+            console.log(`[首页] 完成任务累计: 次数=${stats.earnCount}, 金币=${stats.earnedCoins}`)
+          } else {
+            // 负数：惩罚任务扣除金币
+            stats.penaltyCoins += Math.abs(amount)
+            console.log(`[首页] 惩罚累计: 金币=${stats.penaltyCoins}, 原始值=${amount}, 绝对值=${Math.abs(amount)}`)
+          }
+        } else if (record.type === 'penalty') {
+          // 明确标记为惩罚的记录
+          stats.penaltyCoins += Math.abs(amount)
+          console.log(`[首页] 惩罚累计: 金币=${stats.penaltyCoins}, 原始值=${amount}, 绝对值=${Math.abs(amount)}`)
+        } else if (record.type === 'manual_adjust') {
+          // 手动调整
+          if (amount > 0) {
+            stats.earnedCoins += amount
+          } else {
+            stats.spentCoins += Math.abs(amount)
+          }
+          console.log(`[首页] 手动调整: type=${record.type}, amount=${amount}`)
+        } else {
+          console.log(`[首页] 未知记录类型: ${record.type}`)
+        }
+      })
+
+      this.setData({ coinStats: stats })
+      console.log('[首页] 金币统计:', stats)
+      console.log('[首页] 兑换次数:', stats.redeemCount, '消耗金币:', stats.spentCoins)
+      console.log('[首页] 完成次数:', stats.earnCount, '获得金币:', stats.earnedCoins)
+      console.log('[首页] 惩罚金币:', stats.penaltyCoins)
+    } catch (err) {
+      console.error('[首页] 计算金币统计失败:', err)
+    }
+  },
+
+  /**
+   * 显示主题快捷菜单
+   */
+  showThemeQuickMenu() {
+    this.setData({
+      showThemeMenu: true
+    })
+  },
+
+  /**
+   * 隐藏主题快捷菜单
+   */
+  hideThemeQuickMenu() {
+    this.setData({
+      showThemeMenu: false
+    })
+  },
+
+  /**
+   * 快捷切换主题
+   */
+  quickSwitchTheme(e) {
+    const theme = e.currentTarget.dataset.theme
+    app.globalData.settings.themeStyle = theme
+    app.applyTheme()
+    app.saveSettingsToStorage()
+
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: theme,
+      colorTone: app.globalData.colorTone,
+      showThemeMenu: false
+    })
+
+    // 更新TabBar主题
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().applyTheme()
+    }
+
+    wx.showToast({
+      title: '主题已切换',
+      icon: 'success'
+    })
+  },
+
+  /**
+   * 显示登录弹窗
+   */
+  showLoginModal() {
+    wx.showModal({
+      title: '登录',
+      content: '登录后可以同步数据到云端，多设备使用',
+      confirmText: '去登录',
+      cancelText: '暂不登录',
+      success: (res) => {
+        if (res.confirm) {
+          this.performLogin()
+        }
+      }
+    })
+  },
+
+  /**
+   * 执行登录
+   */
+  async performLogin() {
+    try {
+      // 先获取用户头像昵称
+      const userProfile = await wx.getUserProfile({
+        desc: '用于保存您的设置和历史记录'
+      })
+
+      wx.showLoading({
+        title: '登录中...'
+      })
+
+      // 调用微信登录云函数
+      const loginRes = await wx.cloud.callFunction({
+        name: 'login',
+        data: {
+          userInfo: userProfile.userInfo
+        }
+      })
+
+      if (loginRes.result && loginRes.result.success) {
+        const userInfo = loginRes.result.data
+
+        // 保存用户信息
+        app.globalData.useCloudStorage = true
+        app.globalData.currentUserOpenid = userInfo.openid
+        wx.setStorageSync('userInfo', userInfo)
+
+        // 先更新用户信息显示
+        this.setData({
+          userInfo: userInfo,
+          isLoading: true
+        })
+
+        wx.hideLoading()
+        wx.showToast({
+          title: '登录成功',
+          icon: 'success'
+        })
+
+        // 同步本地数据到云端
+        await app.syncLocalDataToCloud()
+
+        // 延迟确保全局状态更新完成
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // 完全重新加载页面数据
+        await this.onShow()
+      } else {
+        wx.hideLoading()
+        wx.showToast({
+          title: '登录失败',
+          icon: 'none'
+        })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首页] 登录失败:', err)
+      wx.showToast({
+        title: '登录失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
+   * 处理退出登录
+   */
+  handleLogout() {
+    wx.showModal({
+      title: '退出登录',
+      content: '确定要退出登录吗？',
+      success: (res) => {
+        if (res.confirm) {
+          this.performLogout()
+        }
+      }
+    })
+  },
+
+  /**
+   * 执行退出登录
+   */
+  performLogout() {
+    // 清除用户信息
+    app.globalData.useCloudStorage = false
+    app.globalData.currentUserOpenid = null
+    wx.removeStorageSync('userInfo')
+
+    this.setData({
+      userInfo: null
+    })
+
+    wx.showToast({
+      title: '已退出登录',
+      icon: 'success'
+    })
+
+    // 重新加载页面
+    this.onShow()
   }
 })

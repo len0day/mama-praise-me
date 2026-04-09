@@ -582,3 +582,93 @@
   font-size: 36rpx;
 }
 
+/* 童趣模式 (Girl Style) */
+.container.style-girl {
+  background: #FFF0F5;
+}
+
+.style-girl .child-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 35rpx;
+  margin-bottom: 25rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl .child-avatar-wrapper {
+  border: 4rpx solid #FFFFFF;
+  box-shadow: 0 4rpx 15rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .child-name {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .child-age,
+.style-girl .child-coins {
+  color: #880E4F;
+}
+
+.style-girl .section-title {
+  color: #C2185B;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .add-child-btn,
+.style-girl .fab-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .modal-btn.confirm {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .modal-btn.cancel {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 105, 180, 0.3);
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .upload-avatar-btn {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: #FF69B4;
+  color: #C2185B;
+}
+
+.style-girl .child-info {
+  flex: 1;
+}
+
+.style-girl .modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 30rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 182, 193, 0.3),
+    0 20rpx 50rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .modal-title {
+  color: #C2185B;
+  font-weight: 900;
+}
+

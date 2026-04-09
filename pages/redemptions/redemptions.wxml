@@ -1,5 +1,5 @@
 <!--pages/redemptions/redemptions.wxml-->
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
   <custom-navbar title="{{i18n.redemptions.title || '我的奖品'}}" showBack="{{true}}" />
 
   <!-- 当前孩子信息 -->

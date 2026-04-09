@@ -6,6 +6,8 @@ const { showToast, showLoading, hideLoading, showConfirm } = require('../../util
 Page({
   data: {
     themeClass: 'theme-light',
+    themeStyle: 'default',
+    colorTone: 'girl',
     isParentMode: false,
     showPasswordModal: false,
     tasks: [],
@@ -28,6 +30,7 @@ Page({
       maxCompletions: null,  // 最大完成次数，null=无限
       startDate: '',  // 开始日期 YYYY-MM-DD
       endDate: '',    // 结束日期 YYYY-MM-DD
+      endTime: '',    // 结束时间 HH:mm（仅每日任务）
       weekStart: '',
       weekEnd: '',
       monthStart: '',
@@ -37,16 +40,33 @@ Page({
   },
 
   onLoad() {
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
     this.setData({
       themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme,
       isParentMode: app.isParentMode()
     })
   },
 
   onShow() {
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    console.log('[任务管理] onShow - themeStyle:', themeStyle)
+    console.log('[任务管理] app.globalData.settings:', app.globalData.settings)
     this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme,
       isParentMode: app.isParentMode()
     })
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 1 })
+      this.getTabBar().applyTheme()
+    }
     this.loadFamilyAndChild()
     this.loadTasks()
   },
@@ -259,6 +279,7 @@ Page({
         maxCompletions: null,
         startDate: '',
         endDate: '',
+        endTime: '',
         weekStart: this.formatDate(today),
         weekEnd: this.formatDate(weekEnd),
         monthStart: today.toISOString().substring(0, 7),
@@ -295,6 +316,7 @@ Page({
           maxCompletions: task.maxCompletions || null,
           startDate: task.startDate || '',
           endDate: task.endDate || '',
+          endTime: task.endTime || '',
           weekStart: task.weekStart || '',
           weekEnd: task.weekEnd || '',
           monthStart: task.monthStart || '',
@@ -448,10 +470,11 @@ Page({
         return
       }
 
-      // 确保 coinReward 是数字类型
+      // 确保 coinReward 是数字类型，maxCompletions 处理为数字或null
       const taskData = {
         ...formData,
-        coinReward: parseInt(formData.coinReward) || 0
+        coinReward: parseInt(formData.coinReward) || 0,
+        maxCompletions: formData.maxCompletions ? parseInt(formData.maxCompletions) : null
       }
 
       let res
@@ -536,6 +559,7 @@ Page({
           maxCompletions: formData.maxCompletions ? parseInt(formData.maxCompletions) : null,
           startDate: formData.startDate || null,
           endDate: formData.endDate || null,
+          endTime: formData.endTime || null,
           weekStart: formData.weekStart,
           weekEnd: formData.weekEnd,
           monthStart: formData.monthStart,

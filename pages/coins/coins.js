@@ -6,6 +6,7 @@ const { showToast, showLoading, hideLoading, formatDate } = require('../../utils
 Page({
   data: {
     themeClass: 'theme-light',
+    themeStyle: 'default',
     i18n: {},
     records: [],
     currentChild: null,
@@ -15,11 +16,26 @@ Page({
   },
 
   onLoad() {
-    this.setData({ themeClass: app.globalData.themeClass })
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
+    })
     this.loadI18n()
   },
 
   onShow() {
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
+    })
     this.setData({ currentChild: app.getCurrentChild() })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 })

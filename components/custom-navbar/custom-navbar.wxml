@@ -1,5 +1,5 @@
 <!--components/custom-navbar/custom-navbar.wxml-->
-<view class="custom-navbar {{themeClass}} {{transparent ? 'transparent' : ''}} {{transparentWithSlot ? 'transparent-with-slot' : ''}}" style="height: {{totalHeight}}px; {{transparentWithSlot ? 'background-color: ' + navBackgroundColor : 'background-color: ' + currentBackgroundColor}};">
+<view class="custom-navbar {{themeClass}} {{themeStyle === 'girl' ? 'style-girl' : ''}} color-tone-{{colorTone}} {{transparent ? 'transparent' : ''}} {{transparentWithSlot ? 'transparent-with-slot' : ''}}" style="height: {{totalHeight}}px; {{transparentWithSlot ? 'background-color: ' + navBackgroundColor : 'background-color: ' + currentBackgroundColor}};">
   <!-- 状态栏占位 -->
   <view class="status-bar" style="height: {{statusBarHeight}}px;"></view>
 

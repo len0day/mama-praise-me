@@ -108,7 +108,7 @@ exports.main = async (event, context) => {
 
     // 创建任务
     if (action === 'createTask') {
-      const { familyId, title, description, coinReward, taskType, weekStart, weekEnd, monthStart, monthEnd, targetChildId } = data
+      const { familyId, title, description, coinReward, taskType, weekStart, weekEnd, monthStart, monthEnd, targetChildId, maxCompletions, startDate, endDate, endTime } = data
 
       // 验证家庭ID
       if (!familyId) {
@@ -149,6 +149,10 @@ exports.main = async (event, context) => {
         monthStart: monthStart || null,
         monthEnd: monthEnd || null,
         targetChildId: targetChildId || null,  // null表示适用于所有儿童
+        maxCompletions: maxCompletions || null,  // 最大完成次数
+        startDate: startDate || null,  // 开始日期
+        endDate: endDate || null,  // 结束日期
+        endTime: endTime || null,  // 每日任务结束时间 (HH:mm)
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -404,6 +408,8 @@ exports.main = async (event, context) => {
       })
 
       // 增加/扣除金币（使用 manageFamilyCoins，按家庭隔离）
+      const recordType = task.taskType === 'penalty_child' ? 'penalty' : 'task_complete'
+
       const coinsRes = await cloud.callFunction({
         name: 'manageFamilyCoins',
         data: {
@@ -413,7 +419,8 @@ exports.main = async (event, context) => {
             familyId: familyId,
             amount: finalCoinEarned,
             taskId: taskId,
-            taskTitle: task.title
+            taskTitle: task.title,
+            recordType: recordType
           }
         }
       })

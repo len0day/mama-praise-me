@@ -25,8 +25,7 @@ App({
     themeClass: 'theme-light',
     isParentMode: false,              // 当前是否为家长模式
     settings: {
-      theme: 'light',
-      themeStyle: 'default',   // default / girl
+      themeStyle: 'simple-light',    // boy / girl / cute / neutral / simple-light / simple-dark
       fontSize: 'medium',
       locale: 'zh-CN',
       parentPassword: null            // 家长密码（null表示未设置）
@@ -103,28 +102,31 @@ App({
    * 应用主题
    */
   applyTheme() {
-    const theme = this.globalData.settings.theme || 'system'
+    const themeStyle = this.globalData.settings.themeStyle || 'simple-light'
     let themeClass = 'theme-light'
+    let colorTone = 'neutral'
 
-    if (theme === 'dark') {
+    // 根据主题风格设置主题类和色调
+    if (themeStyle === 'simple-dark') {
       themeClass = 'theme-dark'
-    } else if (theme === 'system') {
-      try {
-        const systemInfo = wx.getSystemInfoSync()
-        if (systemInfo.theme !== undefined) {
-          themeClass = systemInfo.theme === 'dark' ? 'theme-dark' : 'theme-light'
-        }
-      } catch (e) {
-        console.error('[主题] 获取系统主题失败:', e)
-      }
+      colorTone = 'neutral'
+    } else if (themeStyle === 'simple-light') {
+      themeClass = 'theme-light'
+      colorTone = 'neutral'
+    } else {
+      // boy, girl, cute, neutral 都使用浅色主题
+      themeClass = 'theme-light'
+      colorTone = themeStyle
     }
 
-    // 如果主题没变化，不执行更新
-    if (this.globalData.themeClass === themeClass) {
-      return
-    }
-
+    // 保存主题信息
     this.globalData.themeClass = themeClass
+    this.globalData.themeStyle = themeStyle
+    this.globalData.colorTone = colorTone
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.globalData.isFunTheme = isFunTheme
+
+    console.log('[app] applyTheme:', { themeClass, themeStyle, colorTone, isFunTheme })
 
     // 立即更新导航栏颜色
     this.updateNavigationBarColor()
@@ -133,64 +135,23 @@ App({
     const pages = getCurrentPages()
     const currentPage = pages[pages.length - 1]
     if (currentPage && currentPage.setData) {
-      currentPage.setData({ themeClass })
+      currentPage.setData({ themeClass, themeStyle, colorTone, isFunTheme })
     }
 
     // 只更新 TabBar
     if (currentPage && typeof currentPage.getTabBar === 'function') {
       const tabbar = currentPage.getTabBar()
       if (tabbar && tabbar.setData) {
-        tabbar.setData({ themeClass })
+        tabbar.setData({ themeClass, themeStyle, colorTone, isFunTheme })
       }
     }
   },
 
   /**
-   * 注册主题监听
+   * 注册主题监听（已简化，不再支持系统主题跟随）
    */
   registerThemeListener() {
-    if (this.themeListenerRegistered || !wx.onThemeChange) return
-
-    this.themeListenerRegistered = true
-    wx.onThemeChange((res) => {
-      if (this.globalData.settings.theme === 'system') {
-        const newThemeClass = res.theme === 'dark' ? 'theme-dark' : 'theme-light'
-
-        if (this.globalData.themeClass === newThemeClass) {
-          return
-        }
-
-        this.globalData.themeClass = newThemeClass
-
-        // 更新导航栏颜色
-        if (newThemeClass === 'theme-dark') {
-          wx.setNavigationBarColor({
-            frontColor: '#ffffff',
-            backgroundColor: '#1C1C1E'
-          })
-        } else {
-          wx.setNavigationBarColor({
-            frontColor: '#000000',
-            backgroundColor: '#FF9800'
-          })
-        }
-
-        // 更新当前页面
-        const pages = getCurrentPages()
-        const currentPage = pages[pages.length - 1]
-        if (currentPage) {
-          if (currentPage.setData) {
-            currentPage.setData({ themeClass: newThemeClass })
-          }
-          if (typeof currentPage.getTabBar === 'function') {
-            const tabbar = currentPage.getTabBar()
-            if (tabbar && tabbar.applyTheme) {
-              tabbar.applyTheme()
-            }
-          }
-        }
-      }
-    })
+    // 不再支持系统主题跟随，移除监听
   },
 
   /**
@@ -218,12 +179,13 @@ App({
   loadSettingsFromStorage() {
     try {
       const settings = wx.getStorageSync('appSettings')
+      console.log('[妈妈表扬我] 从存储加载设置:', settings)
       if (settings) {
         this.globalData.settings = {
           ...this.globalData.settings,
           ...settings
         }
-        console.log('[妈妈表扬我] ✓ 加载设置成功')
+        console.log('[妈妈表扬我] ✓ 加载设置成功 - 最终设置:', this.globalData.settings)
       }
     } catch (e) {
       console.error('[妈妈表扬我] 加载设置失败:', e)

@@ -625,3 +625,121 @@
   box-shadow: 0 2rpx 8rpx rgba(255, 152, 0, 0.3);
   transform: translateY(1rpx);
 }
+
+/* 童趣模式 (Girl Style) */
+.container.style-girl {
+  background: #FFF0F5;
+}
+
+.style-girl .child-info {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 100rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  padding: 20rpx 40rpx;
+  margin: 30rpx 40rpx;
+  backdrop-filter: blur(10px);
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 182, 193, 0.3),
+    inset 10rpx 10rpx 25rpx rgba(255, 255, 255, 0.9),
+    0 15rpx 35rpx rgba(255, 182, 193, 0.2);
+}
+
+.style-girl .child-avatar {
+  border: 4rpx solid #FFFFFF;
+  box-shadow: 0 4rpx 15rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .child-name {
+  color: #C2185B !important;
+  font-weight: 900 !important;
+  text-shadow: 1rpx 1rpx 0 #FFF, 2rpx 2rpx 10rpx rgba(255, 182, 193, 0.5);
+}
+
+.style-girl .section-title {
+  color: #C2185B;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .prize-item {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl .prize-name {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .prize-desc {
+  color: #880E4F;
+}
+
+.style-girl .prize-meta {
+  color: #AD1457;
+}
+
+.style-girl .add-prize-btn,
+.style-girl .fab-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .modal-btn.confirm {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .modal-btn.cancel {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 105, 180, 0.3);
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 30rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 182, 193, 0.3),
+    0 20rpx 50rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .modal-title {
+  color: #C2185B;
+  font-weight: 900;
+}
+
+.style-girl .category-item {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 20rpx;
+  padding: 20rpx 30rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+  color: #C2185B;
+  font-weight: 600;
+}
+
+.style-girl .category-item.active {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+  font-weight: 900;
+}

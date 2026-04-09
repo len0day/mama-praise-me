@@ -35,17 +35,25 @@ Page({
   },
 
   onLoad(options) {
-    this.setData({ 
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
       themeClass: app.globalData.themeClass,
-      themeStyle: app.globalData.settings.themeStyle || 'default'
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
     })
     this.loadI18n()
   },
 
   onShow() {
-    this.setData({ 
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
       themeClass: app.globalData.themeClass,
-      themeStyle: app.globalData.settings.themeStyle || 'default'
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
     })
 
     // 获取当前选中的家庭ID

@@ -421,6 +421,8 @@
 
 .children-section {
   padding: 16rpx 20rpx;
+  margin-bottom: 0;
+  padding-bottom: 10rpx;
 }
 
 .detail-header {
@@ -1135,3 +1137,183 @@
   color: #2196F3;
 }
 
+/* 童趣模式 (Girl Style) */
+.container.style-girl {
+  background: #FFF0F5;
+}
+
+.style-girl .section-title {
+  color: #C2185B;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .family-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 35rpx;
+  margin-bottom: 0; /* 移除底部空白 */
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl .family-card.current {
+  border-color: #FF69B4;
+  border-width: 4rpx;
+}
+
+.style-girl .family-name {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .family-meta {
+  color: #880E4F;
+}
+
+.style-girl .stat-tag {
+  background: linear-gradient(135deg, #FFE4E1, #FFC0CB);
+  color: #C2185B;
+  font-weight: 600;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.style-girl .stat-tag.task {
+  background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+  color: #1976D2;
+}
+
+.style-girl .stat-tag.prize {
+  background: linear-gradient(135deg, #F3E5F5, #E1BEE7);
+  color: #7B1FA2;
+}
+
+.style-girl .stat-tag.child {
+  background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+  color: #388E3C;
+}
+
+.style-girl .stat-tag.parent {
+  background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+  color: #FF9800;
+}
+
+.style-girl .create-family-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .child-item {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 20rpx;
+  padding: 20rpx;
+  margin-bottom: 8rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+}
+
+.style-girl .child-info {
+  flex: 1;
+}
+
+.style-girl .child-avatar {
+  border: 3rpx solid #FFFFFF;
+  box-shadow: 0 2rpx 10rpx rgba(255, 182, 193, 0.3);
+}
+
+.style-girl .child-name {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .child-coins {
+  color: #FF69B4;
+  font-weight: 600;
+}
+
+.style-girl .family-detail {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 20rpx;
+  margin-top: 15rpx;
+  margin-bottom: 0;
+  padding: 15rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+}
+
+.style-girl .detail-item {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 15rpx;
+  padding: 15rpx;
+  margin-bottom: 8rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+}
+
+.style-girl .detail-title {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .family-icon {
+  background: rgba(255, 255, 255, 0.8);
+  border: 3rpx solid #FFFFFF;
+  box-shadow: 0 4rpx 15rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .family-img {
+  border-radius: 12rpx;
+}
+
+.style-girl .admin-badge {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  color: #FFFFFF;
+  font-weight: 700;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.style-girl .invite-code-text {
+  color: #880E4F;
+}
+
+.style-girl .modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 30rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 182, 193, 0.3),
+    0 20rpx 50rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .modal-title {
+  color: #C2185B;
+  font-weight: 900;
+}
+
+
+/* 童趣模式下缩小标签 */
+.style-girl .stat-tag {
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+}
+
+.style-girl .admin-badge {
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+}
+
+.style-girl .role-badge {
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+}

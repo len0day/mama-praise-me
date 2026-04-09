@@ -48,3 +48,169 @@
 .tab-bar.theme-dark .tab-text.selected {
   color: #FF9800;
 }
+
+/* 童趣模式 (Girl Style) */
+.tab-bar.style-girl {
+  background: linear-gradient(180deg, #FFC0CB 0%, #FFB6C1 50%, #FF69B4 100%) !important;
+  border-top: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 -4rpx 20rpx rgba(255, 182, 193, 0.5) !important;
+}
+
+.tab-bar.style-girl.theme-dark {
+  background: linear-gradient(180deg, #FFB6C1 0%, #FF69B4 50%, #C2185B 100%) !important;
+  border-top: 3rpx solid rgba(255, 255, 255, 0.4) !important;
+}
+
+.tab-bar.style-girl .tab-icon {
+  filter: drop-shadow(1rpx 1rpx 3rpx rgba(194, 24, 91, 0.3));
+}
+
+.tab-bar.style-girl .tab-text {
+  color: #C2185B !important;
+  font-weight: 600;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8);
+}
+
+.tab-bar.style-girl .tab-text.selected {
+  color: #C2185B !important;
+  font-weight: 900;
+  font-size: 24rpx;
+  text-shadow:
+    1rpx 1rpx 2rpx rgba(255, 255, 255, 0.9),
+    0 0 8rpx rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  padding: 8rpx 18rpx;
+  border-radius: 25rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow:
+    inset -3rpx -3rpx 10rpx rgba(255, 255, 255, 0.6),
+    inset 3rpx 3rpx 10rpx rgba(255, 182, 193, 0.3),
+    0 4rpx 12rpx rgba(255, 105, 180, 0.25),
+    0 8rpx 20rpx rgba(255, 182, 193, 0.2);
+}
+
+.tab-bar.style-girl.theme-dark .tab-text {
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.tab-bar.style-girl.theme-dark .tab-text.selected {
+  color: #FFFFFF !important;
+  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.4);
+}
+
+/* ==================== TabBar 色调样式 ==================== */
+
+/* 男孩色调 */
+.tab-bar.style-girl.color-tone-boy {
+  background: linear-gradient(180deg, #64B5F6 0%, #42A5F5 50%, #1976D2 100%) !important;
+  border-top: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 -4rpx 20rpx rgba(25, 118, 210, 0.3) !important;
+}
+
+.tab-bar.style-girl.color-tone-boy .tab-icon {
+  filter: drop-shadow(1rpx 1rpx 3rpx rgba(13, 71, 161, 0.3));
+}
+
+.tab-bar.style-girl.color-tone-boy .tab-text {
+  color: #0D47A1 !important;
+  font-weight: 600;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+.tab-bar.style-girl.color-tone-boy .tab-text.selected {
+  color: #FFFFFF !important;
+  font-weight: 900;
+  font-size: 24rpx;
+  text-shadow:
+    1rpx 1rpx 2rpx rgba(13, 71, 161, 0.5),
+    0 0 8rpx rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  padding: 8rpx 18rpx;
+  border-radius: 25rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow:
+    inset -3rpx -3rpx 10rpx rgba(255, 255, 255, 0.6),
+    inset 3rpx 3rpx 10rpx rgba(25, 118, 210, 0.3),
+    0 4rpx 12rpx rgba(25, 118, 210, 0.25),
+    0 8rpx 20rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+/* 中性色调 */
+.tab-bar.style-girl.color-tone-neutral {
+  background: linear-gradient(180deg, #E0E0E0 0%, #BDBDBD 50%, #9E9E9E 100%) !important;
+  border-top: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 -4rpx 20rpx rgba(117, 117, 117, 0.3) !important;
+}
+
+.tab-bar.style-girl.color-tone-neutral .tab-icon {
+  filter: drop-shadow(1rpx 1rpx 3rpx rgba(66, 66, 66, 0.3));
+}
+
+.tab-bar.style-girl.color-tone-neutral .tab-text {
+  color: #424242 !important;
+  font-weight: 600;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+.tab-bar.style-girl.color-tone-neutral .tab-text.selected {
+  color: #424242 !important;
+  font-weight: 900;
+  font-size: 24rpx;
+  text-shadow:
+    1rpx 1rpx 2rpx rgba(66, 66, 66, 0.5),
+    0 0 8rpx rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  padding: 8rpx 18rpx;
+  border-radius: 25rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow:
+    inset -3rpx -3rpx 10rpx rgba(255, 255, 255, 0.6),
+    inset 3rpx 3rpx 10rpx rgba(97, 97, 97, 0.3),
+    0 4rpx 12rpx rgba(117, 117, 117, 0.25),
+    0 8rpx 20rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+/* 可爱色调 */
+.tab-bar.style-girl.color-tone-cute {
+  background: linear-gradient(180deg, #FFD54F 0%, #FFCA28 50%, #FFA726 100%) !important;
+  border-top: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 -4rpx 20rpx rgba(255, 167, 38, 0.3) !important;
+}
+
+.tab-bar.style-girl.color-tone-cute .tab-icon {
+  filter: drop-shadow(1rpx 1rpx 3rpx rgba(230, 81, 0, 0.3));
+}
+
+.tab-bar.style-girl.color-tone-cute .tab-text {
+  color: #E65100 !important;
+  font-weight: 600;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+.tab-bar.style-girl.color-tone-cute .tab-text.selected {
+  color: #FFFFFF !important;
+  font-weight: 900;
+  font-size: 24rpx;
+  text-shadow:
+    1rpx 1rpx 2rpx rgba(230, 81, 0, 0.5),
+    0 0 8rpx rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  padding: 8rpx 18rpx;
+  border-radius: 25rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow:
+    inset -3rpx -3rpx 10rpx rgba(255, 255, 255, 0.6),
+    inset 3rpx 3rpx 10rpx rgba(230, 81, 0, 0.3),
+    0 4rpx 12rpx rgba(255, 167, 38, 0.25),
+    0 8rpx 20rpx rgba(255, 202, 40, 0.2) !important;
+}
+

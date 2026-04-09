@@ -1,4 +1,4 @@
-<view class="container {{themeClass}} style-{{themeStyle}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
   <custom-navbar title="{{i18n.prizes.title || '奖品商城'}}" showBack="{{false}}" />
 
   <!-- 需要创建家庭提示 -->

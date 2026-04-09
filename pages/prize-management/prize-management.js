@@ -6,6 +6,7 @@ const { showToast, showLoading, hideLoading, showConfirm } = require('../../util
 Page({
   data: {
     themeClass: 'theme-light',
+    themeStyle: 'default',
     prizes: [],
     isLoading: false,
     showAddModal: false,
@@ -36,15 +37,26 @@ Page({
 
   onLoad() {
     console.log('[奖品管理] onLoad called')
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
     this.setData({
       themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme,
       isParentMode: app.isParentMode()
     })
   },
 
   onShow() {
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
     console.log('[奖品管理] onShow called, isParentMode:', app.isParentMode())
     this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme,
       isParentMode: app.isParentMode()
     })
 

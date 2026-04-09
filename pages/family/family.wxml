@@ -1,5 +1,5 @@
 <!--pages/family/family.wxml-->
-<view class="container {{themeClass}} style-{{themeStyle}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
   <custom-navbar title="{{family ? family.name : '家庭'}}" showBack="{{true}}" />
 
   <!-- 无家庭时的提示 -->

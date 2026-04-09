@@ -6,6 +6,8 @@ const { showToast, showLoading, hideLoading, showConfirm } = require('../../util
 Page({
   data: {
     themeClass: 'theme-light',
+    themeStyle: 'default',
+    colorTone: 'girl',
     families: [],            // 用户所属的所有家庭
     myFamily: null,          // 当前选中的家庭
     familyMembers: [],       // 当前家庭的成员列表
@@ -33,13 +35,28 @@ Page({
   },
 
   onLoad() {
-    this.setData({ themeClass: app.globalData.themeClass })
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
+    })
   },
 
   onShow() {
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
+    })
     this.loadAllFamilies()
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 2 })
+      this.getTabBar().setData({ selected: 3 })
       this.getTabBar().applyTheme()
     }
   },

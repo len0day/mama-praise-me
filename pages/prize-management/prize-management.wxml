@@ -1,5 +1,5 @@
 <!--pages/prize-management/prize-management.wxml-->
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
   <custom-navbar title="奖品管理" showBack="{{true}}" />
 
   <!-- 家长模式状态栏 -->

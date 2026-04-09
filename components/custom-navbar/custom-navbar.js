@@ -56,6 +56,8 @@ Component({
     navigationBarHeight: 44,  // 默认导航栏高度
     totalHeight: 88,  // 默认总高度（44+44）
     themeClass: 'theme-light',
+    themeStyle: 'default',
+    colorTone: 'girl',
     currentBackgroundColor: '#007AFF'
   },
 
@@ -148,6 +150,8 @@ Component({
     applyTheme() {
       try {
         const themeClass = app.globalData.themeClass || 'theme-light'
+        const themeStyle = app.globalData.settings.themeStyle || 'default'
+        const colorTone = app.globalData.settings.colorTone || 'girl'
         const backgroundColor = this.properties.backgroundColor
 
         let currentBackgroundColor = ''
@@ -169,6 +173,8 @@ Component({
 
         this.setData({
           themeClass,
+          themeStyle,
+          colorTone,
           currentBackgroundColor,
           navBackgroundColor
         })

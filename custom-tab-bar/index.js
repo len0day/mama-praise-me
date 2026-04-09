@@ -8,7 +8,9 @@ Component({
     color: "#666666",
     selectedColor: "#FF9800",
     list: [],
-    themeClass: 'theme-light'
+    themeClass: 'theme-light',
+    themeStyle: 'default',
+    colorTone: 'girl'
   },
 
   lifetimes: {
@@ -26,9 +28,15 @@ Component({
       const list = [
         {
           pagePath: "/pages/index/index",
+          icon: "🏠",
+          selectedIcon: "🏠",
+          text: "首页"
+        },
+        {
+          pagePath: "/pages/tasks/tasks",
           icon: "📋",
           selectedIcon: "📋",
-          text: t('tabBar.tasks')
+          text: "任务"
         },
         {
           pagePath: "/pages/prizes/prizes",
@@ -58,7 +66,16 @@ Component({
      */
     applyTheme() {
       const themeClass = app.globalData.themeClass || 'theme-light'
-      this.setData({ themeClass })
+      const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+      const colorTone = app.globalData.colorTone || 'neutral'
+      const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+      console.log('[TabBar] applyTheme:', { themeClass, themeStyle, colorTone, isFunTheme })
+      this.setData({
+        themeClass,
+        themeStyle,
+        colorTone,
+        isFunTheme
+      })
     },
 
     /**

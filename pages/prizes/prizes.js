@@ -25,18 +25,26 @@ Page({
       { value: 'other', label: '其他' }
     ],
     themeStyle: 'default',
+    colorTone: 'girl',
     celebratingPrizeId: null
   },
 
   onLoad() {
-    this.setData({ 
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
       themeClass: app.globalData.themeClass,
-      themeStyle: app.globalData.settings.themeStyle || 'default'
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
     })
   },
 
   async onShow() {
-    console.log('[奖品商城] onShow 开始')
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    console.log('[奖品商城] onShow 开始 - themeStyle:', themeStyle)
+    console.log('[奖品商城] app.globalData.settings:', app.globalData.settings)
     const child = app.getCurrentChild()
     console.log('[奖品商城] onShow - currentChild:', child)
     console.log('[奖品商城] onShow - currentChild.name:', child ? child.name : 'null')
@@ -44,6 +52,10 @@ Page({
     // 检查是否有家庭
     if (!app.getCurrentFamilyId()) {
       this.setData({
+        themeClass: app.globalData.themeClass,
+        themeStyle: themeStyle,
+        colorTone: app.globalData.colorTone || 'neutral',
+        isFunTheme: isFunTheme,
         currentChild: null,
         prizes: [],
         childCoins: 0,
@@ -60,27 +72,26 @@ Page({
     console.log('[奖品商城] 当前孩子:', currentChild)
 
     // 补充家庭信息和金币余额
+    let enrichedChild = null
     if (currentChild && currentChild.familyId) {
-      const enrichedChild = await this.enrichChildInfo(currentChild)
+      enrichedChild = await this.enrichChildInfo(currentChild)
       console.log('[奖品商城] 补充后的孩子信息:', enrichedChild)
       console.log('[奖品商城] 补充后的金币:', enrichedChild.familyCoins)
-      this.setData({
-        currentChild: enrichedChild,
-        childCoins: enrichedChild.familyCoins || 0,
-        needFamily: false
-      })
-    } else {
-      this.setData({ currentChild, needFamily: false })
     }
 
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 1 })
+      this.getTabBar().setData({ selected: 2 })
       this.getTabBar().applyTheme()
     }
 
     this.setData({
       themeClass: app.globalData.themeClass,
-      themeStyle: app.globalData.settings.themeStyle || 'default'
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme,
+      currentChild: enrichedChild || currentChild,
+      childCoins: enrichedChild ? (enrichedChild.familyCoins || 0) : 0,
+      needFamily: false
     })
 
     this.loadPrizes()

@@ -1,5 +1,5 @@
 <!--pages/coins/coins.wxml-->
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
   <custom-navbar title="{{i18n.coins.title || '金币'}}" showBack="{{false}}" />
 
   <!-- 当前孩子信息和统计 -->

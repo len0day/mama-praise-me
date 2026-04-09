@@ -9,6 +9,11 @@
   background: #1C1C1E;
 }
 
+/* 童趣模式容器 */
+.style-girl.container {
+  background: #FFF0F5; /* 粉色背景 */
+}
+
 /* 空状态 */
 .empty-state {
   display: flex;
@@ -50,6 +55,14 @@
 .action-btn:active {
   transform: translateY(2rpx);
   box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.3);
+}
+
+/* 童趣模式下的操作按钮 */
+.style-girl .action-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  box-shadow:
+    inset -4rpx -4rpx 12rpx rgba(194, 24, 91, 0.3),
+    0 10rpx 25rpx rgba(255, 105, 180, 0.4);
 }
 
 /* 当前信息栏 */
@@ -160,6 +173,20 @@
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
 }
 
+/* 童趣模式下的任务卡片 */
+.style-girl .task-item {
+  background: rgba(255, 255, 255, 0.7); /* 半透明白色 */
+  border-radius: 30rpx; /* 更圆润 */
+  padding: 25rpx;
+  margin-bottom: 25rpx;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+  border: 3rpx solid rgba(255, 255, 255, 0.8);
+}
+
 .task-header {
   display: flex;
   align-items: center;
@@ -176,6 +203,13 @@
   font-size: 32rpx;
   font-weight: bold;
   color: #333333;
+}
+
+/* 童趣模式下的标题 */
+.style-girl .task-title {
+  color: #C2185B;
+  font-weight: 900;
+  font-size: 30rpx;
 }
 
 .theme-dark .task-title {
@@ -266,27 +300,44 @@
 /* 添加按钮 */
 .add-btn {
   position: fixed;
-  bottom: 120rpx;
+  bottom: 180rpx; /* 向上移动，避免被导航栏遮挡 */
   right: 40rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.85), rgba(255, 183, 77, 0.85)); /* 半透明渐变 */
   color: #FFFFFF;
-  padding: 20rpx 40rpx;
-  border-radius: 50rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 152, 0, 0.4);
+  padding: 18rpx 36rpx; /* 进一步增大 */
+  border-radius: 45rpx; /* 增大圆角 */
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4), /* 内发光 */
+    inset 4rpx 4rpx 10rpx rgba(0, 0, 0, 0.1), /* 内阴影 */
+    0 8rpx 20rpx rgba(255, 152, 0, 0.3), /* 外阴影 */
+    0 10rpx 24rpx rgba(255, 152, 0, 0.2); /* 扩散阴影 */
+  backdrop-filter: blur(8px); /* 毛玻璃效果 */
+  border: 2rpx solid rgba(255, 255, 255, 0.3); /* 半透明边框 */
   z-index: 100;
 }
 
+/* 童趣模式下的添加按钮 */
+.style-girl .add-btn {
+  background: linear-gradient(135deg, rgba(255, 105, 180, 0.9), rgba(255, 182, 193, 0.9)); /* 粉色渐变 */
+  box-shadow:
+    inset -6rpx -6rpx 15rpx rgba(255, 255, 255, 0.5), /* 内发光 */
+    inset 6rpx 6rpx 15rpx rgba(194, 24, 91, 0.2), /* 内阴影 */
+    0 10rpx 25rpx rgba(255, 105, 180, 0.4), /* 外阴影 */
+    0 15rpx 35rpx rgba(255, 182, 193, 0.3); /* 扩散阴影 */
+  border: 3rpx solid rgba(255, 255, 255, 0.6); /* 更明显的边框 */
+}
+
 .add-icon {
-  font-size: 48rpx;
+  font-size: 40rpx; /* 进一步增大 */
   line-height: 1;
 }
 
 .add-text {
-  font-size: 24rpx;
-  margin-top: 8rpx;
+  font-size: 20rpx; /* 进一步增大 */
+  margin-top: 8rpx; /* 增加间距 */
 }
 
 /* 模态框 */
@@ -674,4 +725,138 @@
   font-size: 36rpx;
   color: #FF9800;
   font-weight: bold;
+}
+
+/* 童趣模式 (Girl Style) */
+.container.style-girl {
+  background: #FFF0F5;
+}
+
+.style-girl .child-info {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 100rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  padding: 20rpx 40rpx;
+  margin: 30rpx 40rpx;
+  backdrop-filter: blur(10px);
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 182, 193, 0.3),
+    inset 10rpx 10rpx 25rpx rgba(255, 255, 255, 0.9),
+    0 15rpx 35rpx rgba(255, 182, 193, 0.2);
+}
+
+.style-girl .child-avatar {
+  border: 4rpx solid #FFFFFF;
+  box-shadow: 0 4rpx 15rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .child-name {
+  color: #C2185B !important;
+  font-weight: 900 !important;
+  text-shadow: 1rpx 1rpx 0 #FFF, 2rpx 2rpx 10rpx rgba(255, 182, 193, 0.5);
+}
+
+.style-girl .section-title {
+  color: #C2185B;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .task-item {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 35rpx;
+  margin-bottom: 25rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl .task-title {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .task-desc {
+  color: #880E4F;
+}
+
+.style-girl .task-meta {
+  color: #AD1457;
+}
+
+.style-girl .add-task-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .fab-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50%;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+}
+
+.style-girl .info-item {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 20rpx;
+  padding: 25rpx;
+  margin-bottom: 15rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+}
+
+.style-girl .info-label {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .info-value {
+  color: #880E4F;
+  font-weight: 600;
+}
+
+.style-girl .modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 30rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 182, 193, 0.3),
+    0 20rpx 50rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .modal-title {
+  color: #C2185B;
+  font-weight: 900;
+}
+
+.style-girl .radio-item {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 20rpx;
+  padding: 25rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+}
+
+.style-girl .radio-item.active {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+}
+
+.style-girl .modal-btn.cancel {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 105, 180, 0.3);
+  color: #C2185B;
+  font-weight: 700;
 }

@@ -1,0 +1,1734 @@
+/* app.wxss - 全局样式 */
+page {
+  background: #FFF8E1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 深色主题下的page背景 */
+page.theme-dark {
+  background: #1C1C1E !important;
+}
+
+/* 深色主题容器背景 */
+.theme-dark {
+  background: #1C1C1E !important;
+}
+
+/* 童趣模式 - 女孩色调（默认粉色） */
+.style-girl.color-tone-girl {
+  --primary-color: #FF69B4;
+  --secondary-color: #FFB6C1;
+  --accent-color: #C2185B;
+  --bg-gradient: linear-gradient(180deg, #FFC0CB 0%, #FFB6C1 50%, #FF69B4 100%);
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --card-border: rgba(255, 255, 255, 0.9);
+}
+
+/* 童趣模式 - 男孩色调（硬朗蓝色） */
+.style-girl.color-tone-boy {
+  --primary-color: #1976D2;
+  --secondary-color: #64B5F6;
+  --accent-color: #0D47A1;
+  --bg-gradient: linear-gradient(180deg, #64B5F6 0%, #42A5F5 50%, #1976D2 100%);
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --card-border: rgba(255, 255, 255, 0.9);
+}
+
+.style-girl.color-tone-boy.container {
+  background: #E3F2FD !important;
+}
+
+.style-girl.color-tone-boy .tab-bar {
+  background: linear-gradient(180deg, #64B5F6 0%, #42A5F5 50%, #1976D2 100%) !important;
+}
+
+.style-girl.color-tone-boy .tab-text {
+  color: #0D47A1 !important;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+.style-girl.color-tone-boy .tab-text.selected {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  text-shadow: 1rpx 1rpx 2rpx rgba(13, 71, 161, 0.5) !important;
+}
+
+.style-girl.color-tone-boy .task-item {
+  background: linear-gradient(135deg, rgba(227, 242, 253, 0.7), rgba(187, 222, 251, 0.8)) !important;
+  color: #0D47A1 !important;
+  box-shadow:
+    inset -8rpx -8rpx 20rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(66, 165, 245, 0.3) !important;
+}
+
+.style-girl.color-tone-boy .section-title {
+  color: #0D47A1 !important;
+}
+
+/* 童趣模式 - 中性色调（灰色系） */
+.style-girl.color-tone-neutral {
+  --primary-color: #757575;
+  --secondary-color: #BDBDBD;
+  --accent-color: #424242;
+  --bg-gradient: linear-gradient(180deg, #E0E0E0 0%, #BDBDBD 50%, #9E9E9E 100%);
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --card-border: rgba(255, 255, 255, 0.9);
+}
+
+.style-girl.color-tone-neutral.container {
+  background: #F5F5F5 !important;
+}
+
+.style-girl.color-tone-neutral .tab-bar {
+  background: linear-gradient(180deg, #E0E0E0 0%, #BDBDBD 50%, #9E9E9E 100%) !important;
+}
+
+.style-girl.color-tone-neutral .tab-text {
+  color: #424242 !important;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+.style-girl.color-tone-neutral .tab-text.selected {
+  color: #424242 !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  text-shadow: 1rpx 1rpx 2rpx rgba(66, 66, 66, 0.5) !important;
+}
+
+.style-girl.color-tone-neutral .task-item {
+  background: linear-gradient(135deg, rgba(245, 245, 245, 0.7), rgba(235, 235, 235, 0.8)) !important;
+  color: #424242 !important;
+  box-shadow:
+    inset -8rpx -8rpx 20rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(189, 189, 189, 0.3) !important;
+}
+
+.style-girl.color-tone-neutral .section-title {
+  color: #424242 !important;
+}
+
+/* 童趣模式 - 可爱色调（橙黄色系） */
+.style-girl.color-tone-cute {
+  --primary-color: #FFA726;
+  --secondary-color: #FFD54F;
+  --accent-color: #F57C00;
+  --bg-gradient: linear-gradient(180deg, #FFD54F 0%, #FFCA28 50%, #FFA726 100%);
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --card-border: rgba(255, 255, 255, 0.9);
+}
+
+.style-girl.color-tone-cute.container {
+  background: #FFF8E1 !important;
+}
+
+.style-girl.color-tone-cute .tab-bar {
+  background: linear-gradient(180deg, #FFD54F 0%, #FFCA28 50%, #FFA726 100%) !important;
+}
+
+.style-girl.color-tone-cute .tab-text {
+  color: #E65100 !important;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+.style-girl.color-tone-cute .tab-text.selected {
+  color: #E65100 !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  text-shadow: 1rpx 1rpx 2rpx rgba(230, 81, 0, 0.5) !important;
+}
+
+.style-girl.color-tone-cute .task-item {
+  background: linear-gradient(135deg, rgba(255, 248, 225, 0.7), rgba(255, 236, 179, 0.8)) !important;
+  color: #E65100 !important;
+  box-shadow:
+    inset -8rpx -8rpx 20rpx rgba(255, 167, 38, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(255, 202, 40, 0.3) !important;
+}
+
+.style-girl.color-tone-cute .section-title {
+  color: #E65100 !important;
+}
+
+/* ==================== 男孩色调样式 ==================== */
+
+.style-girl.color-tone-boy .family-card {
+  background: rgba(227, 242, 253, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+.style-girl.color-tone-boy .family-name {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-boy .stat-tag {
+  background: linear-gradient(135deg, #E3F2FD, #BBDEFB) !important;
+  color: #1976D2 !important;
+}
+
+.style-girl.color-tone-boy .add-btn {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.9), rgba(66, 165, 245, 0.9)) !important;
+  box-shadow:
+    inset -6rpx -6rpx 15rpx rgba(255, 255, 255, 0.5),
+    inset 6rpx 6rpx 15rpx rgba(13, 71, 161, 0.2),
+    0 10rpx 25rpx rgba(25, 118, 210, 0.4),
+    0 15rpx 35rpx rgba(66, 165, 245, 0.3) !important;
+}
+
+/* ==================== 中性色调样式 ==================== */
+
+.style-girl.color-tone-neutral .family-card {
+  background: rgba(245, 245, 245, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+.style-girl.color-tone-neutral .family-name {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-neutral .stat-tag {
+  background: linear-gradient(135deg, #F5F5F5, #E0E0E0) !important;
+  color: #616161 !important;
+}
+
+.style-girl.color-tone-neutral .add-btn {
+  background: linear-gradient(135deg, rgba(117, 117, 117, 0.9), rgba(189, 189, 189, 0.9)) !important;
+  box-shadow:
+    inset -6rpx -6rpx 15rpx rgba(255, 255, 255, 0.5),
+    inset 6rpx 6rpx 15rpx rgba(66, 66, 66, 0.2),
+    0 10rpx 25rpx rgba(117, 117, 117, 0.4),
+    0 15rpx 35rpx rgba(189, 189, 189, 0.3) !important;
+}
+
+/* ==================== 可爱色调样式 ==================== */
+
+.style-girl.color-tone-cute .family-card {
+  background: rgba(255, 248, 225, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+.style-girl.color-tone-cute .family-name {
+  color: #E65100 !important;
+}
+
+.style-girl.color-tone-cute .stat-tag {
+  background: linear-gradient(135deg, #FFF8E1, #FFECB3) !important;
+  color: #F57C00 !important;
+}
+
+.style-girl.color-tone-cute .add-btn {
+  background: linear-gradient(135deg, rgba(255, 167, 38, 0.9), rgba(255, 202, 40, 0.9)) !important;
+  box-shadow:
+    inset -6rpx -6rpx 15rpx rgba(255, 255, 255, 0.5),
+    inset 6rpx 6rpx 15rpx rgba(230, 81, 0, 0.2),
+    0 10rpx 25rpx rgba(255, 167, 38, 0.4),
+    0 15rpx 35rpx rgba(255, 202, 40, 0.3) !important;
+}
+
+/* ==================== 任务卡片色调样式 ==================== */
+
+/* 男孩色调 - 任务卡片 */
+.style-girl.color-tone-boy .task-item.daily {
+  background: linear-gradient(135deg, rgba(227, 242, 253, 0.7), rgba(187, 222, 251, 0.8)) !important;
+  box-shadow:
+    inset -8rpx -8rpx 20rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(66, 165, 245, 0.3) !important;
+}
+
+.style-girl.color-tone-boy .task-item.weekly {
+  background: linear-gradient(135deg, rgba(232, 245, 253, 0.7), rgba(207, 232, 252, 0.8)) !important;
+  box-shadow:
+    inset -8rpx -8rpx 20rpx rgba(13, 71, 161, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(100, 181, 246, 0.3) !important;
+}
+
+/* 中性色调 - 任务卡片 */
+.style-girl.color-tone-neutral .task-item.daily {
+  background: linear-gradient(135deg, rgba(245, 245, 245, 0.7), rgba(235, 235, 235, 0.8)) !important;
+  box-shadow:
+    inset -8rpx -8rpx 20rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(189, 189, 189, 0.3) !important;
+}
+
+.style-girl.color-tone-neutral .task-item.weekly {
+  background: linear-gradient(135deg, rgba(250, 250, 250, 0.7), rgba(240, 240, 240, 0.8)) !important;
+  box-shadow:
+    inset -8rpx -8rpx 20rpx rgba(97, 97, 97, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(158, 158, 158, 0.3) !important;
+}
+
+/* 可爱色调 - 任务卡片 */
+.style-girl.color-tone-cute .task-item.daily {
+  background: linear-gradient(135deg, rgba(255, 248, 225, 0.7), rgba(255, 236, 179, 0.8)) !important;
+  box-shadow:
+    inset -8rpx -8rpx 20rpx rgba(255, 167, 38, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(255, 202, 40, 0.3) !important;
+}
+
+.style-girl.color-tone-cute .task-item.weekly {
+  background: linear-gradient(135deg, rgba(255, 253, 231, 0.7), rgba(255, 248, 197, 0.8)) !important;
+  box-shadow:
+    inset -8rpx -8rpx 20rpx rgba(245, 124, 0, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(255, 193, 7, 0.3) !important;
+}
+
+/* ==================== 自定义导航栏色调样式 ==================== */
+
+/* 男孩色调导航栏 */
+.style-girl.color-tone-boy .custom-navbar {
+  background: linear-gradient(180deg, #64B5F6 0%, #42A5F5 50%, #1976D2 100%) !important;
+  border-bottom: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+}
+
+.style-girl.color-tone-boy .navbar-title {
+  color: #FFFFFF !important;
+  font-weight: 900 !important;
+  text-shadow: 2rpx 2rpx 4rpx rgba(13, 71, 161, 0.3) !important;
+}
+
+/* 中性色调导航栏 */
+.style-girl.color-tone-neutral .custom-navbar {
+  background: linear-gradient(180deg, #E0E0E0 0%, #BDBDBD 50%, #9E9E9E 100%) !important;
+  border-bottom: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+}
+
+.style-girl.color-tone-neutral .navbar-title {
+  color: #424242 !important;
+  font-weight: 900 !important;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+/* 可爱色调导航栏 */
+.style-girl.color-tone-cute .custom-navbar {
+  background: linear-gradient(180deg, #FFD54F 0%, #FFCA28 50%, #FFA726 100%) !important;
+  border-bottom: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+}
+
+.style-girl.color-tone-cute .navbar-title {
+  color: #FFFFFF !important;
+  font-weight: 900 !important;
+  text-shadow: 2rpx 2rpx 4rpx rgba(230, 81, 0, 0.3) !important;
+}
+
+/* ==================== 设置页面色调样式 ==================== */
+
+/* 男孩色调设置卡片 */
+.style-girl.color-tone-boy .setting-item {
+  background: rgba(227, 242, 253, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+.style-girl.color-tone-boy .style-option.active {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  color: #FFFFFF !important;
+}
+
+/* 中性色调设置卡片 */
+.style-girl.color-tone-neutral .setting-item {
+  background: rgba(245, 245, 245, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+.style-girl.color-tone-neutral .style-option.active {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  color: #FFFFFF !important;
+}
+
+/* 可爱色调设置卡片 */
+.style-girl.color-tone-cute .setting-item {
+  background: rgba(255, 248, 225, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+.style-girl.color-tone-cute .style-option.active {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  color: #FFFFFF !important;
+}
+
+/* ==================== 文字颜色色调样式 ==================== */
+
+/* 男孩色调文字颜色 */
+.style-girl.color-tone-boy .item-label {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-boy .task-title,
+.style-girl.color-tone-boy .task-description {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-boy .coin-bubble {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  color: #FFFFFF !important;
+}
+
+/* 中性色调文字颜色 */
+.style-girl.color-tone-neutral .item-label {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-neutral .task-title,
+.style-girl.color-tone-neutral .task-description {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-neutral .coin-bubble {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  color: #FFFFFF !important;
+}
+
+/* 可爱色调文字颜色 */
+.style-girl.color-tone-cute .item-label {
+  color: #E65100 !important;
+}
+
+.style-girl.color-tone-cute .task-title,
+.style-girl.color-tone-cute .task-description {
+  color: #E65100 !important;
+}
+
+.style-girl.color-tone-cute .coin-bubble {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  color: #FFFFFF !important;
+}
+
+/* ==================== 按钮色调样式 ==================== */
+
+/* 男孩色调按钮 */
+.style-girl.color-tone-boy .primary-btn,
+.style-girl.color-tone-boy .action-btn.primary {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(13, 71, 161, 0.2),
+    0 8rpx 20rpx rgba(25, 118, 210, 0.3) !important;
+}
+
+/* 中性色调按钮 */
+.style-girl.color-tone-neutral .primary-btn,
+.style-girl.color-tone-neutral .action-btn.primary {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(66, 66, 66, 0.2),
+    0 8rpx 20rpx rgba(117, 117, 117, 0.3) !important;
+}
+
+/* 可爱色调按钮 */
+.style-girl.color-tone-cute .primary-btn,
+.style-girl.color-tone-cute .action-btn.primary {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(230, 81, 0, 0.2),
+    0 8rpx 20rpx rgba(255, 167, 38, 0.3) !important;
+}
+
+/* ==================== 首页容器背景色调样式 ==================== */
+
+.style-girl.color-tone-boy .tasks-container {
+  background: #E3F2FD !important;
+}
+
+.style-girl.color-tone-boy .task-item {
+  background: linear-gradient(135deg, rgba(227, 242, 253, 0.7), rgba(187, 222, 251, 0.8)) !important;
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .tasks-container {
+  background: #F5F5F5 !important;
+}
+
+.style-girl.color-tone-neutral .task-item {
+  background: linear-gradient(135deg, rgba(245, 245, 245, 0.7), rgba(235, 235, 235, 0.8)) !important;
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .tasks-container {
+  background: #FFF8E1 !important;
+}
+
+.style-girl.color-tone-cute .task-item {
+  background: linear-gradient(135deg, rgba(255, 248, 225, 0.7), rgba(255, 236, 179, 0.8)) !important;
+  color: #E65100 !important;
+}
+
+/* ==================== 弹窗色调样式 ==================== */
+
+/* 男孩色调弹窗 */
+.style-girl.color-tone-boy .modal-content {
+  background: rgba(227, 242, 253, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(25, 118, 210, 0.3),
+    0 20rpx 50rpx rgba(66, 165, 245, 0.4) !important;
+}
+
+.style-girl.color-tone-boy .modal-title {
+  color: #0D47A1 !important;
+}
+
+/* 中性色调弹窗 */
+.style-girl.color-tone-neutral .modal-content {
+  background: rgba(245, 245, 245, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(117, 117, 117, 0.3),
+    0 20rpx 50rpx rgba(189, 189, 189, 0.4) !important;
+}
+
+.style-girl.color-tone-neutral .modal-title {
+  color: #424242 !important;
+}
+
+/* 可爱色调弹窗 */
+.style-girl.color-tone-cute .modal-content {
+  background: rgba(255, 248, 225, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 167, 38, 0.3),
+    0 20rpx 50rpx rgba(255, 202, 40, 0.4) !important;
+}
+
+.style-girl.color-tone-cute .modal-title {
+  color: #E65100 !important;
+}
+
+/* ==================== 确保 colorTone 在非 style-girl 时也能工作 ==================== */
+
+/* 当 themeStyle 不是 girl 时，colorTone 不生效，但我们需要确保基础样式正确 */
+.color-tone-boy .tasks-container {
+  background: #E3F2FD !important;
+}
+
+.color-tone-neutral .tasks-container {
+  background: #F5F5F5 !important;
+}
+
+.color-tone-cute .tasks-container {
+  background: #FFF8E1 !important;
+}
+
+/* ==================== 强制覆盖页面容器背景色 ==================== */
+
+/* 男孩色调 - 强制覆盖 */
+.style-girl.color-tone-boy .container,
+page.style-girl.color-tone-boy .container {
+  background: #E3F2FD !important;
+}
+
+/* 中性色调 - 强制覆盖 */
+.style-girl.color-tone-neutral .container,
+page.style-girl.color-tone-neutral .container {
+  background: #F5F5F5 !important;
+}
+
+/* 可爱色调 - 强制覆盖 */
+.style-girl.color-tone-cute .container,
+page.style-girl.color-tone-cute .container {
+  background: #FFF8E1 !important;
+}
+
+/* ==================== 完整的按钮色调样式 ==================== */
+
+/* 男孩色调 - 所有按钮 */
+.style-girl.color-tone-boy button,
+.style-girl.color-tone-boy .btn,
+.style-girl.color-tone-boy button.primary,
+.style-girl.color-tone-boy .btn-primary {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(13, 71, 161, 0.2),
+    0 8rpx 20rpx rgba(25, 118, 210, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+/* 中性色调 - 所有按钮 */
+.style-girl.color-tone-neutral button,
+.style-girl.color-tone-neutral .btn,
+.style-girl.color-tone-neutral button.primary,
+.style-girl.color-tone-neutral .btn-primary {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(66, 66, 66, 0.2),
+    0 8rpx 20rpx rgba(117, 117, 117, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+/* 可爱色调 - 所有按钮 */
+.style-girl.color-tone-cute button,
+.style-girl.color-tone-cute .btn,
+.style-girl.color-tone-cute button.primary,
+.style-girl.color-tone-cute .btn-primary {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(230, 81, 0, 0.2),
+    0 8rpx 20rpx rgba(255, 167, 38, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+/* ==================== 阴影色调样式 ==================== */
+
+/* 男孩色调阴影 */
+.style-girl.color-tone-boy .task-item,
+.style-girl.color-tone-boy .family-card,
+.style-girl.color-tone-boy .setting-item,
+.style-girl.color-tone-boy .child-info {
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+/* 中性色调阴影 */
+.style-girl.color-tone-neutral .task-item,
+.style-girl.color-tone-neutral .family-card,
+.style-girl.color-tone-neutral .setting-item,
+.style-girl.color-tone-neutral .child-info {
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+/* 可爱色调阴影 */
+.style-girl.color-tone-cute .task-item,
+.style-girl.color-tone-cute .family-card,
+.style-girl.color-tone-cute .setting-item,
+.style-girl.color-tone-cute .child-info {
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+/* ==================== TabBar 下方导航栏完整色调样式 ==================== */
+
+/* 男孩色调 TabBar */
+.tab-bar.style-girl.color-tone-boy {
+  background: linear-gradient(180deg, #64B5F6 0%, #42A5F5 50%, #1976D2 100%) !important;
+  border-top: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 -4rpx 20rpx rgba(25, 118, 210, 0.3) !important;
+}
+
+.tab-bar.style-girl.color-tone-boy .tab-text {
+  color: #0D47A1 !important;
+  font-weight: 600;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+.tab-bar.style-girl.color-tone-boy .tab-text.selected {
+  color: #FFFFFF !important;
+  font-weight: 900;
+  font-size: 24rpx;
+  text-shadow:
+    1rpx 1rpx 2rpx rgba(13, 71, 161, 0.5),
+    0 0 8rpx rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  padding: 8rpx 18rpx;
+  border-radius: 25rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow:
+    inset -3rpx -3rpx 10rpx rgba(255, 255, 255, 0.6),
+    inset 3rpx 3rpx 10rpx rgba(25, 118, 210, 0.3),
+    0 4rpx 12rpx rgba(25, 118, 210, 0.25),
+    0 8rpx 20rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+/* 中性色调 TabBar */
+.tab-bar.style-girl.color-tone-neutral {
+  background: linear-gradient(180deg, #E0E0E0 0%, #BDBDBD 50%, #9E9E9E 100%) !important;
+  border-top: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 -4rpx 20rpx rgba(117, 117, 117, 0.3) !important;
+}
+
+.tab-bar.style-girl.color-tone-neutral .tab-text {
+  color: #424242 !important;
+  font-weight: 600;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+.tab-bar.style-girl.color-tone-neutral .tab-text.selected {
+  color: #424242 !important;
+  font-weight: 900;
+  font-size: 24rpx;
+  text-shadow:
+    1rpx 1rpx 2rpx rgba(66, 66, 66, 0.5),
+    0 0 8rpx rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  padding: 8rpx 18rpx;
+  border-radius: 25rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow:
+    inset -3rpx -3rpx 10rpx rgba(255, 255, 255, 0.6),
+    inset 3rpx 3rpx 10rpx rgba(97, 97, 97, 0.3),
+    0 4rpx 12rpx rgba(117, 117, 117, 0.25),
+    0 8rpx 20rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+/* 可爱色调 TabBar */
+.tab-bar.style-girl.color-tone-cute {
+  background: linear-gradient(180deg, #FFD54F 0%, #FFCA28 50%, #FFA726 100%) !important;
+  border-top: 3rpx solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 -4rpx 20rpx rgba(255, 167, 38, 0.3) !important;
+}
+
+.tab-bar.style-girl.color-tone-cute .tab-text {
+  color: #E65100 !important;
+  font-weight: 600;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8) !important;
+}
+
+.tab-bar.style-girl.color-tone-cute .tab-text.selected {
+  color: #FFFFFF !important;
+  font-weight: 900;
+  font-size: 24rpx;
+  text-shadow:
+    1rpx 1rpx 2rpx rgba(230, 81, 0, 0.5),
+    0 0 8rpx rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10rpx) !important;
+  -webkit-backdrop-filter: blur(10rpx) !important;
+  padding: 8rpx 18rpx;
+  border-radius: 25rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow:
+    inset -3rpx -3rpx 10rpx rgba(255, 255, 255, 0.6),
+    inset 3rpx 3rpx 10rpx rgba(230, 81, 0, 0.3),
+    0 4rpx 12rpx rgba(255, 167, 38, 0.25),
+    0 8rpx 20rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+/* ==================== 首页元素色调样式 ==================== */
+
+/* 孩子信息卡片文字颜色 */
+.style-girl.color-tone-boy .child-name {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-boy .child-coins {
+  color: #1976D2 !important;
+}
+
+.style-girl.color-tone-neutral .child-name {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-neutral .child-coins {
+  color: #757575 !important;
+}
+
+.style-girl.color-tone-cute .child-name {
+  color: #E65100 !important;
+}
+
+.style-girl.color-tone-cute .child-coins {
+  color: #FFA726 !important;
+}
+
+/* 分类筛选器 */
+.style-girl.color-tone-boy .filter-item {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-boy .filter-item.active {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-neutral .filter-item {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-neutral .filter-item.active {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-cute .filter-item {
+  color: #E65100 !important;
+}
+
+.style-girl.color-tone-cute .filter-item.active {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  color: #FFFFFF !important;
+}
+
+/* 任务标题和描述 */
+.style-girl.color-tone-boy .task-title {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-boy .task-desc {
+  color: #1976D2 !important;
+}
+
+.style-girl.color-tone-neutral .task-title {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-neutral .task-desc {
+  color: #757575 !important;
+}
+
+.style-girl.color-tone-cute .task-title {
+  color: #E65100 !important;
+}
+
+.style-girl.color-tone-cute .task-desc {
+  color: #FFA726 !important;
+}
+
+/* 今日任务标题 */
+.style-girl.color-tone-boy .section-title {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .section-title {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .section-title {
+  color: #E65100 !important;
+}
+
+/* 管理按钮 */
+.style-girl.color-tone-boy .task-manage-btn {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+}
+
+.style-girl.color-tone-neutral .task-manage-btn {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+}
+
+.style-girl.color-tone-cute .task-manage-btn {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+}
+
+/* ==================== 奖品页面色调样式 ==================== */
+
+/* 分类筛选器 - 奖品页面 */
+.style-girl.color-tone-boy .category-item {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-boy .category-item.active {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-neutral .category-item {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-neutral .category-item.active {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-cute .category-item {
+  color: #E65100 !important;
+}
+
+.style-girl.color-tone-cute .category-item.active {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  color: #FFFFFF !important;
+}
+
+/* 奖品卡片 */
+.style-girl.color-tone-boy .prize-card {
+  background: rgba(227, 242, 253, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+.style-girl.color-tone-boy .prize-name {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .prize-card {
+  background: rgba(245, 245, 245, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+.style-girl.color-tone-neutral .prize-name {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .prize-card {
+  background: rgba(255, 248, 225, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+.style-girl.color-tone-cute .prize-name {
+  color: #E65100 !important;
+}
+
+/* ==================== 任务管理页面色调样式 ==================== */
+
+.style-girl.color-tone-boy .task-card {
+  background: rgba(227, 242, 253, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+.style-girl.color-tone-neutral .task-card {
+  background: rgba(245, 245, 245, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+.style-girl.color-tone-cute .task-card {
+  background: rgba(255, 248, 225, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+
+
+
+
+
+
+
+
+
+/* ==================== 更多通用色调样式 ==================== */
+
+/* 任务卡片文字 */
+.style-girl.color-tone-boy .task-title,
+.style-girl.color-tone-boy .task-name {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .task-title,
+.style-girl.color-tone-neutral .task-name {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .task-title,
+.style-girl.color-tone-cute .task-name {
+  color: #E65100 !important;
+}
+
+/* 奖品卡片文字 */
+.style-girl.color-tone-boy .prize-title,
+.style-girl.color-tone-boy .prize-name {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .prize-title,
+.style-girl.color-tone-neutral .prize-name {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .prize-title,
+.style-girl.color-tone-cute .prize-name {
+  color: #E65100 !important;
+}
+
+/* 家庭列表文字 */
+.style-girl.color-tone-boy .family-name {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .family-name {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .family-name {
+  color: #E65100 !important;
+}
+
+/* 设置项文字 */
+.style-girl.color-tone-boy .item-label,
+.style-girl.color-tone-boy .item-title {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .item-label,
+.style-girl.color-tone-neutral .item-title {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .item-label,
+.style-girl.color-tone-cute .item-title {
+  color: #E65100 !important;
+}
+
+/* 标题文字 */
+.style-girl.color-tone-boy .title,
+.style-girl.color-tone-boy .header-title {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .title,
+.style-girl.color-tone-neutral .header-title {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .title,
+.style-girl.color-tone-cute .header-title {
+  color: #E65100 !important;
+}
+
+/* 所有卡片容器的通用样式 */
+.style-girl.color-tone-boy .card,
+.style-girl.color-tone-boy .info-card {
+  background: rgba(227, 242, 253, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+.style-girl.color-tone-neutral .card,
+.style-girl.color-tone-neutral .info-card {
+  background: rgba(245, 245, 245, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+.style-girl.color-tone-cute .card,
+.style-girl.color-tone-cute .info-card {
+  background: rgba(255, 248, 225, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+/* 所有按钮的通用样式 */
+.style-girl.color-tone-boy button:not([class*="secondary"]),
+.style-girl.color-tone-boy .btn:not([class*="secondary"]),
+.style-girl.color-tone-boy button.primary {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  color: #FFFFFF !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(13, 71, 161, 0.2),
+    0 8rpx 20rpx rgba(25, 118, 210, 0.3) !important;
+}
+
+.style-girl.color-tone-neutral button:not([class*="secondary"]),
+.style-girl.color-tone-neutral .btn:not([class*="secondary"]),
+.style-girl.color-tone-neutral button.primary {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  color: #FFFFFF !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(66, 66, 66, 0.2),
+    0 8rpx 20rpx rgba(117, 117, 117, 0.3) !important;
+}
+
+.style-girl.color-tone-cute button:not([class*="secondary"]),
+.style-girl.color-tone-cute .btn:not([class*="secondary"]),
+.style-girl.color-tone-cute button.primary {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  color: #FFFFFF !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(230, 81, 0, 0.2),
+    0 8rpx 20rpx rgba(255, 167, 38, 0.3) !important;
+}
+
+
+/* ==================== 金币元素色调样式 ==================== */
+
+.style-girl.color-tone-boy .child-coins {
+  color: #1976D2 !important;
+}
+
+.style-girl.color-tone-neutral .coin-icon,
+.style-girl.color-tone-neutral .child-coins {
+  color: #757575 !important;
+}
+
+.style-girl.color-tone-cute .coin-icon,
+.style-girl.color-tone-cute .child-coins {
+  color: #FFA726 !important;
+}
+
+/* ==================== 管理按钮色调样式 ==================== */
+
+/* 首页管理按钮 */
+.style-girl.color-tone-boy .manage-text,
+.style-girl.color-tone-boy .task-manage-btn {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-neutral .manage-text,
+.style-girl.color-tone-neutral .task-manage-btn {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-cute .manage-text,
+.style-girl.color-tone-cute .task-manage-btn {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  color: #FFFFFF !important;
+}
+
+/* 任务管理页面管理按钮 */
+
+
+
+/* ==================== 奖品页面按钮色调样式 ==================== */
+
+/* 我的奖品按钮 */
+.style-girl.color-tone-boy .my-prizes-btn,
+.style-girl.color-tone-boy .view-history-btn {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-neutral .my-prizes-btn,
+.style-girl.color-tone-neutral .view-history-btn {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-cute .my-prizes-btn,
+.style-girl.color-tone-cute .view-history-btn {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  color: #FFFFFF !important;
+}
+
+/* ==================== 阴影色调微调 ==================== */
+
+/* 所有阴影都添加色调颜色 */
+.style-girl.color-tone-boy .task-item,
+.style-girl.color-tone-boy .family-card,
+.style-girl.color-tone-boy .setting-item,
+.style-girl.color-tone-boy .child-info,
+.style-girl.color-tone-boy .prize-card {
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.25),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(66, 165, 245, 0.25),
+    0 15rpx 35rpx rgba(25, 118, 210, 0.15) !important;
+}
+
+.style-girl.color-tone-neutral .task-item,
+.style-girl.color-tone-neutral .family-card,
+.style-girl.color-tone-neutral .setting-item,
+.style-girl.color-tone-neutral .child-info,
+.style-girl.color-tone-neutral .prize-card {
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.25),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(189, 189, 189, 0.25),
+    0 15rpx 35rpx rgba(97, 97, 97, 0.15) !important;
+}
+
+.style-girl.color-tone-cute .task-item,
+.style-girl.color-tone-cute .family-card,
+.style-girl.color-tone-cute .setting-item,
+.style-girl.color-tone-cute .child-info,
+.style-girl.color-tone-cute .prize-card {
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.25),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(255, 202, 40, 0.25),
+    0 15rpx 35rpx rgba(230, 81, 0, 0.15) !important;
+}
+
+/* ==================== 任务管理页面顶部卡片色调 ==================== */
+
+.style-girl.color-tone-boy .task-page-header,
+.style-girl.color-tone-boy .family-child-info {
+  background: rgba(227, 242, 253, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+.style-girl.color-tone-boy .task-page-header .info-text,
+.style-girl.color-tone-boy .family-child-info .info-text {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .task-page-header,
+.style-girl.color-tone-neutral .family-child-info {
+  background: rgba(245, 245, 245, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+.style-girl.color-tone-neutral .task-page-header .info-text,
+.style-girl.color-tone-neutral .family-child-info .info-text {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .task-page-header,
+.style-girl.color-tone-cute .family-child-info {
+  background: rgba(255, 248, 225, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+.style-girl.color-tone-cute .task-page-header .info-text,
+.style-girl.color-tone-cute .family-child-info .info-text {
+  color: #E65100 !important;
+}
+
+/* ==================== 奖品卡片金币数量 ==================== */
+
+.style-girl.color-tone-boy .prize-coin-cost,
+.style-girl.color-tone-boy .coin-cost {
+  color: #1976D2 !important;
+}
+
+.style-girl.color-tone-neutral .prize-coin-cost,
+.style-girl.color-tone-neutral .coin-cost {
+  color: #757575 !important;
+}
+
+.style-girl.color-tone-cute .prize-coin-cost,
+.style-girl.color-tone-cute .coin-cost {
+  color: #FFA726 !important;
+}
+
+/* ==================== 添加任务按钮色调 ==================== */
+
+.style-girl.color-tone-boy .add-btn,
+.style-girl.color-tone-boy .add-task-btn {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(13, 71, 161, 0.2),
+    0 8rpx 20rpx rgba(25, 118, 210, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-neutral .add-btn,
+.style-girl.color-tone-neutral .add-task-btn {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(66, 66, 66, 0.2),
+    0 8rpx 20rpx rgba(117, 117, 117, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-cute .add-btn,
+.style-girl.color-tone-cute .add-task-btn {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(230, 81, 0, 0.2),
+    0 8rpx 20rpx rgba(255, 167, 38, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+
+/* ==================== 更多按钮色调样式 ==================== */
+
+/* 主要按钮 */
+.style-girl.color-tone-boy button[type="primary"],
+.style-girl.color-tone-boy .btn-primary,
+.style-girl.color-tone-boy .primary-button,
+.style-girl.color-tone-boy .action-btn.primary {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(13, 71, 161, 0.2),
+    0 8rpx 20rpx rgba(25, 118, 210, 0.3) !important;
+}
+
+.style-girl.color-tone-neutral button[type="primary"],
+.style-girl.color-tone-neutral .btn-primary,
+.style-girl.color-tone-neutral .primary-button,
+.style-girl.color-tone-neutral .action-btn.primary {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(66, 66, 66, 0.2),
+    0 8rpx 20rpx rgba(117, 117, 117, 0.3) !important;
+}
+
+.style-girl.color-tone-cute button[type="primary"],
+.style-girl.color-tone-cute .btn-primary,
+.style-girl.color-tone-cute .primary-button,
+.style-girl.color-tone-cute .action-btn.primary {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow:
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(230, 81, 0, 0.2),
+    0 8rpx 20rpx rgba(255, 167, 38, 0.3) !important;
+}
+
+/* 次要按钮 */
+.style-girl.color-tone-boy button.secondary,
+.style-girl.color-tone-boy .btn-secondary,
+.style-girl.color-tone-boy .action-btn.secondary {
+  background: rgba(227, 242, 253, 0.6) !important;
+  color: #0D47A1 !important;
+  border: 2rpx solid #1976D2 !important;
+}
+
+.style-girl.color-tone-neutral button.secondary,
+.style-girl.color-tone-neutral .btn-secondary,
+.style-girl.color-tone-neutral .action-btn.secondary {
+  background: rgba(245, 245, 245, 0.6) !important;
+  color: #424242 !important;
+  border: 2rpx solid #757575 !important;
+}
+
+.style-girl.color-tone-cute button.secondary,
+.style-girl.color-tone-cute .btn-secondary,
+.style-girl.color-tone-cute .action-btn.secondary {
+  background: rgba(255, 248, 225, 0.6) !important;
+  color: #E65100 !important;
+  border: 2rpx solid #FFA726 !important;
+}
+
+/* ==================== 输入框色调样式 ==================== */
+
+.style-girl.color-tone-boy input,
+.style-girl.color-tone-boy textarea,
+.style-girl.color-tone-boy .form-input {
+  background: rgba(227, 242, 253, 0.5) !important;
+  border-color: #1976D2 !important;
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral input,
+.style-girl.color-tone-neutral textarea,
+.style-girl.color-tone-neutral .form-input {
+  background: rgba(245, 245, 245, 0.5) !important;
+  border-color: #757575 !important;
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute input,
+.style-girl.color-tone-cute textarea,
+.style-girl.color-tone-cute .form-input {
+  background: rgba(255, 248, 225, 0.5) !important;
+  border-color: #FFA726 !important;
+  color: #E65100 !important;
+}
+
+/* ==================== 弹窗色调样式增强 ==================== */
+
+.style-girl.color-tone-boy .modal-content {
+  background: rgba(227, 242, 253, 0.95) !important;
+  border: 4rpx solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(25, 118, 210, 0.3),
+    0 20rpx 50rpx rgba(66, 165, 245, 0.4) !important;
+}
+
+.style-girl.color-tone-neutral .modal-content {
+  background: rgba(245, 245, 245, 0.95) !important;
+  border: 4rpx solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(117, 117, 117, 0.3),
+    0 20rpx 50rpx rgba(189, 189, 189, 0.4) !important;
+}
+
+.style-girl.color-tone-cute .modal-content {
+  background: rgba(255, 248, 225, 0.95) !important;
+  border: 4rpx solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 167, 38, 0.3),
+    0 20rpx 50rpx rgba(255, 202, 40, 0.4) !important;
+}
+
+/* ==================== 标签徽章色调样式 ==================== */
+
+.style-girl.color-tone-boy .tag,
+.style-girl.color-tone-boy .badge {
+  background: linear-gradient(135deg, #E3F2FD, #BBDEFB) !important;
+  color: #1976D2 !important;
+}
+
+.style-girl.color-tone-neutral .tag,
+.style-girl.color-tone-neutral .badge {
+  background: linear-gradient(135deg, #F5F5F5, #E0E0E0) !important;
+  color: #616161 !important;
+}
+
+.style-girl.color-tone-cute .tag,
+.style-girl.color-tone-cute .badge {
+  background: linear-gradient(135deg, #FFF8E1, #FFECB3) !important;
+  color: #F57C00 !important;
+}
+
+
+/* ==================== 金币数量文字颜色（不改变气泡背景） ==================== */
+
+/* 金币数量的文字颜色 */
+.style-girl.color-tone-boy .child-coins,
+.style-girl.color-tone-boy .coin-count,
+.style-girl.color-tone-boy .coin-bubble text,
+.style-girl.color-tone-boy .task-reward text {
+  color: #1976D2 !important;
+}
+
+.style-girl.color-tone-neutral .child-coins,
+.style-girl.color-tone-neutral .coin-count,
+.style-girl.color-tone-neutral .coin-bubble text,
+.style-girl.color-tone-neutral .task-reward text {
+  color: #757575 !important;
+}
+
+.style-girl.color-tone-cute .child-coins,
+.style-girl.color-tone-cute .coin-count,
+.style-girl.color-tone-cute .coin-bubble text,
+.style-girl.color-tone-cute .task-reward text {
+  color: #FFA726 !important;
+}
+
+/* 奖品卡片金币数量 */
+.style-girl.color-tone-boy .coin-cost,
+.style-girl.color-tone-boy .prize-coin-cost {
+  color: #1976D2 !important;
+}
+
+.style-girl.color-tone-neutral .coin-cost,
+.style-girl.color-tone-neutral .prize-coin-cost {
+  color: #757575 !important;
+}
+
+.style-girl.color-tone-cute .coin-cost,
+.style-girl.color-tone-cute .prize-coin-cost {
+  color: #FFA726 !important;
+}
+
+
+/* ==================== 任务页面顶部信息卡片色调 ==================== */
+
+.style-girl.color-tone-boy .current-info,
+.style-girl.color-tone-boy .info-item {
+  background: rgba(227, 242, 253, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+.style-girl.color-tone-boy .info-label,
+.style-girl.color-tone-boy .info-value {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .current-info,
+.style-girl.color-tone-neutral .info-item {
+  background: rgba(245, 245, 245, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+.style-girl.color-tone-neutral .info-label,
+.style-girl.color-tone-neutral .info-value {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .current-info,
+.style-girl.color-tone-cute .info-item {
+  background: rgba(255, 248, 225, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+.style-girl.color-tone-cute .info-label,
+.style-girl.color-tone-cute .info-value {
+  color: #E65100 !important;
+}
+
+/* ==================== 奖品页面元素色调 ==================== */
+
+/* 孩子信息区域 */
+.style-girl.color-tone-boy .child-info {
+  background: rgba(227, 242, 253, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(66, 165, 245, 0.2) !important;
+}
+
+.style-girl.color-tone-boy .child-name,
+.style-girl.color-tone-boy .stat-text {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .child-info {
+  background: rgba(245, 245, 245, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(189, 189, 189, 0.2) !important;
+}
+
+.style-girl.color-tone-neutral .child-name,
+.style-girl.color-tone-neutral .stat-text {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .child-info {
+  background: rgba(255, 248, 225, 0.7) !important;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 167, 38, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 202, 40, 0.2) !important;
+}
+
+.style-girl.color-tone-cute .child-name,
+.style-girl.color-tone-cute .stat-text {
+  color: #E65100 !important;
+}
+
+/* 金币和我的奖品按钮 */
+.style-girl.color-tone-boy .stat-btn {
+  background: linear-gradient(135deg, #1976D2, #42A5F5) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-neutral .stat-btn {
+  background: linear-gradient(135deg, #757575, #9E9E9E) !important;
+  color: #FFFFFF !important;
+}
+
+.style-girl.color-tone-cute .stat-btn {
+  background: linear-gradient(135deg, #FFA726, #FFCA28) !important;
+  color: #FFFFFF !important;
+}
+
+/* 管理按钮 */
+
+
+
+/* 奖品卡片金币数量 */
+.style-girl.color-tone-boy .prize-cost,
+.style-girl.color-tone-boy .coin-cost-text {
+  color: #1976D2 !important;
+}
+
+.style-girl.color-tone-neutral .prize-cost,
+.style-girl.color-tone-neutral .coin-cost-text {
+  color: #757575 !important;
+}
+
+.style-girl.color-tone-cute .prize-cost,
+.style-girl.color-tone-cute .coin-cost-text {
+  color: #FFA726 !important;
+}
+
+/* ==================== 色调选择器优化样式 ==================== */
+
+/* 确保色调选择器在童趣模式下有正确的样式 */
+.style-girl .color-tone-selector {
+  display: flex;
+  gap: 12rpx;
+  padding: 5rpx;
+}
+
+.style-girl .color-tone-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx;
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-radius: 20rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.3s;
+  backdrop-filter: blur(10rpx);
+  -webkit-backdrop-filter: blur(10rpx);
+  box-shadow:
+    inset -4rpx -4rpx 12rpx rgba(255, 182, 193, 0.25),
+    inset 4rpx 4rpx 12rpx rgba(255, 255, 255, 0.7),
+    0 6rpx 16rpx rgba(255, 105, 180, 0.2);
+}
+
+.style-girl .color-tone-option.active {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: #FF69B4 !important;
+  border-width: 4rpx !important;
+  box-shadow:
+    inset -4rpx -4rpx 12rpx rgba(255, 182, 193, 0.35),
+    inset 4rpx 4rpx 12rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.4) !important;
+  transform: scale(1.08);
+}
+
+.style-girl .tone-preview {
+  width: 55rpx;
+  height: 55rpx;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow:
+    inset -3rpx -3rpx 8rpx rgba(0, 0, 0, 0.15),
+    inset 3rpx 3rpx 8rpx rgba(255, 255, 255, 0.6),
+    0 4rpx 10rpx rgba(0, 0, 0, 0.2);
+}
+
+.style-girl .tone-label {
+  font-size: 24rpx;
+  color: #C2185B !important;
+  font-weight: 700;
+  text-shadow: 1rpx 1rpx 2rpx rgba(255, 255, 255, 0.8);
+}
+
+.style-girl .color-tone-option.active .tone-label {
+  color: #FF1493 !important;
+  font-weight: 900;
+  font-size: 26rpx;
+}
+
+/* 不同色调下选中状态的颜色 */
+.style-girl.color-tone-boy .color-tone-option.active {
+  border-color: #1976D2 !important;
+}
+
+.style-girl.color-tone-boy .color-tone-option.active .tone-label {
+  color: #0D47A1 !important;
+}
+
+.style-girl.color-tone-neutral .color-tone-option.active {
+  border-color: #757575 !important;
+}
+
+.style-girl.color-tone-neutral .color-tone-option.active .tone-label {
+  color: #424242 !important;
+}
+
+.style-girl.color-tone-cute .color-tone-option.active {
+  border-color: #FFA726 !important;
+}
+
+.style-girl.color-tone-cute .color-tone-option.active .tone-label {
+  color: #E65100 !important;
+}
+
+
+
+.style-girl.color-tone-boy .stat-btn {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #0D47A1 !important;
+  box-shadow:
+    inset -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.4),
+    inset 2rpx 2rpx 6rpx rgba(25, 118, 210, 0.2),
+    0 4rpx 10rpx rgba(25, 118, 210, 0.15) !important;
+}
+
+.style-girl.color-tone-neutral .stat-btn {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #424242 !important;
+  box-shadow:
+    inset -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.4),
+    inset 2rpx 2rpx 6rpx rgba(117, 117, 117, 0.2),
+    0 4rpx 10rpx rgba(117, 117, 117, 0.15) !important;
+}
+
+.style-girl.color-tone-cute .stat-btn {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #E65100 !important;
+  box-shadow:
+    inset -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.4),
+    inset 2rpx 2rpx 6rpx rgba(255, 167, 38, 0.2),
+    0 4rpx 10rpx rgba(255, 167, 38, 0.15) !important;
+}
+
+/* 管理按钮 - 半透明背景 */
+
+
+
+

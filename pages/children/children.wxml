@@ -1,5 +1,5 @@
 <!--pages/children/children.wxml-->
-<view class="container {{themeClass}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
   <custom-navbar title="{{i18n.children.title || '孩子管理'}}" showBack="{{true}}" />
 
   <!-- 孩子列表 -->

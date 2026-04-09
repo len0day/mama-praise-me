@@ -192,12 +192,19 @@ exports.main = async (event, context) => {
 
     // 兑换奖品
     if (action === 'redeemPrize') {
-      const { prizeId, childId } = data
+      const { prizeId, childId, familyId } = data
+
+      if (!familyId) {
+        return {
+          success: false,
+          error: '缺少家庭ID'
+        }
+      }
 
       // 1. 获取奖品信息
       const prizeRes = await db.collection('prizes')
         .where({
-          openid: OPENID,
+          familyId: familyId,
           prizeId: prizeId,
           isActive: true
         })
@@ -215,7 +222,7 @@ exports.main = async (event, context) => {
       // 2. 获取孩子信息
       const childRes = await db.collection('children')
         .where({
-          openid: OPENID,
+          familyId: familyId,
           childId: childId
         })
         .get()
@@ -229,8 +236,28 @@ exports.main = async (event, context) => {
 
       const child = childRes.data[0]
 
-      // 3. 检查金币是否足够
-      if (child.totalCoins < prize.coinCost) {
+      // 3. 检查金币是否足够（使用家庭金币余额）
+      const balanceRes = await cloud.callFunction({
+        name: 'manageFamilyCoins',
+        data: {
+          action: 'getChildCoinsInFamily',
+          data: {
+            childId: childId,
+            familyId: familyId
+          }
+        }
+      })
+
+      if (!balanceRes.result.success) {
+        return {
+          success: false,
+          error: '获取金币余额失败'
+        }
+      }
+
+      const currentBalance = balanceRes.result.balance || 0
+
+      if (currentBalance < prize.coinCost) {
         return {
           success: false,
           error: '金币不足'
@@ -245,24 +272,35 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 5. 扣除金币
-      const newBalance = child.totalCoins - prize.coinCost
-      await db.collection('children')
-        .where({
-          openid: OPENID,
-          childId: childId
-        })
-        .update({
+      // 5. 扣除金币（使用家庭金币系统）
+      const deductRes = await cloud.callFunction({
+        name: 'manageFamilyCoins',
+        data: {
+          action: 'deductCoins',
           data: {
-            totalCoins: newBalance
+            childId: childId,
+            familyId: familyId,
+            amount: prize.coinCost,
+            prizeId: prizeId,
+            prizeName: prize.name
           }
-        })
+        }
+      })
+
+      if (!deductRes.result.success) {
+        return {
+          success: false,
+          error: '扣除金币失败'
+        }
+      }
+
+      const newBalance = deductRes.result.newBalance
 
       // 6. 创建兑换记录
       const redemptionId = generateRedemptionId()
       await db.collection('redemptions').add({
         data: {
-          openid: OPENID,
+          familyId: familyId,
           redemptionId: redemptionId,
           prizeId: prizeId,
           prizeName: prize.name,
@@ -277,27 +315,11 @@ exports.main = async (event, context) => {
         }
       })
 
-      // 7. 创建金币记录
-      await db.collection('coin_records').add({
-        data: {
-          openid: OPENID,
-          recordId: `coin_record_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          childId: childId,
-          childName: child.name,
-          amount: -prize.coinCost,
-          type: 'prize_redeem',
-          relatedId: prizeId,
-          description: `兑换"${prize.name}"`,
-          balanceAfter: newBalance,
-          createdAt: new Date()
-        }
-      })
-
-      // 8. 更新奖品库存
+      // 7. 更新奖品库存
       if (prize.stock !== -1) {
         await db.collection('prizes')
           .where({
-            openid: OPENID,
+            familyId: familyId,
             prizeId: prizeId
           })
           .update({
@@ -306,18 +328,6 @@ exports.main = async (event, context) => {
             }
           })
       }
-
-      // 9. 更新孩子兑换统计
-      await db.collection('children')
-        .where({
-          openid: OPENID,
-          childId: childId
-        })
-        .update({
-          data: {
-            redeemedPrizes: child.redeemedPrizes + 1
-          }
-        })
 
       return {
         success: true,
@@ -328,11 +338,18 @@ exports.main = async (event, context) => {
 
     // 确认兑换
     if (action === 'confirmRedemption') {
-      const { redemptionId } = data
+      const { redemptionId, familyId } = data
+
+      if (!familyId) {
+        return {
+          success: false,
+          error: '缺少家庭ID'
+        }
+      }
 
       const res = await db.collection('redemptions')
         .where({
-          openid: OPENID,
+          familyId: familyId,
           redemptionId: redemptionId
         })
         .update({
@@ -356,12 +373,19 @@ exports.main = async (event, context) => {
 
     // 取消兑换
     if (action === 'cancelRedemption') {
-      const { redemptionId } = data
+      const { redemptionId, familyId } = data
+
+      if (!familyId) {
+        return {
+          success: false,
+          error: '缺少家庭ID'
+        }
+      }
 
       // 获取兑换记录
       const redemptionRes = await db.collection('redemptions')
         .where({
-          openid: OPENID,
+          familyId: familyId,
           redemptionId: redemptionId
         })
         .get()
@@ -383,40 +407,23 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 退还金币
-      const childRes = await db.collection('children')
-        .where({
-          openid: OPENID,
-          childId: redemption.childId
-        })
-        .get()
-
-      if (childRes.data.length === 0) {
-        return {
-          success: false,
-          error: '孩子不存在'
-        }
-      }
-
-      const child = childRes.data[0]
-      const newBalance = child.totalCoins + redemption.coinCost
-
-      // 更新孩子金币
-      await db.collection('children')
-        .where({
-          openid: OPENID,
-          childId: redemption.childId
-        })
-        .update({
+      // 退还金币到家庭金币余额
+      await cloud.callFunction({
+        name: 'manageFamilyCoins',
+        data: {
+          action: 'addCoins',
           data: {
-            totalCoins: newBalance
+            childId: redemption.childId,
+            familyId: familyId,
+            amount: redemption.coinCost
           }
-        })
+        }
+      })
 
       // 更新兑换记录状态
       await db.collection('redemptions')
         .where({
-          openid: OPENID,
+          familyId: familyId,
           redemptionId: redemptionId
         })
         .update({
@@ -425,27 +432,11 @@ exports.main = async (event, context) => {
           }
         })
 
-      // 创建金币记录（退还）
-      await db.collection('coin_records').add({
-        data: {
-          openid: OPENID,
-          recordId: `coin_record_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          childId: redemption.childId,
-          childName: redemption.childName,
-          amount: redemption.coinCost,
-          type: 'prize_redeem_cancel',
-          relatedId: redemption.prizeId,
-          description: `取消兑换"${redemption.prizeName}"`,
-          balanceAfter: newBalance,
-          createdAt: new Date()
-        }
-      })
-
       // 恢复奖品库存
       if (redemption.coinCost > 0) {
         const prizeRes = await db.collection('prizes')
           .where({
-            openid: OPENID,
+            familyId: familyId,
             prizeId: redemption.prizeId
           })
           .get()
@@ -453,7 +444,7 @@ exports.main = async (event, context) => {
         if (prizeRes.data.length > 0 && prizeRes.data[0].stock !== -1) {
           await db.collection('prizes')
             .where({
-              openid: OPENID,
+              familyId: familyId,
               prizeId: redemption.prizeId
             })
             .update({

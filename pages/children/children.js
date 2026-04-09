@@ -6,6 +6,7 @@ const { showToast, showLoading, hideLoading, showConfirm, generateId } = require
 Page({
   data: {
     themeClass: 'theme-light',
+    themeStyle: 'default',
     children: [],
     currentChildId: null,
     showAddModal: false,
@@ -19,10 +20,25 @@ Page({
   },
 
   onLoad() {
-    this.setData({ themeClass: app.globalData.themeClass })
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
+    })
   },
 
   onShow() {
+    const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
+    const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+    this.setData({
+      themeClass: app.globalData.themeClass,
+      themeStyle: themeStyle,
+      colorTone: app.globalData.colorTone || 'neutral',
+      isFunTheme: isFunTheme
+    })
     this.setData({ currentChildId: app.globalData.currentChildId })
     this.loadChildren()
   },

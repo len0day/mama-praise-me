@@ -1565,3 +1565,228 @@
   margin-left: 8rpx;
   opacity: 0.6;
 }
+
+/* 童趣模式 (Girl Style) */
+.container.style-girl {
+  background: #FFF0F5;
+}
+
+.style-girl .my-info-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 35rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl .my-info-avatar-wrapper {
+  border: 4rpx solid #FFFFFF;
+  box-shadow: 0 4rpx 15rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .info-label {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .info-value {
+  color: #880E4F;
+  font-weight: 600;
+}
+
+.style-girl .member-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 25rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl .member-name {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .child-item {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl .child-name {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .child-coins {
+  color: #FF69B4;
+  font-weight: 600;
+}
+
+.style-girl .child-avatar {
+  border: 4rpx solid #FFFFFF;
+  box-shadow: 0 4rpx 15rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .section-title {
+  color: #C2185B;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .create-family-btn,
+.style-girl .go-add-child-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .bottom-btn.normal {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  font-weight: 900;
+  color: #FFFFFF;
+  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.style-girl .bottom-btn.danger {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  font-weight: 900;
+  color: #FFFFFF;
+  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.style-girl .invite-header-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  padding: 12rpx 24rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  font-weight: 900;
+  color: #FFFFFF;
+  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.style-girl .current-selector {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 35rpx;
+  margin-bottom: 25rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl .selector-label {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl .selector-value {
+  color: #880E4F;
+  font-weight: 600;
+}
+
+.style-girl .family-name-display {
+  color: #FF69B4;
+  font-weight: 900;
+}
+
+.style-girl .picker {
+  color: #880E4F;
+  font-weight: 600;
+}
+
+.style-girl .picker-arrow {
+  color: #FF69B4;
+}
+
+.style-girl .child-info {
+  flex: 1;
+}
+
+.style-girl .share-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 35rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl .share-card-header {
+  border-bottom: 2rpx solid rgba(255, 105, 180, 0.2);
+  padding-bottom: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.style-girl .family-icon-large {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border: 3rpx solid #FFFFFF;
+  box-shadow: 0 4rpx 15rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .family-name-large {
+  color: #C2185B;
+  font-weight: 900;
+}
+
+.style-girl .invite-code-display {
+  color: #880E4F;
+}
+
+.style-girl .share-card-actions {
+  border-top: 2rpx solid rgba(255, 105, 180, 0.2);
+  padding-top: 20rpx;
+  margin-top: 20rpx;
+}
+
+.style-girl .share-action-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 30rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 20rpx rgba(255, 182, 193, 0.3),
+    0 20rpx 50rpx rgba(255, 182, 193, 0.4);
+}
+
+.style-girl .modal-title {
+  color: #C2185B;
+  font-weight: 900;
+}

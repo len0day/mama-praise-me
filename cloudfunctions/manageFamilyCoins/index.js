@@ -51,9 +51,9 @@ exports.main = async (event, context) => {
       }
     }
 
-    // 增加金币（完成任务）
+    // 增加金币（完成任务、手动调整等）
     if (action === 'addCoins') {
-      const { childId, familyId, amount, taskId, taskTitle } = data
+      const { childId, familyId, amount, taskId, taskTitle, prizeId, prizeName, recordType, recordDescription } = data
 
       // 确保 amount 是数字类型
       const amountNum = parseInt(amount) || 0
@@ -113,9 +113,9 @@ exports.main = async (event, context) => {
           childId: childId,
           familyId: familyId,
           amount: amountNum,
-          type: 'task_complete',
-          relatedId: taskId,
-          description: taskTitle || '完成任务',
+          type: recordType || (taskId ? 'task_complete' : 'manual_adjust'),
+          relatedId: taskId || prizeId || null,
+          description: recordDescription || taskTitle || prizeName || '获得金币',
           balanceAfter: newBalance,
           createdAt: new Date()
         }
