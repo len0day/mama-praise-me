@@ -567,21 +567,12 @@
   padding-bottom: 120rpx;
 }
 
-/* 深色主题背景 - 确保在容器和页面级别都应用 */
+/* 深色主题背景 - 使用多重选择器确保最高优先级 */
+view.container.theme-dark,
 .theme-dark.container,
 .container.theme-dark {
   background: #1C1C1E !important;
-  min-height: 100vh;
-}
-
-/* 页面级别的深色主题背景 */
-page.theme-dark {
-  background: #1C1C1E !important;
-}
-
-/* 确保容器在深色主题下有正确背景 */
-page.theme-dark .container {
-  background: #1C1C1E !important;
+  min-height: 100vh !important;
 }
 
 /* 深色主题下的基础样式 */
@@ -2305,8 +2296,8 @@ page.theme-dark .container {
   color: #FF9800;
   font-weight: bold;
 }
-/* 少女风格 (Girl Style) */
-.container.style-girl {
+/* 少女风格 (Girl Style) - 不覆盖深色主题 */
+.container.style-girl:not(.theme-dark) {
   background: #FFF0F5;
 }
 

@@ -89,8 +89,21 @@ Page({
     // 先更新主题，让用户立即看到主题变化
     const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
     const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+
+    // 确保主题类正确
+    let themeClass = 'theme-light'
+    if (themeStyle === 'simple-dark') {
+      themeClass = 'theme-dark'
+    } else if (themeStyle === 'simple-light') {
+      themeClass = 'theme-light'
+    } else {
+      themeClass = 'theme-light'
+    }
+
+    console.log('[首页 onShow] 设置主题:', { themeClass, themeStyle, isFunTheme })
+
     this.setData({
-      themeClass: app.globalData.themeClass,
+      themeClass: themeClass,
       themeStyle: themeStyle,
       colorTone: app.globalData.colorTone || 'neutral',
       isFunTheme: isFunTheme,
@@ -620,8 +633,21 @@ Page({
     // 保存所有任务并应用筛选
     const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
     const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+
+    // 确保主题类正确
+    let themeClass = 'theme-light'
+    if (themeStyle === 'simple-dark') {
+      themeClass = 'theme-dark'
+    } else if (themeStyle === 'simple-light') {
+      themeClass = 'theme-light'
+    } else {
+      themeClass = 'theme-light'
+    }
+
+    console.log('[首页 loadDataFromLocal] 设置主题:', { themeClass, themeStyle, isFunTheme, appThemeClass: app.globalData.themeClass })
+
     this.setData({
-      themeClass: app.globalData.themeClass,
+      themeClass: themeClass,
       themeStyle: themeStyle,
       colorTone: app.globalData.colorTone || 'neutral',
       isFunTheme: isFunTheme,
@@ -912,8 +938,21 @@ Page({
       // 保存所有任务并应用筛选
       const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
       const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+
+      // 确保主题类正确
+      let themeClass = 'theme-light'
+      if (themeStyle === 'simple-dark') {
+        themeClass = 'theme-dark'
+      } else if (themeStyle === 'simple-light') {
+        themeClass = 'theme-light'
+      } else {
+        themeClass = 'theme-light'
+      }
+
+      console.log('[首页 loadDataFromCloud] 设置主题:', { themeClass, themeStyle, isFunTheme, appThemeClass: app.globalData.themeClass })
+
       this.setData({
-        themeClass: app.globalData.themeClass,
+        themeClass: themeClass,
         themeStyle: themeStyle,
         colorTone: app.globalData.colorTone || 'neutral',
         isFunTheme: isFunTheme,
@@ -942,8 +981,21 @@ Page({
     } finally {
       const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
       const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
+
+      // 确保主题类正确
+      let themeClass = 'theme-light'
+      if (themeStyle === 'simple-dark') {
+        themeClass = 'theme-dark'
+      } else if (themeStyle === 'simple-light') {
+        themeClass = 'theme-light'
+      } else {
+        themeClass = 'theme-light'
+      }
+
+      console.log('[首页 loadDataFromCloud finally] 设置主题:', { themeClass, themeStyle, isFunTheme, appThemeClass: app.globalData.themeClass })
+
       this.setData({
-        themeClass: app.globalData.themeClass,
+        themeClass: themeClass,
         themeStyle: themeStyle,
         colorTone: app.globalData.colorTone || 'neutral',
         isFunTheme: isFunTheme,
