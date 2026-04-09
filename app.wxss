@@ -4,13 +4,17 @@ page {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* 深色主题下的page背景 - 使用更强的选择器 */
-page[class="theme-dark"] {
+/* 深色主题下的page背景 - 使用最高优先级 */
+page.theme-dark,
+page[class*="theme-dark"],
+view.theme-dark {
   background: #1C1C1E !important;
 }
 
-/* 深色主题容器背景 - 使用更强的选择器 */
-view.theme-dark {
+/* 深色主题容器背景 - 使用最高优先级 */
+.theme-dark,
+view.theme-dark,
+[class*="theme-dark"] {
   background: #1C1C1E !important;
 }
 

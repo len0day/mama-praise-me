@@ -567,12 +567,24 @@
   padding-bottom: 120rpx;
 }
 
-/* 深色主题背景 - 使用多重选择器确保最高优先级 */
+/* 深色主题背景 - 使用最高优先级，强制覆盖所有其他样式 */
 view.container.theme-dark,
 .theme-dark.container,
-.container.theme-dark {
+.container.theme-dark,
+view[class*="theme-dark"].container,
+.container[class*="theme-dark"],
+page view.container.theme-dark,
+page .theme-dark.container,
+page .container.theme-dark {
   background: #1C1C1E !important;
   min-height: 100vh !important;
+}
+
+/* 额外的保护：确保深色主题下所有变体都是深色 */
+.theme-dark.view.container,
+.view.theme-dark.container,
+.container.view.theme-dark {
+  background: #1C1C1E !important;
 }
 
 /* 深色主题下的基础样式 */
