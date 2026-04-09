@@ -2463,12 +2463,24 @@ Page({
         await app.syncLocalDataToCloud()
 
         // 延迟确保全局状态更新完成
-        await new Promise(resolve => setTimeout(resolve, 200))
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // 强制加载家庭和孩子数据（即使本地有缓存）
+        console.log('[首页登录] 开始加载家庭和孩子数据')
+        await app.loadChildren()
+        await app.loadFamilies()
 
         // 检查是否有家庭，如果没有则创建默认家庭
         if (!app.getCurrentFamilyId()) {
           console.log('[首页登录] 没有家庭，创建默认家庭')
           await this.createDefaultFamily()
+        }
+
+        // 检查是否有孩子，如果没有则创建默认孩子
+        const allChildren = app.globalData.children || []
+        if (allChildren.length === 0) {
+          console.log('[首页登录] 没有孩子，创建默认孩子')
+          await this.createDefaultChild()
         }
 
         // 完全重新加载页面数据
@@ -2550,6 +2562,33 @@ Page({
       }
     } catch (err) {
       console.error('[首页] 创建默认家庭失败:', err)
+    }
+  },
+
+  /**
+   * 创建默认孩子（首次登录时）
+   */
+  async createDefaultChild() {
+    try {
+      const childName = '宝贝'
+      const res = await wx.cloud.callFunction({
+        name: 'manageChildren',
+        data: {
+          action: 'createChild',
+          data: {
+            name: childName,
+            age: 6
+          }
+        }
+      })
+
+      if (res.result && res.result.success) {
+        console.log('[首页] 默认孩子创建成功:', res.result.child.childId)
+        // 重新加载孩子数据
+        await app.loadChildren()
+      }
+    } catch (err) {
+      console.error('[首页] 创建默认孩子失败:', err)
     }
   }
 })
