@@ -2463,7 +2463,13 @@ Page({
         await app.syncLocalDataToCloud()
 
         // 延迟确保全局状态更新完成
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(resolve => setTimeout(resolve, 200))
+
+        // 检查是否有家庭，如果没有则创建默认家庭
+        if (!app.getCurrentFamilyId()) {
+          console.log('[首页登录] 没有家庭，创建默认家庭')
+          await this.createDefaultFamily()
+        }
 
         // 完全重新加载页面数据
         await this.onShow()
@@ -2519,5 +2525,31 @@ Page({
 
     // 重新加载页面
     this.onShow()
+  },
+
+  /**
+   * 创建默认家庭（首次登录时）
+   */
+  async createDefaultFamily() {
+    try {
+      const familyName = '我的家庭'
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamily',
+        data: {
+          action: 'createFamily',
+          data: {
+            name: familyName
+          }
+        }
+      })
+
+      if (res.result && res.result.success) {
+        const familyId = res.result.family.familyId
+        app.saveCurrentFamilyId(familyId)
+        console.log('[首页] 默认家庭创建成功:', familyId)
+      }
+    } catch (err) {
+      console.error('[首页] 创建默认家庭失败:', err)
+    }
   }
 })

@@ -1,5 +1,5 @@
 <!--pages/index/index.wxml-->
-<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}">
+<view class="container {{themeClass}} {{isFunTheme ? 'style-girl' : ''}} color-tone-{{colorTone}}" style="background: {{themeStyle === 'simple-dark' ? '#1C1C1E' : '#FFF8E1'}};">
   <!-- 自定义导航栏 -->
   <custom-navbar title="首页" showBack="{{false}}" />
 
