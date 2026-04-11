@@ -80,7 +80,8 @@ Page({
    * 如果儿童没有头像，使用当前用户头像作为默认值
    */
   _applyUserAvatarAsDefault(list) {
-    const userAvatar = (app.globalData.userInfo && app.globalData.userInfo.avatarUrl) || ''
+    const storageUser = wx.getStorageSync && wx.getStorageSync('userInfo')
+    const userAvatar = (app.globalData.userInfo && app.globalData.userInfo.avatarUrl) || (storageUser && storageUser.avatarUrl) || ''
     if (!Array.isArray(list)) return list
     return list.map(child => ({
       ...child,
