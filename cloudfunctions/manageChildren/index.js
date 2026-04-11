@@ -80,15 +80,19 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 替换头像URL为临时URL
+      // 确保所有儿童都有有效的头像URL
       const processedChildren = childrenWithAvatar.map(child => {
         if (child.avatar && tempUrlMap[child.avatar]) {
           return {
             ...child,
             avatar: tempUrlMap[child.avatar]
-          }
+          };
+        } else {
+          return {
+            ...child,
+            avatar: '' // 使用空字符串作为默认值，前端按是否存在来决定显示图片或占位文字
+          };
         }
-        return child
       })
 
       return {
@@ -101,13 +105,13 @@ exports.main = async (event, context) => {
     if (action === 'createChild') {
       const { name, avatar, gender, age, familyId, childId } = data
 
-      // 验证必须有家庭ID
-      if (!familyId) {
-        return {
-          success: false,
-          error: '儿童必须加入一个家庭'
-        }
-      }
+      // 移除家庭ID的强制验证
+      // if (!familyId) {
+      //   return {
+      //     success: false,
+      //     error: '儿童必须加入一个家庭'
+      //   }
+      // }
 
       // 验证家庭ID（如果提供了家庭ID，则进行验证）
       if (familyId) {
@@ -589,8 +593,12 @@ exports.main = async (event, context) => {
             ...child,
             avatar: tempUrlMap[child.avatar]
           }
+        } else {
+          return {
+            ...child,
+            avatar: '/images/default-avatar.png' // 设置默认头像
+          }
         }
-        return child
       })
 
       return {
