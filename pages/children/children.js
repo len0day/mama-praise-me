@@ -77,6 +77,18 @@ Page({
   },
 
   /**
+   * 如果儿童没有头像，使用当前用户头像作为默认值
+   */
+  _applyUserAvatarAsDefault(list) {
+    const userAvatar = (app.globalData.userInfo && app.globalData.userInfo.avatarUrl) || ''
+    if (!Array.isArray(list)) return list
+    return list.map(child => ({
+      ...child,
+      avatar: child.avatar || userAvatar
+    }))
+  },
+
+  /**
    * 加载孩子列表
    */
   async loadChildren() {
@@ -131,6 +143,10 @@ Page({
       // 更新全局数据（只包含当前家庭的儿童）
       app.globalData.children = familyChildren
 
+      // 为没有头像的儿童应用用户头像作为默认头像
+      familyChildren = this._applyUserAvatarAsDefault(familyChildren)
+      otherChildren = this._applyUserAvatarAsDefault(otherChildren)
+
       this.setData({
         children: familyChildren,
         otherChildren: otherChildren,
@@ -166,9 +182,11 @@ Page({
         if (res.result.success) {
           const allChildren = res.result.children || []
           app.globalData.children = []
+          // 将用户头像作为默认头像填充到无头像的儿童
+          const filled = this._applyUserAvatarAsDefault(allChildren)
           this.setData({
             children: [],
-            otherChildren: allChildren
+            otherChildren: filled
           })
         }
         hideLoading()
@@ -210,6 +228,10 @@ Page({
 
       // 更新全局数据（只包含当前家庭的儿童）
       app.globalData.children = familyChildren
+
+      // 为没有头像的儿童应用用户头像作为默认头像
+      familyChildren = this._applyUserAvatarAsDefault(familyChildren)
+      otherChildren = this._applyUserAvatarAsDefault(otherChildren)
 
       this.setData({
         children: familyChildren,
