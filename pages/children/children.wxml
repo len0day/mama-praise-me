@@ -14,7 +14,7 @@
       wx:key="childId">
       <view class="child-card" data-childid="{{item.childId}}" bindtap="viewChildDetail">
         <view class="child-avatar">
-          <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" />
+          <image wx:if="{{item.avatar && (item.avatar.indexOf('http') === 0 || item.avatar.indexOf('cloud://') === 0)}}" src="{{item.avatar}}" mode="aspectFill" />
           <text wx:else>{{item.name.substring(0, 1)}}</text>
         </view>
         <view class="child-info">
@@ -48,7 +48,7 @@
       <view class="child-card">
         <view class="child-avatar">
           <image wx:if="{{otherChild.avatar && (otherChild.avatar.indexOf('http') === 0 || otherChild.avatar.indexOf('cloud://') === 0)}}" src="{{otherChild.avatar}}" mode="aspectFill" />
-          <text wx:else>{{otherChild.avatar || otherChild.name.substring(0, 1)}}</text>
+          <text wx:else>{{otherChild.name.substring(0, 1)}}</text>
         </view>
         <view class="child-info">
           <view class="child-name">{{otherChild.name}}</view>

@@ -596,7 +596,7 @@ exports.main = async (event, context) => {
         } else {
           return {
             ...child,
-            avatar: '/images/default-avatar.png' // 设置默认头像
+            avatar: '' // 使用空字符串，前端按存在性与类型决定显示
           }
         }
       })
