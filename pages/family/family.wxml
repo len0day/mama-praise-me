@@ -146,7 +146,8 @@
         <view class="member-card" wx:for="{{members}}" wx:key="openid">
           <view class="member-name-row">
             <view class="member-avatar">
-              <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="avatar-img" />
+              <image wx:if="{{item.avatar && !item.isEmoji}}" src="{{item.avatar}}" mode="aspectFill" class="avatar-img" />
+              <text wx:elif="{{item.isEmoji}}">{{item.avatar}}</text>
               <text wx:else>{{item.nickname.substring(0, 1)}}</text>
             </view>
             <view class="member-me" wx:if="{{item.isMe}}">我</view>
@@ -182,7 +183,8 @@
       <view class="children-list" wx:if="{{familyChildren.length > 0}}">
         <view class="child-item" wx:for="{{familyChildren}}" wx:key="childId">
           <view class="child-avatar">
-            <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" />
+            <image wx:if="{{item.avatar && !item.isEmoji}}" src="{{item.avatar}}" mode="aspectFill" />
+            <text wx:elif="{{item.isEmoji}}">{{item.avatar}}</text>
             <text wx:else>{{item.name.substring(0, 1)}}</text>
           </view>
           <view class="child-info">
@@ -221,8 +223,9 @@
             wx:for-item="myChild"
             wx:key="childId">
             <view class="child-avatar-small">
-              <image wx:if="{{myChild.avatar && (myChild.avatar.indexOf('http') === 0 || myChild.avatar.indexOf('cloud://') === 0)}}" src="{{myChild.avatar}}" mode="aspectFill" />
-              <text wx:else>{{myChild.avatar || myChild.name.substring(0, 1)}}</text>
+              <image wx:if="{{myChild.avatar && !myChild.isEmoji}}" src="{{myChild.avatar}}" mode="aspectFill" />
+              <text wx:elif="{{myChild.isEmoji}}">{{myChild.avatar}}</text>
+              <text wx:else>{{myChild.name.substring(0, 1)}}</text>
             </view>
             <view class="child-name-small">{{myChild.name}}</view>
             <button

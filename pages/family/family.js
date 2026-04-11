@@ -1,7 +1,7 @@
 // pages/family/family.js
 const app = getApp()
 const { t } = require('../../utils/i18n.js')
-const { showToast, showLoading, hideLoading, showConfirm } = require('../../utils/util.js')
+const { showToast, showLoading, hideLoading, showConfirm, getConsistentAvatar } = require('../../utils/util.js')
 
 Page({
   data: {
@@ -144,12 +144,15 @@ Page({
         console.log('[家庭] 加载到的家庭信息:', family)
         console.log('[家庭] 家庭名称:', family.name)
 
+        // 处理成员头像，为没有头像的成员分配随机头像
+        const processedMembers = this._processMembersAvatars(members)
+
         // 找到当前用户在家庭中的信息
-        const myMemberInfo = members.find(m => m.isMe)
+        const myMemberInfo = processedMembers.find(m => m.isMe)
 
         this.setData({
           family: family,
-          members: members,
+          members: processedMembers,
           myMemberInfo: myMemberInfo || { role: 'member', nickname: '' }
         }, () => {
           // setData 回调
@@ -282,9 +285,13 @@ Page({
           }
         })
 
+        // 处理儿童头像
+        const processedFamilyChildren = this._processChildrenAvatars(localChildren)
+        const processedMyChildren = this._processChildrenAvatars(myChildren)
+
         this.setData({
-          familyChildren: localChildren,
-          myChildren: myChildren,
+          familyChildren: processedFamilyChildren,
+          myChildren: processedMyChildren,
           invitations: []
         })
 
@@ -349,7 +356,11 @@ Page({
 
       if (familyChildrenRes.result.success) {
         const children = familyChildrenRes.result.children || []
-        this.setData({ familyChildren: children })
+        console.log('[家庭] 云端返回的儿童数据:', children.map(c => ({ name: c.name, avatar: c.avatar, gender: c.gender })))
+        // 处理儿童头像，为没有头像的儿童添加性别对应的预设头像
+        const processedChildren = this._processChildrenAvatars(children)
+        console.log('[家庭] 处理后的儿童数据:', processedChildren.map(c => ({ name: c.name, avatar: c.avatar, isEmoji: c.isEmoji })))
+        this.setData({ familyChildren: processedChildren })
 
         // 查找当前选中的儿童
         const currentChildId = app.globalData.currentChildId
@@ -376,7 +387,11 @@ Page({
           // 兼容旧数据：familyId 是单个值
           return child.familyId !== familyId
         })
-        this.setData({ myChildren: myChildren })
+        console.log('[家庭] 云端返回的待加入儿童数据:', myChildren.map(c => ({ name: c.name, avatar: c.avatar, gender: c.gender })))
+        // 处理儿童头像
+        const processedMyChildren = this._processChildrenAvatars(myChildren)
+        console.log('[家庭] 处理后的待加入儿童数据:', processedMyChildren.map(c => ({ name: c.name, avatar: c.avatar, isEmoji: c.isEmoji })))
+        this.setData({ myChildren: processedMyChildren })
       }
     } catch (err) {
       console.error('[家庭] 加载额外数据失败:', err)
@@ -1552,6 +1567,70 @@ Page({
             showToast('修改失败')
           }
         }
+      }
+    })
+  },
+
+  /**
+   * 处理儿童头像：为没有头像的儿童添加性别对应的预设头像
+   */
+  _processChildrenAvatars(list) {
+    if (!Array.isArray(list)) return list
+
+    // 性别对应的预设头像
+    const genderAvatars = {
+      'male': '👦',
+      'female': '👧'
+    }
+
+    return list.map(child => {
+      console.log('[家庭] 处理儿童头像 - name:', child.name, 'avatar:', child.avatar, 'gender:', child.gender)
+
+      // 判断是否是emoji（短字符串且不是URL）
+      const isEmoji = child.avatar && child.avatar.length <= 2 && !child.avatar.startsWith('http')
+
+      // 如果孩子没有头像（null、undefined、空字符串），使用性别对应的预设头像
+      if (!child.avatar || child.avatar === '') {
+        const defaultAvatar = genderAvatars[child.gender] || '👦'
+        console.log('[家庭] 为孩子', child.name, '使用性别预设头像:', defaultAvatar)
+        return {
+          ...child,
+          avatar: defaultAvatar,
+          isEmoji: true
+        }
+      }
+
+      // 标记emoji头像
+      return {
+        ...child,
+        isEmoji: isEmoji
+      }
+    })
+  },
+
+  /**
+   * 处理成员头像：为没有头像的成员分配随机头像
+   */
+  _processMembersAvatars(list) {
+    if (!Array.isArray(list)) return list
+
+    return list.map(member => {
+      // 如果成员没有头像，根据openid生成确定性的随机头像
+      if (!member.avatar || member.avatar === '') {
+        const randomAvatar = getConsistentAvatar(member.openid)
+        console.log('[家庭] 为成员', member.nickname, '分配随机头像:', randomAvatar)
+        return {
+          ...member,
+          avatar: randomAvatar,
+          isEmoji: true
+        }
+      }
+
+      // 判断是否是emoji
+      const isEmoji = member.avatar && member.avatar.length <= 2 && !member.avatar.startsWith('http')
+      return {
+        ...member,
+        isEmoji: isEmoji
       }
     })
   }

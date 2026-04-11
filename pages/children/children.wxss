@@ -58,6 +58,12 @@
   border-radius: 50%;
 }
 
+.child-avatar .avatar-text {
+  font-size: 48rpx;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
 .child-info {
   flex: 1;
 }

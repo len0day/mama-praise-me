@@ -218,6 +218,30 @@ function showConfirm(content, title = '提示') {
   })
 }
 
+/**
+ * 随机头像列表
+ */
+const RANDOM_AVATARS = ['👦', '👧', '🧒', '👶', '🧑', '🐱', '🐶', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮']
+
+/**
+ * 获取随机头像
+ */
+function getRandomAvatar() {
+  return RANDOM_AVATARS[Math.floor(Math.random() * RANDOM_AVATARS.length)]
+}
+
+/**
+ * 根据字符串生成确定性的头像（相同字符串总是返回相同头像）
+ */
+function getConsistentAvatar(str) {
+  if (!str) return getRandomAvatar()
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return RANDOM_AVATARS[Math.abs(hash) % RANDOM_AVATARS.length]
+}
+
 module.exports = {
   generateId,
   formatDate,
@@ -229,5 +253,7 @@ module.exports = {
   showToast,
   showLoading,
   hideLoading,
-  showConfirm
+  showConfirm,
+  getRandomAvatar,
+  getConsistentAvatar
 }

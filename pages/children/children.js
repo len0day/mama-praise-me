@@ -77,16 +77,30 @@ Page({
   },
 
   /**
-   * 如果儿童没有头像，使用当前用户头像作为默认值
+   * 如果儿童没有头像，使用性别对应的预设头像
    */
   _applyUserAvatarAsDefault(list) {
-    const storageUser = wx.getStorageSync && wx.getStorageSync('userInfo')
-    const userAvatar = (app.globalData.userInfo && app.globalData.userInfo.avatarUrl) || (storageUser && storageUser.avatarUrl) || ''
     if (!Array.isArray(list)) return list
-    return list.map(child => ({
-      ...child,
-      avatar: child.avatar || userAvatar
-    }))
+
+    // 性别对应的预设头像
+    const genderAvatars = {
+      'male': '👦',
+      'female': '👧'
+    }
+
+    return list.map(child => {
+      // 如果孩子没有头像（空字符串、null、undefined），使用性别对应的预设头像
+      if (!child.avatar || child.avatar === '' || (typeof child.avatar === 'string' && child.avatar.startsWith('/'))) {
+        const defaultAvatar = genderAvatars[child.gender] || '👦'
+        console.log('[孩子管理] 为孩子', child.name, '使用性别预设头像:', defaultAvatar, '原头像:', child.avatar)
+        return {
+          ...child,
+          avatar: defaultAvatar
+        }
+      }
+      console.log('[孩子管理] 为孩子', child.name, '保持原有头像:', child.avatar)
+      return child
+    })
   },
 
   /**
@@ -217,14 +231,17 @@ Page({
 
       if (familyRes.result.success) {
         familyChildren = familyRes.result.children || []
+        console.log('[孩子管理] 云端返回的家庭儿童原始数据:', JSON.stringify(familyChildren))
       }
 
       if (allRes.result.success) {
         const allChildren = allRes.result.children || []
+        console.log('[孩子管理] 云端返回的所有儿童原始数据:', JSON.stringify(allChildren))
         const familyChildIds = new Set(familyChildren.map(c => c.childId))
 
         // 找出不在当前家庭的儿童
         otherChildren = allChildren.filter(child => !familyChildIds.has(child.childId))
+        console.log('[孩子管理] 筛选后的otherChildren:', JSON.stringify(otherChildren))
       }
 
       // 更新全局数据（只包含当前家庭的儿童）
@@ -234,10 +251,26 @@ Page({
       familyChildren = this._applyUserAvatarAsDefault(familyChildren)
       otherChildren = this._applyUserAvatarAsDefault(otherChildren)
 
+      // 标记emoji头像，添加isEmoji字段
+      familyChildren = familyChildren.map(child => ({
+        ...child,
+        isEmoji: child.avatar && child.avatar.length <= 2 && !child.avatar.startsWith('http')
+      }))
+      otherChildren = otherChildren.map(child => ({
+        ...child,
+        isEmoji: child.avatar && child.avatar.length <= 2 && !child.avatar.startsWith('http')
+      }))
+
+      console.log('[孩子管理] 处理后的家庭儿童头像:', familyChildren.map(c => ({ name: c.name, avatar: c.avatar, isEmoji: c.isEmoji })))
+      console.log('[孩子管理] 处理后的其他儿童头像:', otherChildren.map(c => ({ name: c.name, avatar: c.avatar, isEmoji: c.isEmoji })))
+
       this.setData({
         children: familyChildren,
         otherChildren: otherChildren
       })
+
+      console.log('[孩子管理] setData后的children:', this.data.children.map(c => ({ name: c.name, avatar: c.avatar, avatar前20字符: c.avatar ? c.avatar.substring(0, 20) : '' })))
+      console.log('[孩子管理] setData后的otherChildren:', this.data.otherChildren.map(c => ({ name: c.name, avatar: c.avatar, avatar前20字符: c.avatar ? c.avatar.substring(0, 20) : '' })))
 
       console.log('[孩子管理] 当前家庭儿童:', familyChildren.length)
       console.log('[孩子管理] 可加入当前家庭的儿童:', otherChildren.length)
@@ -345,6 +378,7 @@ Page({
                    this.data.otherChildren.find(c => c.childId === childid)
 
     if (child) {
+      console.log('[孩子管理] 编辑孩子 - child.avatar:', child.avatar, '类型:', typeof child.avatar)
       this.setData({
         showAddModal: true,
         editingChild: child,
@@ -356,6 +390,7 @@ Page({
           familyId: child.familyIds && child.familyIds.length > 0 ? child.familyIds[0] : null  // 使用第一个家庭ID
         }
       })
+      console.log('[孩子管理] 编辑孩子 - formData.avatar:', this.data.formData.avatar)
     }
   },
 
@@ -678,9 +713,11 @@ Page({
    */
   selectPresetAvatar(e) {
     const { avatar } = e.currentTarget.dataset
+    console.log('[孩子管理] 选择预设头像:', avatar, '类型:', typeof avatar)
     this.setData({
       'formData.avatar': avatar
     })
+    console.log('[孩子管理] 设置后的formData.avatar:', this.data.formData.avatar, '类型:', typeof this.data.formData.avatar)
   },
 
   /**
@@ -847,6 +884,17 @@ Page({
    */
   async saveChildToCloud(formData, editingChild) {
     try {
+      console.log('[孩子管理] 准备保存到云端 - formData:', JSON.stringify(formData))
+      console.log('[孩子管理] avatar值:', formData.avatar, '类型:', typeof formData.avatar, '长度:', formData.avatar ? formData.avatar.length : 0)
+
+      // 只传递必要的字段
+      const childData = {
+        name: formData.name,
+        avatar: formData.avatar || '',  // 确保avatar不是undefined
+        gender: formData.gender || 'male',
+        age: formData.age || 0
+      }
+
       let res
       if (editingChild) {
         // 更新：不修改家庭ID
@@ -854,7 +902,7 @@ Page({
           name: 'manageChildren',
           data: {
             action: 'createChild',  // 使用 createChild 因为 updateChild 不支持修改 familyId
-            ...formData,
+            ...childData,
             childId: editingChild.childId,  // 传递 childId 表示更新
             familyId: editingChild.familyId  // 保持原有的家庭ID
           }
@@ -865,7 +913,7 @@ Page({
           name: 'manageChildren',
           data: {
             action: 'createChild',
-            ...formData
+            ...childData
             // 不传familyId，云函数会设置为空数组
           }
         })

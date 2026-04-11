@@ -51,10 +51,16 @@ exports.main = async (event, context) => {
           updatedAt: child.updatedAt
         }
 
-        // 收集所有fileID
-        if (child.avatar && child.avatar.startsWith('cloud://')) {
+        // 处理头像：云存储URL、emoji或其他值都直接返回
+        if (child.avatar) {
           result.avatar = child.avatar
-          fileList.push(child.avatar)
+          console.log('[manageChildren] child.avatar:', child.avatar, '类型:', typeof child.avatar, '是否云存储:', child.avatar.startsWith('cloud://'))
+          // 只收集云存储的fileID进行转换
+          if (child.avatar.startsWith('cloud://')) {
+            fileList.push(child.avatar)
+          }
+        } else {
+          result.avatar = ''  // 没有头像时使用空字符串
         }
 
         return result
@@ -83,14 +89,19 @@ exports.main = async (event, context) => {
       // 确保所有儿童都有有效的头像URL
       const processedChildren = childrenWithAvatar.map(child => {
         if (child.avatar && tempUrlMap[child.avatar]) {
+          // 云存储头像，使用临时URL
           return {
             ...child,
             avatar: tempUrlMap[child.avatar]
           };
+        } else if (child.avatar) {
+          // 非云存储头像（如emoji），保持原样
+          return child;
         } else {
+          // 没有头像，保持为空字符串
           return {
             ...child,
-            avatar: '' // 使用空字符串作为默认值，前端按是否存在来决定显示图片或占位文字
+            avatar: ''
           };
         }
       })
@@ -104,6 +115,8 @@ exports.main = async (event, context) => {
     // 创建孩子
     if (action === 'createChild') {
       const { name, avatar, gender, age, familyId, childId } = data
+
+      console.log('[manageChildren] createChild - avatar:', avatar, '类型:', typeof avatar, '长度:', avatar ? avatar.length : 0)
 
       // 移除家庭ID的强制验证
       // if (!familyId) {
@@ -149,6 +162,11 @@ exports.main = async (event, context) => {
         }
 
         // 更新儿童的家庭ID
+        console.log('[manageChildren] 更新儿童 - childId:', childId, 'avatar:', avatar, '类型:', typeof avatar)
+
+        // 处理头像：确保不是undefined
+        const processedAvatar = avatar !== undefined ? avatar : ''
+
         await db.collection('children')
           .where({
             openid: OPENID,
@@ -158,7 +176,7 @@ exports.main = async (event, context) => {
             data: {
               familyIds: [familyId],  // 使用数组存储
               name: name,
-              avatar: avatar || '',
+              avatar: processedAvatar,
               gender: gender || 'male',
               age: age || 0,
               updatedAt: new Date()
@@ -182,17 +200,22 @@ exports.main = async (event, context) => {
       // 创建新儿童
       const newChildId = generateChildId()
 
+      // 处理头像：如果是emoji（长度<=2），直接使用；否则使用原值
+      const processedAvatar = avatar || ''
+
       const childData = {
         openid: OPENID,
         childId: newChildId,
         familyIds: familyId ? [familyId] : [],  // 使用数组存储多个家庭ID
         name: name,
-        avatar: avatar || '',
+        avatar: processedAvatar,
         gender: gender || 'male',
         age: age || 0,
         createdAt: new Date(),
         updatedAt: new Date()
       }
+
+      console.log('[manageChildren] 创建新儿童 - childData.avatar:', childData.avatar, '类型:', typeof childData.avatar, '长度:', childData.avatar.length)
 
       // 先创建儿童记录
       const childRes = await db.collection('children').add({
@@ -551,6 +574,8 @@ exports.main = async (event, context) => {
       // 处理头像URL
       const fileList = []
       const childrenWithAvatar = childrenRes.data.map(child => {
+        console.log('[getFamilyChildrenById] 儿童:', child.name, 'avatar:', child.avatar, '类型:', typeof child.avatar, '长度:', child.avatar ? child.avatar.length : 0)
+
         const result = {
           childId: child.childId,
           name: child.name,
@@ -561,9 +586,15 @@ exports.main = async (event, context) => {
           updatedAt: child.updatedAt
         }
 
-        if (child.avatar && child.avatar.startsWith('cloud://')) {
+        // 处理头像：云存储URL、emoji或其他值都直接返回
+        if (child.avatar) {
           result.avatar = child.avatar
-          fileList.push(child.avatar)
+          // 只收集云存储的fileID进行转换
+          if (child.avatar.startsWith('cloud://')) {
+            fileList.push(child.avatar)
+          }
+        } else {
+          result.avatar = ''  // 没有头像时使用空字符串
         }
 
         return result
@@ -589,17 +620,24 @@ exports.main = async (event, context) => {
 
       const processedChildren = childrenWithAvatar.map(child => {
         if (child.avatar && tempUrlMap[child.avatar]) {
+          // 云存储头像，使用临时URL
           return {
             ...child,
             avatar: tempUrlMap[child.avatar]
           }
+        } else if (child.avatar) {
+          // 非云存储头像（如emoji），保持原样
+          return child;
         } else {
+          // 没有头像，保持为空字符串
           return {
             ...child,
-            avatar: '' // 使用空字符串，前端按存在性与类型决定显示
+            avatar: ''
           }
         }
       })
+
+      console.log('[getFamilyChildrenById] 最终返回的children:', JSON.stringify(processedChildren))
 
       return {
         success: true,
