@@ -156,8 +156,9 @@ exports.main = async (event, context) => {
     // 获取我的所有家庭
     if (action === 'getAllMyFamilies') {
       console.log('[getAllMyFamilies] 开始查询')
+      console.log('[getAllMyFamilies] 当前用户 OPENID:', OPENID)
 
-      // 1. 查找我是成员的家庭
+      // 1. 查找我是成员的活跃家庭
       const memberRes = await db.collection('family_members')
         .where({
           openid: OPENID,
@@ -169,26 +170,34 @@ exports.main = async (event, context) => {
       const memberFamilyIds = memberRes.data.map(m => m.familyId)
       console.log('[getAllMyFamilies] memberFamilyIds:', memberFamilyIds)
 
-      // 2. 查找我直接创建的家庭（兼容旧数据）
-      const ownerRes = await db.collection('families')
-        .where({
-          openid: OPENID
-        })
+      // 2. 查找我创建的所有家庭（包括已解散的）
+      // 使用 creatorOpenid 或 openid 匹配
+      const creatorRes = await db.collection('families')
+        .where(
+          _.or(
+            { creatorOpenid: OPENID },
+            { openid: OPENID }
+          )
+        )
         .get()
 
-      console.log('[getAllMyFamilies] families 查询结果:', ownerRes.data.length)
-      const ownerFamilyIds = ownerRes.data.map(f => f.familyId)
-      console.log('[getAllMyFamilies] ownerFamilyIds:', ownerFamilyIds)
+      console.log('[getAllMyFamilies] 作为创建者的家庭查询结果:', creatorRes.data.length)
+      creatorRes.data.forEach(f => {
+        console.log('[getAllMyFamilies] 创建者家庭:', f.familyId, f.name, 'status:', f.status, 'creatorOpenid:', f.creatorOpenid, 'openid:', f.openid)
+      })
+      const creatorFamilyIds = creatorRes.data.map(f => f.familyId)
+      console.log('[getAllMyFamilies] creatorFamilyIds:', creatorFamilyIds)
 
       // 3. 合并所有家庭ID（去重）
-      const allFamilyIds = [...new Set([...memberFamilyIds, ...ownerFamilyIds])]
+      const allFamilyIds = [...new Set([...memberFamilyIds, ...creatorFamilyIds])]
       console.log('[getAllMyFamilies] 合并后的 familyIds:', allFamilyIds)
 
       if (allFamilyIds.length === 0) {
         console.log('[getAllMyFamilies] 没有找到任何家庭')
         return {
           success: true,
-          families: []
+          families: [],
+          deletedFamilies: []
         }
       }
 
@@ -206,8 +215,8 @@ exports.main = async (event, context) => {
       console.log('[getAllMyFamilies] 查询的家庭IDs:', familyIds)
 
       const [tasksRes, prizesRes, membersRes, childrenRes] = await Promise.all([
-        db.collection('tasks').where({ familyId: _.in(familyIds) }).get(),
-        db.collection('prizes').where({ familyId: _.in(familyIds) }).get(),
+        db.collection('tasks').where({ familyId: _.in(familyIds), isActive: true }).get(),
+        db.collection('prizes').where({ familyId: _.in(familyIds), isActive: true }).get(),
         db.collection('family_members').where({ familyId: _.in(familyIds), status: 'active' }).get(),
         // 查询所有儿童，然后在内存中过滤（因为 familyIds 是数组）
         db.collection('children').get()
@@ -285,29 +294,43 @@ exports.main = async (event, context) => {
       const families = familiesRes.data.map(family => {
         // 判断用户在该家庭中的角色
         const member = memberRes.data.find(m => m.familyId === family.familyId)
-        const isOwner = ownerFamilyIds.includes(family.familyId)
+        const isCreator = creatorFamilyIds.includes(family.familyId)
+        const isDeleted = family.status === 'disbanded'
 
         return {
           familyId: family.familyId,
           name: family.name,
           avatar: (family.avatar && tempUrlMap[family.avatar]) ? tempUrlMap[family.avatar] : (family.avatar || ''),
-          inviteCode: (member?.role === 'admin' || isOwner) ? family.inviteCode : null,
-          role: member?.role || (isOwner ? 'admin' : 'member'),
-          isCreator: isOwner,
+          inviteCode: (member?.role === 'admin' || isCreator) && !isDeleted ? family.inviteCode : null,
+          role: member?.role || (isCreator ? 'admin' : 'member'),
+          isCreator: isCreator,
           myNickname: member?.nickname || null,
-          taskCount: taskCountMap[family.familyId] || 0,
-          prizeCount: prizeCountMap[family.familyId] || 0,
-          childCount: childCountMap[family.familyId] || 0,
-          parentCount: parentCountMap[family.familyId] || 0,
+          taskCount: isDeleted ? 0 : (taskCountMap[family.familyId] || 0),
+          prizeCount: isDeleted ? 0 : (prizeCountMap[family.familyId] || 0),
+          childCount: isDeleted ? 0 : (childCountMap[family.familyId] || 0),
+          parentCount: isDeleted ? 0 : (parentCountMap[family.familyId] || 0),
+          status: family.status || 'active',
+          disbandedAt: family.disbandedAt,
           createdAt: family.createdAt
         }
       })
 
-      console.log('[getAllMyFamilies] 返回家庭数据:', families)
+      // 分离活跃家庭和已解散家庭
+      const activeFamilies = families.filter(f => f.status === 'active')
+      const deletedFamilies = families.filter(f => f.status === 'disbanded')
+
+      console.log('[getAllMyFamilies] 活跃家庭数量:', activeFamilies.length)
+      console.log('[getAllMyFamilies] 已解散家庭数量:', deletedFamilies.length)
+      if (deletedFamilies.length > 0) {
+        deletedFamilies.forEach(f => {
+          console.log('[getAllMyFamilies] 已解散家庭:', f.familyId, f.name, 'disbandedAt:', f.disbandedAt)
+        })
+      }
 
       return {
         success: true,
-        families: families
+        families: activeFamilies,
+        deletedFamilies: deletedFamilies  // 仅创建者可见的已解散家庭
       }
     }
 
@@ -1288,6 +1311,13 @@ exports.main = async (event, context) => {
     if (action === 'disbandFamily') {
       const { familyId } = data
 
+      if (!familyId || String(familyId).trim() === '') {
+        return {
+          success: false,
+          error: '家庭ID无效'
+        }
+      }
+
       console.log('[disbandFamily] familyId:', familyId)
       console.log('[disbandFamily] OPENID:', OPENID)
 
@@ -1331,12 +1361,11 @@ exports.main = async (event, context) => {
         })
         .get()
 
-      // 更新所有成员状态为已解散
+      // 更新所有成员状态为已解散（成员记录无 memberId 字段，必须用 _id）
       for (const member of membersRes.data) {
+        if (!member._id) continue
         await db.collection('family_members')
-          .where({
-            memberId: member.memberId
-          })
+          .doc(member._id)
           .update({
             data: {
               status: 'disbanded',
@@ -1345,25 +1374,31 @@ exports.main = async (event, context) => {
           })
       }
 
-      // 从所有儿童的 familyIds 数组中移除该家庭ID
+      // 儿童：familyIds 数组包含该家庭，或旧数据仅有 familyId
       const childrenRes = await db.collection('children')
-        .where({
-          familyIds: _.eq(familyId)
-        })
+        .where(
+          _.or(
+            { familyIds: _.eq(familyId) },
+            { familyId: familyId }
+          )
+        )
         .get()
 
       console.log('[disbandFamily] 找到需要移除家庭ID的儿童数:', childrenRes.data.length)
 
       for (const child of childrenRes.data) {
+        if (!child._id) continue
         const newFamilyIds = (child.familyIds || []).filter(id => id !== familyId)
+        const updateData = {
+          familyIds: newFamilyIds
+        }
+        if (child.familyId === familyId) {
+          updateData.familyId = _.remove()
+        }
         await db.collection('children')
-          .where({
-            childId: child.childId
-          })
+          .doc(child._id)
           .update({
-            data: {
-              familyIds: newFamilyIds
-            }
+            data: updateData
           })
       }
 
@@ -1436,6 +1471,222 @@ exports.main = async (event, context) => {
       return {
         success: true,
         message: '家庭头像已更新'
+      }
+    }
+
+    // 获取已解散的家庭列表（仅创建者可见）
+    if (action === 'getDeletedFamilies') {
+      const ownerRes = await db.collection('families')
+        .where({
+          creatorOpenid: OPENID,
+          status: 'disbanded'
+        })
+        .orderBy('disbandedAt', 'desc')
+        .get()
+
+      // 兼容旧数据（只有 openid 没有 creatorOpenid）
+      const oldOwnerRes = await db.collection('families')
+        .where({
+          creatorOpenid: db.command.exists(false),
+          openid: OPENID,
+          status: 'disbanded'
+        })
+        .orderBy('disbandedAt', 'desc')
+        .get()
+
+      // 合并结果
+      const allDeletedFamilies = [...ownerRes.data, ...oldOwnerRes.data]
+      // 去重（基于 familyId）
+      const uniqueDeletedFamilies = []
+      const seenFamilyIds = new Set()
+      for (const family of allDeletedFamilies) {
+        if (!seenFamilyIds.has(family.familyId)) {
+          seenFamilyIds.add(family.familyId)
+          uniqueDeletedFamilies.push(family)
+        }
+      }
+
+      return {
+        success: true,
+        families: uniqueDeletedFamilies.map(f => ({
+          familyId: f.familyId,
+          name: f.name,
+          avatar: f.avatar || '',
+          disbandedAt: f.disbandedAt,
+          createdAt: f.createdAt
+        }))
+      }
+    }
+
+    // 恢复已解散的家庭
+    if (action === 'restoreFamily') {
+      const { familyId } = data
+
+      if (!familyId) {
+        return {
+          success: false,
+          error: '缺少家庭ID'
+        }
+      }
+
+      // 验证是否是家庭创建者
+      const familyRes = await db.collection('families')
+        .where({
+          familyId: familyId,
+          status: 'disbanded'
+        })
+        .get()
+
+      if (familyRes.data.length === 0) {
+        return {
+          success: false,
+          error: '家庭不存在或未解散'
+        }
+      }
+
+      const family = familyRes.data[0]
+      const isCreator = family.creatorOpenid === OPENID || family.openid === OPENID
+
+      if (!isCreator) {
+        return {
+          success: false,
+          error: '只有家庭创建者可以恢复家庭'
+        }
+      }
+
+      // 恢复家庭状态
+      await db.collection('families')
+        .where({
+          familyId: familyId
+        })
+        .update({
+          data: {
+            status: 'active',
+            restoredAt: new Date(),
+            updatedAt: new Date()
+          }
+        })
+
+      // 创建者自动成为管理员（如果成员记录不存在或已解散）
+      const existingMemberRes = await db.collection('family_members')
+        .where({
+          openid: OPENID,
+          familyId: familyId
+        })
+        .get()
+
+      if (existingMemberRes.data.length === 0) {
+        // 创建新成员记录
+        await db.collection('family_members').add({
+          data: {
+            openid: OPENID,
+            familyId: familyId,
+            role: 'admin',
+            nickname: '创建者',
+            status: 'active',
+            createdAt: new Date()
+          }
+        })
+      } else {
+        // 恢复现有成员记录
+        await db.collection('family_members')
+          .doc(existingMemberRes.data[0]._id)
+          .update({
+            data: {
+              status: 'active',
+              role: 'admin',
+              restoredAt: new Date()
+            }
+          })
+      }
+
+      return {
+        success: true,
+        message: '家庭已恢复'
+      }
+    }
+
+    // 彻底删除家庭（仅创建者，且家庭必须已解散）
+    if (action === 'permanentlyDeleteFamily') {
+      const { familyId } = data
+
+      if (!familyId) {
+        return {
+          success: false,
+          error: '缺少家庭ID'
+        }
+      }
+
+      // 验证是否是家庭创建者且家庭已解散
+      const familyRes = await db.collection('families')
+        .where({
+          familyId: familyId,
+          status: 'disbanded'
+        })
+        .get()
+
+      if (familyRes.data.length === 0) {
+        return {
+          success: false,
+          error: '家庭不存在或未解散'
+        }
+      }
+
+      const family = familyRes.data[0]
+      const isCreator = family.creatorOpenid === OPENID || family.openid === OPENID
+
+      if (!isCreator) {
+        return {
+          success: false,
+          error: '只有家庭创建者可以彻底删除家庭'
+        }
+      }
+
+      // 辅助函数：安全删除集合（忽略集合不存在的错误）
+      const safeRemove = async (collectionName, whereCondition) => {
+        try {
+          await db.collection(collectionName).where(whereCondition).remove()
+          console.log(`[permanentlyDeleteFamily] 已删除 ${collectionName} 的数据`)
+        } catch (err) {
+          if (err.errCode === -502005) {
+            // 集合不存在，忽略错误
+            console.log(`[permanentlyDeleteFamily] ${collectionName} 集合不存在，跳过`)
+          } else {
+            // 其他错误，记录但不中断
+            console.error(`[permanentlyDeleteFamily] 删除 ${collectionName} 失败:`, err)
+          }
+        }
+      }
+
+      // 删除所有家庭成员记录
+      await safeRemove('family_members', { familyId: familyId })
+
+      // 删除家庭的所有任务
+      await safeRemove('tasks', { familyId: familyId })
+
+      // 删除家庭的所有奖品
+      await safeRemove('prizes', { familyId: familyId })
+
+      // 删除家庭的所有金币记录
+      await safeRemove('family_coin_balances', { familyId: familyId })
+
+      // 删除家庭的所有任务完成记录
+      await safeRemove('task_completions', { familyId: familyId })
+
+      // 删除家庭的所有奖品兑换记录（尝试两个可能的集合名）
+      await safeRemove('prize_redemptions', { familyId: familyId })
+      await safeRemove('redemptions', { familyId: familyId })
+
+      // 删除家庭记录本身
+      await db.collection('families')
+        .where({
+          familyId: familyId
+        })
+        .remove()
+
+      return {
+        success: true,
+        message: '家庭已彻底删除'
       }
     }
 

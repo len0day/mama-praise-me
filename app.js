@@ -35,6 +35,14 @@ App({
     useCloudStorage: false,
     currentUserOpenid: null,
 
+    // 家庭列表短缓存（减轻 getAllMyFamilies 高频调用；切换 Tab 时复用）
+    familiesListCacheAt: 0,
+    familiesListCacheData: null,
+    FAMILIES_LIST_CACHE_TTL_MS: 90 * 1000,
+
+    // 任务缓存（基于家庭和儿童）
+    tasksCache: {},  // 格式: { "familyId_childId": { at: timestamp, data: tasks } }
+
     // 缓存系统
     CACHE_DURATION: {
       TASKS: 5 * 60 * 1000,          // 任务缓存5分钟
@@ -46,6 +54,13 @@ App({
 
   onLaunch() {
     console.log('[妈妈表扬我] 应用启动')
+
+    // 检查并清理旧格式的家庭列表缓存
+    const cached = this.getFamiliesListCache()
+    if (cached && Array.isArray(cached)) {
+      console.log('[妈妈表扬我] 检测到旧格式缓存，清除中...')
+      this.invalidateFamiliesListCache()
+    }
 
     // 初始化国际化系统
     initI18n()
@@ -79,6 +94,92 @@ App({
 
   onShow() {
     console.log('[妈妈表扬我] 应用显示')
+  },
+
+  /** @returns {Object|null} 未过期则返回上次 getAllMyFamilies 结果 {families, deletedFamilies} */
+  getFamiliesListCache() {
+    const ttl = this.globalData.FAMILIES_LIST_CACHE_TTL_MS
+    const at = this.globalData.familiesListCacheAt
+    if (!at || !this.globalData.familiesListCacheData) return null
+    if (Date.now() - at > ttl) return null
+    return this.globalData.familiesListCacheData
+  },
+
+  /**
+   * 设置家庭列表缓存（包括活跃家庭和已解散家庭）
+   * @param {Array} families - 活跃家庭列表
+   * @param {Array} deletedFamilies - 已解散家庭列表（可选）
+   */
+  setFamiliesListCache(families, deletedFamilies = []) {
+    this.globalData.familiesListCacheAt = Date.now()
+    this.globalData.familiesListCacheData = {
+      families: families ? [...families] : [],
+      deletedFamilies: deletedFamilies ? [...deletedFamilies] : []
+    }
+  },
+
+  invalidateFamiliesListCache() {
+    this.globalData.familiesListCacheAt = 0
+    this.globalData.familiesListCacheData = null
+  },
+
+  /**
+   * 获取任务缓存（基于家庭和儿童）
+   * @param {string} familyId - 家庭ID
+   * @param {string} childId - 儿童ID
+   * @returns {Array|null} 未过期则返回缓存的任务列表
+   */
+  getTasksCache(familyId, childId) {
+    const cacheKey = `${familyId}_${childId}`
+    const cacheEntry = this.globalData.tasksCache?.[cacheKey]
+    if (!cacheEntry) return null
+
+    const ttl = this.globalData.CACHE_DURATION.TASKS
+    if (Date.now() - cacheEntry.at > ttl) return null
+
+    return cacheEntry.data
+  },
+
+  /**
+   * 设置任务缓存
+   * @param {string} familyId - 家庭ID
+   * @param {string} childId - 儿童ID
+   * @param {Array} tasks - 任务列表
+   */
+  setTasksCache(familyId, childId, tasks) {
+    if (!this.globalData.tasksCache) {
+      this.globalData.tasksCache = {}
+    }
+    const cacheKey = `${familyId}_${childId}`
+    this.globalData.tasksCache[cacheKey] = {
+      at: Date.now(),
+      data: tasks ? [...tasks] : []
+    }
+  },
+
+  /**
+   * 清除任务缓存
+   * @param {string} familyId - 家庭ID（可选）
+   * @param {string} childId - 儿童ID（可选）
+   */
+  invalidateTasksCache(familyId, childId) {
+    if (!this.globalData.tasksCache) return
+
+    if (familyId && childId) {
+      // 清除特定家庭的特定儿童的任务缓存
+      const cacheKey = `${familyId}_${childId}`
+      delete this.globalData.tasksCache[cacheKey]
+    } else if (familyId) {
+      // 清除特定家庭的所有任务缓存
+      Object.keys(this.globalData.tasksCache).forEach(key => {
+        if (key.startsWith(`${familyId}_`)) {
+          delete this.globalData.tasksCache[key]
+        }
+      })
+    } else {
+      // 清除所有任务缓存
+      this.globalData.tasksCache = {}
+    }
   },
 
   /**
@@ -207,6 +308,34 @@ App({
     } catch (e) {
       console.error('[妈妈表扬我] 保存设置失败:', e)
     }
+  },
+
+  /**
+   * 登录成功后合并云端用户设置：本地主题与其它本地项优先；
+   * 家长密码仅在本设备尚未设置（空/null）时采用云端，避免本地默认值覆盖云端已存密码并被反写清空。
+   */
+  mergeUserSettingsAfterLogin(userData) {
+    if (!userData || !userData.settings) return
+    const cloudSettings = userData.settings
+    const localThemeStyle = this.globalData.settings.themeStyle
+    const localPw = this.globalData.settings.parentPassword
+    const cloudPw = cloudSettings.parentPassword
+    const hasLocalPw = localPw != null && String(localPw).trim() !== ''
+    let resolvedPassword = null
+    if (hasLocalPw) {
+      resolvedPassword = localPw
+    } else if (cloudPw != null && String(cloudPw).trim() !== '') {
+      resolvedPassword = cloudPw
+    }
+
+    this.globalData.settings = {
+      ...cloudSettings,
+      ...this.globalData.settings,
+      themeStyle: localThemeStyle,
+      parentPassword: resolvedPassword
+    }
+    this.saveSettingsToStorage()
+    console.log('[妈妈表扬我] ✓ 已合并登录用户设置（家长密码:', hasLocalPw ? '本机' : (resolvedPassword ? '云端' : '未设置'), ')')
   },
 
   /**
@@ -382,30 +511,20 @@ App({
       return allChildren
     }
 
-    // 已登录：检查数据新鲜度
-    if (!forceRefresh) {
-      const needsRefresh = await this.checkDataFreshness()
-      if (!needsRefresh) {
-        // 数据新鲜，直接返回缓存数据
-        console.log('[妈妈表扬我] 数据新鲜，使用缓存')
-        return this.globalData.children || []
-      }
+    // 已登录：仅强制刷新或家庭级缓存过期时请求云端（checkDataFreshness 不再内置拉取，避免重复请求）
+    if (!forceRefresh && !this.isFamilyChildrenCacheStale(false)) {
+      console.log('[妈妈表扬我] 数据新鲜，使用缓存')
+      return this.globalData.children || []
     }
 
-    // 数据过期或强制刷新，从云端加载
     console.log('[妈妈表扬我] 数据过期或强制刷新，从云端加载')
     const children = await this.loadChildrenFromCloud()
 
-    // 更新所有儿童的时间戳
     const now = Date.now()
     const currentFamilyId = this.globalData.currentFamilyId
-    children.forEach(child => {
-      // 使用当前家庭ID和儿童ID作为键（因为现在查询的是特定家庭的儿童）
-      if (currentFamilyId) {
-        const localLastUpdateKey = `lastUpdate_${currentFamilyId}_${child.childId}`
-        wx.setStorageSync(localLastUpdateKey, now)
-      }
-    })
+    if (currentFamilyId) {
+      wx.setStorageSync(`lastUpdate_${currentFamilyId}`, now)
+    }
 
     return children
   },
@@ -580,19 +699,33 @@ App({
     }
   },
   /**
+   * 当前是否视为「已设置家长密码」（与 hasParentPassword 一致：非空且 trim 后非空）
+   */
+  getEffectiveParentPassword() {
+    const p = this.globalData.settings.parentPassword
+    if (p == null) return null
+    const t = String(p).trim()
+    return t !== '' ? t : null
+  },
+
+  /**
    * 进入家长模式
    * @param {string} password - 家长密码
    * @returns {boolean} - 是否成功
    */
   enterParentMode(password) {
-    const storedPassword = this.globalData.settings.parentPassword
+    const storedEff = this.getEffectiveParentPassword()
+    const inputEff = password != null ? String(password).trim() : ''
 
-    // 如果还没有设置密码，第一次输入的密码将成为家长密码
-    if (!storedPassword) {
-      this.globalData.settings.parentPassword = password
+    // 如果还没有有效密码，第一次输入的密码将成为家长密码
+    if (!storedEff) {
+      if (inputEff.length < 4) {
+        return false
+      }
+      this.globalData.settings.parentPassword = inputEff
       this.saveSettingsToStorage()
       console.log('[妈妈表扬我] ✓ 首次设置家长密码')
-    } else if (storedPassword !== password) {
+    } else if (storedEff !== inputEff) {
       console.error('[妈妈表扬我] ✗ 密码错误')
       return false
     }
@@ -609,21 +742,30 @@ App({
    * @returns {boolean} - 是否成功
    */
   changeParentPassword(oldPassword, newPassword) {
-    const storedPassword = this.globalData.settings.parentPassword
+    const storedEff = this.getEffectiveParentPassword()
+    const oldEff = oldPassword != null ? String(oldPassword).trim() : ''
+    const newEff = newPassword != null ? String(newPassword).trim() : ''
 
-    // 如果还没有设置密码
-    if (!storedPassword) {
-      this.globalData.settings.parentPassword = newPassword
+    // 如果还没有有效密码，直接设新密码
+    if (!storedEff) {
+      if (newEff.length < 4) {
+        return false
+      }
+      this.globalData.settings.parentPassword = newEff
       this.saveSettingsToStorage()
       return true
     }
 
-    if (storedPassword !== oldPassword) {
+    if (storedEff !== oldEff) {
       console.error('[妈妈表扬我] ✗ 旧密码错误')
       return false
     }
 
-    this.globalData.settings.parentPassword = newPassword
+    if (newEff.length < 4) {
+      return false
+    }
+
+    this.globalData.settings.parentPassword = newEff
     this.saveSettingsToStorage()
     console.log('[妈妈表扬我] ✓ 密码修改成功')
     return true
@@ -638,11 +780,11 @@ App({
   },
 
   /**
-   * 检查是否有家长密码
+   * 检查是否已设置家长密码（非空字符串）
    * @returns {boolean}
    */
   hasParentPassword() {
-    return !!this.globalData.settings.parentPassword
+    return this.getEffectiveParentPassword() != null
   },
 
   /**
@@ -651,14 +793,6 @@ App({
    */
   isParentMode() {
     return this.globalData.isParentMode === true
-  },
-
-  /**
-   * 检查家长密码是否已设置
-   * @returns {boolean}
-   */
-  hasParentPassword() {
-    return this.globalData.settings.parentPassword !== null
   },
 
   /**
@@ -891,66 +1025,35 @@ App({
   // ========== 数据新鲜度检查机制 ==========
 
   /**
-   * 数据新鲜度检查
-   * @param {boolean} forceRefresh - 是否强制刷新
-   * @returns {Promise<boolean>} - 是否需要更新数据
+   * 当前家庭的孩子列表缓存是否过期（仅读本地时间戳，不发起网络请求）
+   * 与 loadChildren 成功写入的 lastUpdate_${familyId}、updateChildTimestamp 一致
    */
-  async checkDataFreshness(forceRefresh = false) {
+  isFamilyChildrenCacheStale(forceRefresh = false) {
     if (!this.globalData.useCloudStorage) {
-      return false // 未登录不需要检查
-    }
-
-    const currentFamilyId = this.globalData.currentFamilyId
-
-    if (!currentFamilyId) {
       return false
     }
-
-    // 获取本地上次更新时间（基于家庭，因为查询的是特定家庭的孩子）
-    const localLastUpdateKey = `lastUpdate_${currentFamilyId}`
-    const localLastUpdateTime = wx.getStorageSync(localLastUpdateKey) || 0
-    const now = Date.now()
+    if (forceRefresh) {
+      return true
+    }
+    const familyId = this.globalData.currentFamilyId
+    if (!familyId) {
+      return false
+    }
+    const localLastUpdateTime = wx.getStorageSync(`lastUpdate_${familyId}`) || 0
     const tenMinutes = 10 * 60 * 1000
+    return (Date.now() - localLastUpdateTime) > tenMinutes
+  },
 
-    // 检查是否超过10分钟
-    const isStale = (now - localLastUpdateTime) > tenMinutes
-
-    if (!isStale && !forceRefresh) {
+  /**
+   * 孩子列表是否需要从云端刷新（不在这里拉取云端，避免与 loadChildren 重复请求）
+   * @returns {Promise<boolean>} 是否与 isFamilyChildrenCacheStale 一致
+   */
+  async checkDataFreshness(forceRefresh = false) {
+    const stale = this.isFamilyChildrenCacheStale(forceRefresh)
+    if (!stale) {
       console.log('[数据新鲜度] 数据新鲜，无需更新')
-      return false // 数据新鲜，不需要更新
     }
-
-    try {
-      // 直接从云端加载当前家庭的孩子数据
-      console.log('[数据新鲜度] 云端数据更新，开始同步')
-
-      // 显示加载提示
-      if (forceRefresh) {
-        wx.showLoading({
-          title: '正在更新数据...',
-          mask: true
-        })
-      }
-
-      await this.loadChildrenFromCloud()
-
-      // 更新本地时间戳（基于家庭）
-      wx.setStorageSync(localLastUpdateKey, now)
-
-      if (forceRefresh) {
-        wx.hideLoading()
-      }
-
-      return true // 数据已更新
-    } catch (e) {
-      console.error('[数据新鲜度] 检查失败:', e)
-
-      if (forceRefresh) {
-        wx.hideLoading()
-      }
-    }
-
-    return false
+    return stale
   },
 
   /**
@@ -1032,43 +1135,6 @@ App({
     const currentPage = pages[pages.length - 1]
     if (currentPage && currentPage.onChildDataUpdated) {
       currentPage.onChildDataUpdated(childData)
-    }
-  },
-
-  /**
-   * 更新云端时间戳
-   * 任何更新操作（增删改）完成后都需要调用此方法
-   */
-  async updateChildTimestamp() {
-    if (!this.globalData.useCloudStorage) {
-      return
-    }
-
-    const currentFamilyId = this.globalData.currentFamilyId
-    const currentChildId = this.globalData.currentChildId
-
-    if (!currentFamilyId || !currentChildId) {
-      return
-    }
-
-    try {
-      await wx.cloud.callFunction({
-        name: 'manageChildren',
-        data: {
-          action: 'updateChildTimestamp',
-          familyId: currentFamilyId,
-          childId: currentChildId,
-          timestamp: Date.now()
-        }
-      })
-
-      // 同时更新本地时间戳（基于家庭）
-      const localLastUpdateKey = `lastUpdate_${currentFamilyId}`
-      wx.setStorageSync(localLastUpdateKey, Date.now())
-
-      console.log('[时间戳] ✓ 已更新云端和本地时间戳')
-    } catch (e) {
-      console.error('[时间戳] ✗ 更新失败:', e)
     }
   }
 })

@@ -297,19 +297,12 @@ Page({
         app.globalData.currentUserOpenid = userData.openid
         app.globalData.useCloudStorage = true
 
-        // 加载用户设置（包括家长密码，但保留本地的主题设置）
-        if (userData.settings) {
-          // 保存本地的主题设置
-          const localThemeStyle = app.globalData.settings.themeStyle
-
-          app.globalData.settings = {
-            ...userData.settings,
-            ...app.globalData.settings,  // 本地设置优先，包括主题
-            themeStyle: localThemeStyle  // 确保本地主题不被覆盖
-          }
-          app.saveSettingsToStorage()
-          console.log('[设置] 已从云端加载用户设置，保留本地主题:', localThemeStyle)
+        // 合并云端设置（主题本地优先；本机未设家长密码时用云端，避免把云端密码冲掉）
+        app.mergeUserSettingsAfterLogin(userData)
+        if (typeof app.invalidateFamiliesListCache === 'function') {
+          app.invalidateFamiliesListCache()
         }
+        console.log('[设置] 已合并登录用户设置')
 
         this.checkLoginStatus()
         showToast('登录成功')
@@ -632,6 +625,9 @@ Page({
     // 保留所有本地数据，仅清除登录信息
     app.globalData.useCloudStorage = false
     app.globalData.currentUserOpenid = null
+    if (typeof app.invalidateFamiliesListCache === 'function') {
+      app.invalidateFamiliesListCache()
+    }
     wx.removeStorageSync('userInfo')
 
     showToast(t('firstTimeFlow.logoutSuccessKeep'))
@@ -657,6 +653,9 @@ Page({
     app.globalData.currentChildId = null
     app.globalData.families = []
     app.globalData.children = []
+    if (typeof app.invalidateFamiliesListCache === 'function') {
+      app.invalidateFamiliesListCache()
+    }
 
     showToast(t('firstTimeFlow.logoutSuccessClear'))
 

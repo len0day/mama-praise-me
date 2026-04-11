@@ -109,19 +109,21 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 验证家庭是否存在且用户是成员
-      const memberRes = await db.collection('family_members')
-        .where({
-          openid: OPENID,
-          familyId: familyId,
-          status: 'active'
-        })
-        .get()
+      // 验证家庭ID（如果提供了家庭ID，则进行验证）
+      if (familyId) {
+        const memberRes = await db.collection('family_members')
+          .where({
+            openid: OPENID,
+            familyId: familyId,
+            status: 'active'
+          })
+          .get();
 
-      if (memberRes.data.length === 0) {
-        return {
-          success: false,
-          error: '您不是该家庭成员，无法添加儿童'
+        if (memberRes.data.length === 0) {
+          return {
+            success: false,
+            error: '您不是该家庭成员，无法添加儿童'
+          };
         }
       }
 
@@ -594,6 +596,85 @@ exports.main = async (event, context) => {
       return {
         success: true,
         children: processedChildren
+      }
+    }
+
+    // 获取单个儿童在当前家庭下的数据（用于客户端合并 globalData）
+    if (action === 'getChildData') {
+      const { childId, familyId } = data
+
+      if (!childId || !familyId) {
+        return {
+          success: false,
+          error: '儿童ID与家庭ID不能为空'
+        }
+      }
+
+      const memberRes = await db.collection('family_members')
+        .where({
+          openid: OPENID,
+          familyId: familyId,
+          status: 'active'
+        })
+        .get()
+
+      if (memberRes.data.length === 0) {
+        return {
+          success: false,
+          error: '您不是该家庭成员'
+        }
+      }
+
+      const cRes = await db.collection('children')
+        .where({ childId: childId })
+        .limit(1)
+        .get()
+
+      if (cRes.data.length === 0) {
+        return {
+          success: false,
+          error: '儿童不存在'
+        }
+      }
+
+      const c = cRes.data[0]
+      const ids = c.familyIds || []
+      const inFamily = ids.includes(familyId) || c.familyId === familyId
+      if (!inFamily) {
+        return {
+          success: false,
+          error: '该儿童不属于该家庭'
+        }
+      }
+
+      const childData = {
+        childId: c.childId,
+        name: c.name,
+        gender: c.gender,
+        age: c.age,
+        familyIds: c.familyIds || [],
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt
+      }
+
+      if (c.avatar && c.avatar.startsWith('cloud://')) {
+        try {
+          const tempUrlRes = await cloud.getTempFileURL({ fileList: [c.avatar] })
+          if (tempUrlRes.fileList[0] && tempUrlRes.fileList[0].status === 0) {
+            childData.avatar = tempUrlRes.fileList[0].tempFileURL
+          } else {
+            childData.avatar = c.avatar
+          }
+        } catch (err) {
+          childData.avatar = c.avatar
+        }
+      } else if (c.avatar) {
+        childData.avatar = c.avatar
+      }
+
+      return {
+        success: true,
+        childData
       }
     }
 

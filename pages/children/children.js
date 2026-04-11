@@ -74,16 +74,6 @@ Page({
     }
 
     await this.loadChildren()
-
-    // 检查数据新鲜度（仅已登录用户）
-    if (app.globalData.useCloudStorage) {
-      const shouldRefresh = await app.checkDataFreshness()
-
-      if (shouldRefresh) {
-        // 数据已更新，重新加载儿童数据
-        await this.loadChildren()
-      }
-    }
   },
 
   /**
@@ -465,6 +455,9 @@ Page({
         // 更新时间戳（关键！）
         await app.updateChildTimestamp()
 
+        // 清除家庭列表缓存（儿童数可能已变化）
+        app.invalidateFamiliesListCache()
+
         showToast('儿童已加入当前家庭')
 
         // 重新加载页面数据
@@ -615,6 +608,9 @@ Page({
       hideLoading()
 
       if (res.result.success) {
+        // 清除家庭列表缓存（儿童数可能已变化）
+        app.invalidateFamiliesListCache()
+
         showToast('孩子已删除')
         await this.loadChildren()
 

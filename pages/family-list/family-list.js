@@ -9,6 +9,7 @@ Page({
     themeStyle: 'default',
     colorTone: 'girl',
     families: [],            // 用户所属的所有家庭
+    deletedFamilies: [],     // 已解散的家庭（仅创建者可见）
     myFamily: null,          // 当前选中的家庭
     familyMembers: [],       // 当前家庭的成员列表
     familyChildren: [],      // 当前家庭的儿童列表
@@ -52,7 +53,9 @@ Page({
       themeClass: app.globalData.themeClass,
       themeStyle: themeStyle,
       colorTone: app.globalData.colorTone || 'neutral',
-      isFunTheme: isFunTheme
+      isFunTheme: isFunTheme,
+      // 先设置当前家庭ID，避免 selectFamilyById 误判为切换
+      currentFamilyId: app.globalData.currentFamilyId
     })
     this.loadAllFamilies()
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
@@ -91,7 +94,8 @@ Page({
         const currentFamilyId = app.globalData.currentFamilyId
         const familyToSelect = localFamilies.find(f => f.familyId === currentFamilyId) || localFamilies[0]
         console.log('[家庭列表] 选择本地家庭:', familyToSelect)
-        this.selectFamilyById(familyToSelect.familyId)
+        // 页面加载时不返回首页
+        this.selectFamilyById(familyToSelect.familyId, false)
       } else {
         this.setData({
           myFamily: null,
@@ -102,11 +106,53 @@ Page({
       return
     }
 
-    // 已登录：从云端加载
+    // 已登录：从云端加载（使用缓存机制）
+    // 先检查缓存
+    const cachedData = app.getFamiliesListCache()
+    if (cachedData) {
+      console.log('[家庭列表] 使用缓存的家庭列表')
+
+      let families = []
+      let deletedFamilies = []
+
+      // 兼容旧格式（数组）和新格式（对象）
+      if (Array.isArray(cachedData)) {
+        // 旧格式：直接是数组
+        families = cachedData
+      } else {
+        // 新格式：对象包含 families 和 deletedFamilies
+        families = cachedData.families || []
+        deletedFamilies = cachedData.deletedFamilies || []
+      }
+
+      console.log('[家庭列表] 缓存数据 - 活跃家庭:', families.length, '已解散家庭:', deletedFamilies.length)
+
+      // 格式化已解散家庭的日期
+      const formattedDeletedFamilies = deletedFamilies.map(f => ({
+        ...f,
+        disbandedAtFormatted: this.formatDate(f.disbandedAt)
+      }))
+
+      this.setData({
+        families: families,
+        deletedFamilies: formattedDeletedFamilies
+      })
+
+      const currentFamilyId = app.globalData.currentFamilyId
+      if (families.length > 0) {
+        const familyToSelect = families.find(f => f.familyId === currentFamilyId) || families[0]
+        console.log('[家庭列表] 选择家庭:', familyToSelect)
+        // 页面加载时不返回首页
+        await this.selectFamilyById(familyToSelect.familyId, false)
+      }
+      return
+    }
+
+    // 缓存过期，从云端加载
     showLoading()
 
     try {
-      console.log('[家庭列表] 开始加载所有家庭')
+      console.log('[家庭列表] 缓存过期，开始加载所有家庭')
       const familiesRes = await wx.cloud.callFunction({
         name: 'manageFamilies',
         data: {
@@ -118,8 +164,28 @@ Page({
 
       if (familiesRes.result.success) {
         const families = familiesRes.result.families || []
+        const deletedFamilies = familiesRes.result.deletedFamilies || []
         console.log('[家庭列表] 获取到家庭数量:', families.length)
+        console.log('[家庭列表] 获取到已解散家庭数量:', deletedFamilies.length)
         console.log('[家庭列表] 家庭详细数据:', families)
+
+        // 格式化已解散家庭的日期
+        const formattedDeletedFamilies = deletedFamilies.map(f => ({
+          ...f,
+          disbandedAtFormatted: this.formatDate(f.disbandedAt)
+        }))
+
+        console.log('[家庭列表] 格式化后的已解散家庭:', formattedDeletedFamilies)
+
+        // 总是设置数据（包括已解散家庭）
+        this.setData({
+          families: families,
+          deletedFamilies: formattedDeletedFamilies
+        }, () => {
+          console.log('[家庭列表] setData 完成')
+          console.log('[家庭列表] 当前 data.families:', this.data.families)
+          console.log('[家庭列表] 当前 data.deletedFamilies:', this.data.deletedFamilies)
+        })
 
         if (families.length > 0) {
           // 检测是否有新加入的家庭（上次访问时没有的家庭）
@@ -127,11 +193,8 @@ Page({
           const currentFamilyIds = families.map(f => f.familyId)
           const newFamilies = families.filter(f => !lastFamilyIds.includes(f.familyId))
 
-          this.setData({ families: families }, () => {
-            console.log('[家庭列表] setData 完成')
-            console.log('[家庭列表] 当前 data.families:', this.data.families)
-            console.log('[家庭列表] 第一个家庭名称:', this.data.families[0].name)
-          })
+          // 保存到缓存（同时保存活跃家庭和已解散家庭）
+          app.setFamiliesListCache(families, formattedDeletedFamilies)
 
           const currentFamilyId = app.globalData.currentFamilyId
 
@@ -140,8 +203,8 @@ Page({
             const newFamily = newFamilies[0]
             console.log('[家庭列表] 检测到新加入的家庭:', newFamily.name)
 
-            // 自动选择新家庭
-            await this.selectFamilyById(newFamily.familyId)
+            // 自动选择新家庭（页面加载时不返回首页）
+            await this.selectFamilyById(newFamily.familyId, false)
 
             // 保存当前家庭ID列表
             wx.setStorageSync('lastFamilyIds_before', currentFamilyIds)
@@ -149,18 +212,20 @@ Page({
             // 没有新家庭，选择当前家庭或第一个家庭
             const familyToSelect = families.find(f => f.familyId === currentFamilyId) || families[0]
             console.log('[家庭列表] 选择家庭:', familyToSelect)
-            await this.selectFamilyById(familyToSelect.familyId)
+            // 页面加载时不返回首页
+            await this.selectFamilyById(familyToSelect.familyId, false)
 
             // 保存当前家庭ID列表
             wx.setStorageSync('lastFamilyIds_before', currentFamilyIds)
           }
         } else {
-          console.log('[家庭列表] 没有找到家庭')
+          console.log('[家庭列表] 没有找到活跃家庭')
+          // 清空当前家庭相关数据，但保留已解散家庭（已经在前面设置过了）
           this.setData({
-            families: [],
             myFamily: null,
             familyMembers: [],
-            familyChildren: []
+            familyChildren: [],
+            currentMemberInfo: null
           })
         }
       } else {
@@ -186,8 +251,8 @@ Page({
       return
     }
 
-    // 选择新家庭
-    this.selectFamilyById(familyid)
+    // 选择新家庭（不返回首页，用户可以继续查看家庭列表）
+    this.selectFamilyById(familyid, false)
   },
 
   /**
@@ -229,9 +294,18 @@ Page({
 
   /**
    * 选择家庭（内部方法）
+   * @param {string} familyId - 家庭ID
+   * @param {boolean} shouldReturnHome - 是否返回首页（默认true）
    */
-  async selectFamilyById(familyId) {
-    console.log('[家庭列表] 选择家庭:', familyId)
+  async selectFamilyById(familyId, shouldReturnHome = true) {
+    console.log('[家庭列表] 选择家庭:', familyId, 'shouldReturnHome:', shouldReturnHome)
+
+    // 检查是否真的是切换家庭（与当前家庭不同）
+    const previousFamilyId = this.data.currentFamilyId
+    const isActuallySwitching = familyId !== previousFamilyId
+
+    console.log('[家庭列表] 是否真正切换家庭:', isActuallySwitching, '从', previousFamilyId, '到', familyId)
+
     this.setData({ currentFamilyId: familyId })
     app.saveCurrentFamilyId(familyId)
     await app.loadChildren()
@@ -279,6 +353,26 @@ Page({
 
     app.saveCurrentChildId(childToSelect.childId)
     console.log('[家庭列表] 自动选择儿童:', childToSelect.name)
+
+    // 根据参数决定是否返回首页
+    console.log('[家庭列表] shouldReturnHome:', shouldReturnHome, 'isActuallySwitching:', isActuallySwitching)
+
+    if (shouldReturnHome) {
+      // 切换家庭后自动返回首页，让首页显示新家庭的数据
+      console.log('[家庭列表] 执行 switchTab 到首页')
+      wx.switchTab({
+        url: '/pages/index/index'
+      })
+    } else {
+      // 不返回首页
+      // 只有在真正切换家庭时才显示提示
+      if (isActuallySwitching) {
+        console.log('[家庭列表] 真正切换了家庭，显示提示')
+        showToast(`已切换到${this.data.myFamily?.name || '新家庭'}`)
+      } else {
+        console.log('[家庭列表] 家庭没有变化，不显示提示')
+      }
+    }
   },
 
   /**
@@ -395,7 +489,8 @@ Page({
       return
     }
 
-    await this.selectFamilyById(familyid)
+    // 选择新家庭（不返回首页，用户可以继续查看家庭列表）
+    await this.selectFamilyById(familyid, false)
   },
 
   /**
@@ -562,6 +657,9 @@ Page({
         showToast('家庭创建成功')
         this.closeAllModals()
 
+        // 使缓存失效
+        app.invalidateFamiliesListCache()
+
         // 自动选择新创建的家庭
         app.saveCurrentFamilyId(family.familyId)
         await app.loadChildren()
@@ -626,8 +724,14 @@ Page({
 
       hideLoading()
       if (res.result.success) {
+        // 使缓存失效
+        app.invalidateFamiliesListCache()
+
         showToast(res.result.message || '申请已提交')
         this.closeAllModals()
+
+        // 重新加载家庭列表
+        await this.loadAllFamilies()
       } else {
         showToast(res.result.error || '加入失败')
       }
@@ -721,6 +825,9 @@ Page({
 
       hideLoading()
       if (res.result.success) {
+        // 清除家庭列表缓存（儿童数可能已变化）
+        app.invalidateFamiliesListCache()
+
         showToast('儿童已添加到家庭')
         this.setData({ showAssignChildModal: false })
         await this.loadAdditionalData(this.data.myFamily.familyId)
@@ -1016,6 +1123,117 @@ Page({
       hideLoading()
       console.error('[家庭列表] 修改昵称失败:', err)
       showToast('修改失败，请重试')
+    }
+  },
+
+  /**
+   * 格式化日期
+   */
+  formatDate(dateString) {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  },
+
+  /**
+   * 点击已解散家庭
+   */
+  onDeletedFamilyTap(e) {
+    const { familyname } = e.currentTarget.dataset
+    showToast(`"${familyname}" 已解散，请点击下方按钮恢复或彻底删除`)
+  },
+
+  /**
+   * 恢复家庭
+   */
+  async restoreFamily(e) {
+    const { familyid } = e.currentTarget.dataset
+
+    const confirm = await showConfirm('确定要恢复这个家庭吗？恢复后您将自动成为该家庭的管理员。')
+    if (!confirm) return
+
+    showLoading()
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'restoreFamily',
+          familyId: familyid
+        }
+      })
+
+      hideLoading()
+
+      if (res.result.success) {
+        showToast(res.result.message || '家庭已恢复')
+
+        // 清除缓存并重新加载
+        app.invalidateFamiliesListCache()
+        await this.loadAllFamilies()
+      } else {
+        showToast(res.result.error || '恢复失败')
+      }
+    } catch (err) {
+      hideLoading()
+      console.error('[家庭列表] 恢复家庭失败:', err)
+      showToast('恢复失败，请重试')
+    }
+  },
+
+  /**
+   * 彻底删除家庭
+   */
+  async permanentlyDeleteFamily(e) {
+    const { familyid, familyname } = e.currentTarget.dataset
+
+    const confirm = await showConfirm(
+      `确定要彻底删除家庭"${familyname}"吗？\n\n` +
+      `此操作不可撤销，将会删除：\n` +
+      `• 家庭的所有任务\n` +
+      `• 家庭的所有奖品\n` +
+      `• 家庭的所有金币记录\n` +
+      `• 家庭的所有成员信息\n` +
+      `• 家庭记录本身`
+    )
+    if (!confirm) return
+
+    // 二次确认
+    const secondConfirm = await showConfirm('请再次确认：此操作无法撤销，确定要彻底删除吗？')
+    if (!secondConfirm) return
+
+    showLoading()
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'permanentlyDeleteFamily',
+          familyId: familyid
+        }
+      })
+
+      hideLoading()
+
+      if (res.result.success) {
+        showToast(res.result.message || '家庭已彻底删除')
+
+        // 清除缓存（确保数据一致性）
+        app.invalidateFamiliesListCache()
+
+        // 从本地列表中移除
+        const updatedDeletedFamilies = this.data.deletedFamilies.filter(f => f.familyId !== familyid)
+        this.setData({ deletedFamilies: updatedDeletedFamilies })
+      } else {
+        showToast(res.result.error || '删除失败')
+      }
+    } catch (err) {
+      hideLoading()
+      console.error('[家庭列表] 彻底删除家庭失败:', err)
+      showToast('删除失败，请重试')
     }
   }
 })

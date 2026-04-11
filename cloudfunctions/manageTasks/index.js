@@ -258,16 +258,25 @@ exports.main = async (event, context) => {
         }
       }
 
+      // 硬删除：先删除任务的完成记录（使用容错处理）
+      try {
+        await db.collection('task_completions')
+          .where({
+            taskId: taskId
+          })
+          .remove()
+      } catch (err) {
+        if (err.errCode !== -502005) {
+          console.error('[manageTasks] 删除任务完成记录失败:', err)
+        }
+      }
+
+      // 硬删除：删除任务本身
       await db.collection('tasks')
         .where({
           taskId: taskId
         })
-        .update({
-          data: {
-            isActive: false,
-            updatedAt: new Date()
-          }
-        })
+        .remove()
 
       return {
         success: true
@@ -336,15 +345,23 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 获取儿童信息
+      // 获取儿童信息（数据模型为 familyIds 数组，兼容旧字段 familyId）
       const childRes = await db.collection('children')
-        .where({
-          childId: childId,
-          familyId: familyId
-        })
+        .where({ childId: childId })
+        .limit(1)
         .get()
 
       if (childRes.data.length === 0) {
+        return {
+          success: false,
+          error: '儿童不存在'
+        }
+      }
+
+      const childRow = childRes.data[0]
+      const ids = childRow.familyIds || []
+      const inFamily = ids.includes(familyId) || childRow.familyId === familyId
+      if (!inFamily) {
         return {
           success: false,
           error: '该儿童不属于该家庭'

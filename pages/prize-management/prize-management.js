@@ -220,6 +220,9 @@ Page({
       })
 
       if (res.result.success) {
+        // 清除家庭列表缓存（奖品数可能已变化）
+        app.invalidateFamiliesListCache()
+
         showToast('删除成功')
         await this.loadPrizes()
       } else {
@@ -366,6 +369,9 @@ Page({
       hideLoading()
 
       if (res.result.success) {
+        // 清除家庭列表缓存（奖品数可能已变化）
+        app.invalidateFamiliesListCache()
+
         showToast(editingPrize ? t('prizes.prizeUpdated') : t('prizes.prizeCreated'))
         this.setData({ showAddModal: false })
         await this.loadPrizes()

@@ -1627,6 +1627,96 @@
   border-radius: 20rpx;
 }
 
+/* 已解散家庭部分 */
+.deleted-section {
+  margin-top: 40rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid rgba(0, 0, 0, 0.1);
+}
+
+.theme-dark .deleted-section {
+  border-top: 2rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.section-subtitle {
+  font-size: 24rpx;
+  color: #999999;
+  margin-left: 10rpx;
+}
+
+.families-list.deleted {
+  opacity: 0.8;
+}
+
+.family-card.deleted {
+  background: rgba(0, 0, 0, 0.03);
+  border: 2rpx dashed #CCCCCC;
+}
+
+.family-card.deleted:active {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.theme-dark .family-card.deleted {
+  background: rgba(255, 255, 255, 0.03);
+  border: 2rpx dashed #666666;
+}
+
+.theme-dark .family-card.deleted:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.family-card.deleted .family-icon text {
+  font-size: 40rpx;
+}
+
+.deleted-badge {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  background: #999999;
+  color: #FFFFFF;
+  font-size: 20rpx;
+  border-radius: 8rpx;
+  margin-left: 10rpx;
+}
+
+.deleted-date {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.deleted-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  min-width: 140rpx;
+}
+
+.deleted-action-btn {
+  padding: 12rpx 24rpx;
+  font-size: 24rpx;
+  border-radius: 12rpx;
+  border: none;
+  transition: all 0.2s;
+}
+
+.deleted-action-btn:active {
+  opacity: 0.8;
+  transform: scale(0.95);
+}
+
+.deleted-action-btn.restore {
+  background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2rpx 8rpx rgba(76, 175, 80, 0.3);
+}
+
+.deleted-action-btn.delete {
+  background: linear-gradient(135deg, #F44336 0%, #E53935 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2rpx 8rpx rgba(244, 67, 54, 0.3);
+}
+
 .style-girl .child-avatar-small {
   border: 2rpx solid #FFFFFF;
 }

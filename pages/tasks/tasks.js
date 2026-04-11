@@ -216,7 +216,27 @@ Page({
       return
     }
 
-    // 已登录：从云端加载
+    // 已登录：先检查缓存
+    const cachedTasks = app.getTasksCache(currentFamilyId, currentChild.childId)
+    if (cachedTasks) {
+      // 使用缓存数据，不显示加载提示
+      const badgeMap = {
+        'daily': '📅',
+        'weekly': '📆',
+        'monthly': '🗓️',
+        'permanent': '♾️',
+        'penalty_parent': '🎁',
+        'penalty_child': '⚠️'
+      }
+      const tasks = cachedTasks.map(task => ({
+        ...task,
+        taskTypeBadge: badgeMap[task.taskType] || '📅'
+      }))
+      this.setData({ tasks })
+      return
+    }
+
+    // 缓存过期或无缓存，从云端加载
     showLoading()
 
     try {
@@ -245,6 +265,9 @@ Page({
           }
         })
         this.setData({ tasks })
+
+        // 保存到缓存
+        app.setTasksCache(currentFamilyId, currentChild.childId, tasks)
       } else {
         showToast(res.result.error || '加载失败')
       }
@@ -382,6 +405,20 @@ Page({
 
     // 已登录：从云端删除
     try {
+      const currentFamilyId = app.getCurrentFamilyId()
+      if (!currentFamilyId) {
+        hideLoading()
+        showToast('请先选择家庭')
+        return
+      }
+
+      const currentChild = app.getCurrentChild()
+      if (!currentChild) {
+        hideLoading()
+        showToast('请先添加儿童')
+        return
+      }
+
       const res = await wx.cloud.callFunction({
         name: 'manageTasks',
         data: {
@@ -395,6 +432,12 @@ Page({
       if (res.result.success) {
         // 更新时间戳（关键！）
         await app.updateChildTimestamp()
+
+        // 清除任务缓存
+        app.invalidateTasksCache(currentFamilyId, currentChild.childId)
+
+        // 清除家庭列表缓存（任务数可能已变化）
+        app.invalidateFamiliesListCache()
 
         showToast(t('tasks.taskDeleted'))
         await this.loadTasks()
@@ -506,6 +549,13 @@ Page({
         return
       }
 
+      const currentChild = app.getCurrentChild()
+      if (!currentChild) {
+        hideLoading()
+        showToast('请先添加儿童')
+        return
+      }
+
       // 确保 coinReward 是数字类型，maxCompletions 处理为数字或null
       const taskData = {
         ...formData,
@@ -542,6 +592,12 @@ Page({
       if (res.result.success) {
         // 更新时间戳（关键！）
         await app.updateChildTimestamp()
+
+        // 清除任务缓存
+        app.invalidateTasksCache(currentFamilyId, currentChild.childId)
+
+        // 清除家庭列表缓存（任务数可能已变化）
+        app.invalidateFamiliesListCache()
 
         showToast(editingTask ? t('tasks.taskUpdated') : t('tasks.taskCreated'))
         this.setData({ showAddModal: false })

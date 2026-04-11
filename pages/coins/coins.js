@@ -78,22 +78,45 @@ Page({
 
   async loadRecords() {
     const currentChildId = app.globalData.currentChildId
+    const familyId = app.getCurrentFamilyId()
+
     if (!currentChildId) {
       this.setData({ records: [], totalEarned: 0, totalSpent: 0 })
       return
     }
 
+    // 云端金币流水按「家庭 + 孩子」隔离，与 manageFamilyCoins 一致
+    if (app.globalData.useCloudStorage) {
+      if (!familyId) {
+        this.setData({ records: [], totalEarned: 0, totalSpent: 0 })
+        return
+      }
+    }
+
     this.setData({ isLoading: true })
 
     try {
-      const res = await wx.cloud.callFunction({
-        name: 'manageCoins',
-        data: {
-          action: 'getCoinRecords',
-          childId: currentChildId,
-          limit: 100
-        }
-      })
+      let res
+      if (app.globalData.useCloudStorage && familyId) {
+        res = await wx.cloud.callFunction({
+          name: 'manageFamilyCoins',
+          data: {
+            action: 'getCoinRecords',
+            childId: currentChildId,
+            familyId: familyId,
+            limit: 100
+          }
+        })
+      } else {
+        res = await wx.cloud.callFunction({
+          name: 'manageCoins',
+          data: {
+            action: 'getCoinRecords',
+            childId: currentChildId,
+            limit: 100
+          }
+        })
+      }
 
       if (res.result.success) {
         const records = res.result.records

@@ -281,16 +281,25 @@ exports.main = async (event, context) => {
         }
       }
 
+      // 硬删除：先删除奖品的兑换记录（使用容错处理）
+      try {
+        await db.collection('redemptions')
+          .where({
+            prizeId: prizeId
+          })
+          .remove()
+      } catch (err) {
+        if (err.errCode !== -502005) {
+          console.error('[managePrizes] 删除兑换记录失败:', err)
+        }
+      }
+
+      // 硬删除：删除奖品本身
       await db.collection('prizes')
         .where({
           prizeId: prizeId
         })
-        .update({
-          data: {
-            isActive: false,
-            updatedAt: new Date()
-          }
-        })
+        .remove()
 
       return {
         success: true

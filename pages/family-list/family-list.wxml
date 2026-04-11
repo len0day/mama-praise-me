@@ -97,6 +97,57 @@
       </view>
     </view>
 
+    <!-- 已解散家庭列表（仅创建者可见） -->
+    <view class="families-section deleted-section" wx:if="{{deletedFamilies.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">已解散家庭</text>
+        <text class="section-subtitle">（仅您可见）</text>
+      </view>
+
+      <view class="families-list deleted">
+        <view
+          class="family-card deleted"
+          wx:for="{{deletedFamilies}}"
+          wx:key="familyId"
+          bindtap="onDeletedFamilyTap"
+          data-familyid="{{item.familyId}}"
+          data-familyname="{{item.name}}">
+
+          <view class="family-main">
+            <view class="family-icon">
+              <text>🚫</text>
+            </view>
+            <view class="family-info">
+              <view class="family-name-row">
+                <text class="family-name">{{item.name}}</text>
+                <text class="deleted-badge">已解散</text>
+              </view>
+              <view class="family-meta">
+                <text class="deleted-date">解散于: {{item.disbandedAtFormatted || '未知'}}</text>
+              </view>
+            </view>
+            <view class="family-right">
+              <view class="deleted-actions">
+                <button
+                  class="deleted-action-btn restore"
+                  data-familyid="{{item.familyId}}"
+                  catchtap="restoreFamily">
+                  恢复
+                </button>
+                <button
+                  class="deleted-action-btn delete"
+                  data-familyid="{{item.familyId}}"
+                  data-familyname="{{item.name}}"
+                  catchtap="permanentlyDeleteFamily">
+                  彻底删除
+                </button>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- 底部操作按钮 -->
     <view class="bottom-actions">
       <button class="action-btn primary" bindtap="showCreateModal">

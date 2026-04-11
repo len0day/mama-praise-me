@@ -1,5 +1,7 @@
 // cloudfunctions/manageCoins/index.js
-// 金币管理云函数
+// 金币管理云函数（旧版：按用户 openid + children.totalCoins）
+// 新流水与余额请以 manageFamilyCoins + family_coin_balances / coin_records(familyId) 为准；
+// 客户端已改为优先走 manageFamilyCoins；本云函数仅保留给未登录/无家庭等兼容路径。
 
 const cloud = require('wx-server-sdk')
 

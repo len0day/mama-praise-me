@@ -61,18 +61,11 @@ Page({
     console.log('[家庭] 当前家庭ID:', currentFamilyId)
 
     if (currentFamilyId) {
-      // 加载指定家庭的数据
-      await this.loadFamilyDataById(currentFamilyId)
-
-      // 检查数据新鲜度（仅已登录用户）
-      if (app.globalData.useCloudStorage) {
-        const shouldRefresh = await app.checkDataFreshness()
-
-        if (shouldRefresh) {
-          // 数据已更新，重新加载数据
-          await this.loadFamilyDataById(currentFamilyId)
-        }
+      if (app.globalData.useCloudStorage && app.isFamilyChildrenCacheStale(false)) {
+        await app.loadChildren(false)
       }
+      // 总是加载家庭数据（因为是新页面），但使用静默加载（不显示"加载中"）
+      await this.loadFamilyDataById(currentFamilyId, false)
     } else {
       // 如果没有选中家庭，加载用户的第一个家庭
       this.loadFamilyData()
@@ -81,9 +74,13 @@ Page({
 
   /**
    * 加载指定家庭的数据
+   * @param {string} familyId - 家庭ID
+   * @param {boolean} showLoadingIndicator - 是否显示加载提示（默认true）
    */
-  async loadFamilyDataById(familyId) {
-    showLoading()
+  async loadFamilyDataById(familyId, showLoadingIndicator = true) {
+    if (showLoadingIndicator) {
+      showLoading()
+    }
 
     try {
       // 未登录：从本地加载
@@ -166,7 +163,9 @@ Page({
       console.error('[家庭] 加载失败:', err)
       showToast('加载失败')
     } finally {
-      hideLoading()
+      if (showLoadingIndicator) {
+        hideLoading()
+      }
     }
   },
 
@@ -420,6 +419,9 @@ Page({
       })
 
       if (updateRes.result.success) {
+        // 清除家庭列表缓存（家庭头像已变化）
+        app.invalidateFamiliesListCache()
+
         showToast('家庭头像已更新')
         // 重新加载家庭数据以刷新头像
         this.loadFamilyDataById(this.data.family.familyId)
@@ -781,6 +783,9 @@ Page({
       hideLoading()
 
       if (res.result.success) {
+        // 清除家庭列表缓存（家长数可能已变化）
+        app.invalidateFamiliesListCache()
+
         showToast(res.result.message)
         await this.loadFamilyData()
       } else {
@@ -916,6 +921,9 @@ Page({
       hideLoading()
 
       if (res.result.success) {
+        // 清除家庭列表缓存（家长数可能已变化）
+        app.invalidateFamiliesListCache()
+
         showToast(res.result.message)
         if (this.data.family && this.data.family.familyId) {
           await this.loadFamilyDataById(this.data.family.familyId)
@@ -953,6 +961,9 @@ Page({
       hideLoading()
 
       if (res.result.success) {
+        // 清除家庭列表缓存（家庭列表已变化）
+        app.invalidateFamiliesListCache()
+
         showToast(res.result.message)
         await this.loadFamilyData()
       } else {
@@ -1329,6 +1340,9 @@ Page({
             hideLoading()
 
             if (response.result.success) {
+              // 清除家庭列表缓存（家庭名称已变化）
+              app.invalidateFamiliesListCache()
+
               showToast('家庭名称已更新')
               await this.loadFamilyData()
             } else {
@@ -1373,6 +1387,9 @@ Page({
       hideLoading()
 
       if (res.result.success) {
+        // 清除家庭列表缓存（家庭列表已变化）
+        app.invalidateFamiliesListCache()
+
         showToast(res.result.message)
         // 清除当前家庭ID并返回家庭列表
         app.setCurrentFamily(null)

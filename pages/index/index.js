@@ -180,10 +180,19 @@ Page({
     // 继续正常的页面加载流程
     console.log('[首页 onShow] 设置主题:', { themeClass, themeStyle, isFunTheme })
 
-    // 如果刚刚强制刷新过（登录后），保持加载状态
-    if (this._justForceRefreshed) {
-      this.setData({ isLoading: true })
-    } else {
+    // 从其他 Tab 回到首页且家庭/孩子未变：不盖全屏加载层，在后台静默拉任务（避免每次切换都闪「加载中」）
+    const resumeFamilyId = app.getCurrentFamilyId()
+    const resumeChildId = app.globalData.currentChildId
+    const silentTabResume =
+      !this._justForceRefreshed &&
+      !familyChanged &&
+      this._lastDisplayedFamilyId != null &&
+      this._lastDisplayedFamilyId === resumeFamilyId &&
+      !!this.data.currentChild &&
+      !!resumeChildId &&
+      this.data.currentChild.childId === resumeChildId
+
+    if (!silentTabResume) {
       this.setData({ isLoading: true })
     }
 
@@ -236,18 +245,40 @@ Page({
       })
 
       if (familyChildren.length > 0) {
-        // 自动选择第一个儿童
-        const firstChild = familyChildren[0]
-        app.saveCurrentChildId(firstChild.childId)
-        currentChild = firstChild
+        // 从家庭配置中获取该家庭上次选择的儿童ID
+        const familyConfig = wx.getStorageSync('familyConfig') || {}
+        const savedChildId = familyConfig[currentFamilyId]?.currentChildId
+
+        let childToSelect
+        if (savedChildId) {
+          // 尝试找到上次选择的儿童
+          childToSelect = familyChildren.find(c => c.childId === savedChildId)
+        }
+
+        // 如果没有保存的记录或找不到该儿童，选择第一个
+        if (!childToSelect) {
+          childToSelect = familyChildren[0]
+        }
+
+        app.saveCurrentChildId(childToSelect.childId)
+        currentChild = childToSelect
+        console.log('[首页] 自动选择儿童:', currentChild.name)
       }
     }
 
     console.log('[首页] 最终 currentChild:', currentChild)
 
-    // 如果还是没有孩子，显示添加孩子提示
+    // 如果还是没有孩子，显示添加孩子提示，但要显示当前家庭信息
     if (!currentChild) {
-      console.warn('[首页] 仍然没有孩子，显示添加提示')
+      console.warn('[首页] 当前家庭没有儿童，显示添加提示')
+
+      // 加载所有家庭列表，用于显示当前家庭
+      await this.loadAllFamilies()
+
+      // 获取当前家庭信息
+      const currentFamilyId = app.getCurrentFamilyId()
+      const currentFamily = this.data.allFamilies.find(f => f.familyId === currentFamilyId)
+
       const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
       const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
       this.setData({
@@ -259,8 +290,14 @@ Page({
         tasks: [],
         todayCompletions: [],
         isLoading: false,
-        needFamily: false
+        needFamily: false,
+        currentFamily: currentFamily || null,  // 显示当前家庭
+        currentFamilyId: currentFamilyId
       })
+
+      // 记录当前显示的家庭ID
+      this._lastDisplayedFamilyId = currentFamilyId
+      console.log('[首页 onShow] 无儿童家庭，记录当前家庭ID:', this._lastDisplayedFamilyId)
       return
     }
 
@@ -293,18 +330,8 @@ Page({
     console.log('[首页 onShow] 记录当前家庭ID:', this._lastDisplayedFamilyId)
 
     // 加载数据（包含计算金币统计）
-    await this.loadData()
-
-    // 检查数据新鲜度（仅已登录用户，且不是刚刚强制刷新过的）
-    // 登录后会强制刷新，这里跳过检查避免重复加载
-    if (app.globalData.useCloudStorage && !this._justForceRefreshed) {
-      const shouldRefresh = await app.checkDataFreshness()
-
-      if (shouldRefresh) {
-        // 数据已更新，重新加载数据
-        await this.loadData()
-      }
-    }
+    // loadChildren 已按家庭级时间戳决定是否拉取孩子列表，无需再在此处二次 checkDataFreshness + loadData（避免重复云请求）
+    await this.loadData({ silent: silentTabResume })
 
     // 清除强制刷新标记
     this._justForceRefreshed = false
@@ -381,47 +408,6 @@ Page({
   },
 
   /**
-   * 加载所有家庭列表
-   */
-  async loadAllFamilies() {
-    // 未登录：从本地加载
-    if (!app.globalData.useCloudStorage) {
-      const localFamilies = wx.getStorageSync('localFamilies') || []
-      // 补充 isCreator 标记和 childCount（兼容旧本地数据）
-      const processedLocalFamilies = localFamilies.map(f => {
-        // 计算该家庭的儿童数量
-        const storageKey = `localChildren_${f.familyId}`
-        const familyChildren = wx.getStorageSync(storageKey) || []
-
-        return {
-          ...f,
-          isCreator: f.isCreator !== undefined ? f.isCreator : (f.role === 'admin'),
-          childCount: familyChildren.length,
-          parentCount: 1  // 本地模式只有一个家长（创建者）
-        }
-      })
-      this.setData({ allFamilies: processedLocalFamilies })
-      return
-    }
-
-    // 已登录：从云端加载
-    try {
-      const res = await wx.cloud.callFunction({
-        name: 'manageFamilies',
-        data: {
-          action: 'getAllMyFamilies'
-        }
-      })
-
-      if (res.result.success) {
-        this.setData({ allFamilies: res.result.families || [] })
-      }
-    } catch (err) {
-      console.error('[首页] 加载家庭列表失败:', err)
-    }
-  },
-
-  /**
    * 加载当前家庭的儿童列表
    */
   async loadCurrentFamilyChildren() {
@@ -446,8 +432,11 @@ Page({
 
   /**
    * 加载数据
+   * @param {{ silent?: boolean }} options - silent=true 时不点亮全屏 isLoading（用于 Tab 切回首页）
    */
-  async loadData() {
+  async loadData(options = {}) {
+    const silent = options.silent === true
+
     // 获取当前家庭和孩子
     const currentFamilyId = app.getCurrentFamilyId()
     const currentChild = app.getCurrentChild()
@@ -481,7 +470,11 @@ Page({
     }
 
     // 只设置 currentFamilyId，不覆盖 currentChild（因为它可能已经包含了 familyName 和 familyCoins）
-    this.setData({ currentFamilyId, isLoading: true })
+    if (silent) {
+      this.setData({ currentFamilyId })
+    } else {
+      this.setData({ currentFamilyId, isLoading: true })
+    }
 
     // 未登录：从本地加载数据
     if (!app.globalData.useCloudStorage) {
@@ -490,7 +483,7 @@ Page({
     }
 
     // 已登录：从云端加载数据
-    await this.loadDataFromCloud(currentFamilyId, currentChild)
+    await this.loadDataFromCloud(currentFamilyId, currentChild, { silent })
   },
 
   /**
@@ -761,8 +754,26 @@ Page({
 
   /**
    * 从云端加载数据
+   * @param {{ silent?: boolean }} loadOpts - silent 且短期缓存命中时跳过 getTasks/getAllCompletions（Tab 来回切时少打云）
    */
-  async loadDataFromCloud(currentFamilyId, currentChild) {
+  async loadDataFromCloud(currentFamilyId, currentChild, loadOpts = {}) {
+    const silent = loadOpts.silent === true
+    const cacheKey = `${currentFamilyId}_${currentChild.childId}`
+    const TASK_CACHE_TTL_MS = 45 * 1000
+    if (
+      silent &&
+      this._homeTasksCacheKey === cacheKey &&
+      this._homeTasksCacheAt > 0 &&
+      Date.now() - this._homeTasksCacheAt < TASK_CACHE_TTL_MS
+    ) {
+      try {
+        await this.calculateCoinStats()
+      } catch (e) {}
+      // onHide 会停表，从 Tab 回来时需恢复倒计时刷新
+      this.startCountdownTimer()
+      return
+    }
+
     try {
       // 获取任务列表和所有完成记录
       const [tasksRes, completionsRes] = await Promise.all([
@@ -1062,6 +1073,9 @@ Page({
 
       // 启动倒计时更新定时器
       this.startCountdownTimer()
+
+      this._homeTasksCacheKey = cacheKey
+      this._homeTasksCacheAt = Date.now()
 
     } catch (err) {
       console.error('[首页] 加载数据失败:', err)
@@ -1366,6 +1380,9 @@ Page({
         // 3. 立即更新时间戳（关键！）
         await app.updateChildTimestamp()
 
+        // 4. 清除任务缓存
+        app.invalidateTasksCache(this.data.currentFamilyId, this.data.currentChild.childId)
+
         hideLoading()
         showToast('任务完成！')
         // 重新加载数据
@@ -1518,23 +1535,45 @@ Page({
       return
     }
 
-    // 已登录：从云端加载
+    // 已登录：从云端加载（非「打开选择器」可走短缓存，减少重复 getAllMyFamilies）
     try {
-      const res = await wx.cloud.callFunction({
-        name: 'manageFamilies',
-        data: {
-          action: 'getAllMyFamilies'
+      let families = null
+      if (!show) {
+        const cached = app.getFamiliesListCache()
+        console.log('[首页] 缓存数据:', cached)
+        if (cached) {
+          // 兼容旧格式（数组）和新格式（对象）
+          if (Array.isArray(cached)) {
+            // 旧格式：直接是数组
+            families = cached
+            console.log('[首页] 使用旧格式缓存（数组）')
+          } else if (cached && typeof cached === 'object') {
+            // 新格式：对象包含 families 和 deletedFamilies
+            families = cached.families || []
+            console.log('[首页] 使用新格式缓存，家庭数:', families.length)
+          }
         }
-      })
+      }
+      if (!families) {
+        const res = await wx.cloud.callFunction({
+          name: 'manageFamilies',
+          data: {
+            action: 'getAllMyFamilies'
+          }
+        })
 
-      if (res.result.success) {
-        const families = res.result.families || []
+        if (res.result.success) {
+          families = res.result.families || []
+          if (!show) {
+            // 同时保存活跃家庭和已解散家庭到缓存
+            app.setFamiliesListCache(families, res.result.deletedFamilies || [])
+          }
+        }
+      }
 
-        // 保存所有家庭到全局数据（包括没有孩子的家庭）
+      if (families && Array.isArray(families)) {
         app.globalData.families = families
 
-        // 过滤掉没有儿童的家庭用于显示
-        // 使用云函数返回的 childCount 字段来判断
         const familiesWithChildren = families.filter(family => {
           return (family.childCount || 0) > 0
         })
@@ -1997,11 +2036,8 @@ Page({
     // 清除旧的定时器
     this.stopCountdownTimer()
 
-    console.log('[定时器] 启动倒计时定时器')
-
     // 每秒更新一次倒计时
     this.data.countdownTimer = setInterval(() => {
-      console.log('[定时器] 执行定时任务')
       this.updateTaskCountdowns()
     }, 1000) // 1秒
   },
@@ -2568,6 +2604,10 @@ Page({
         app.globalData.useCloudStorage = true
         app.globalData.currentUserOpenid = userInfo.openid
         wx.setStorageSync('userInfo', userInfo)
+        app.mergeUserSettingsAfterLogin(userInfo)
+        if (typeof app.invalidateFamiliesListCache === 'function') {
+          app.invalidateFamiliesListCache()
+        }
 
         // 先更新用户信息显示
         this.setData({
@@ -3431,6 +3471,10 @@ Page({
         app.globalData.useCloudStorage = true
         app.globalData.currentUserOpenid = userInfo.openid
         wx.setStorageSync('userInfo', userInfo)
+        app.mergeUserSettingsAfterLogin(userInfo)
+        if (typeof app.invalidateFamiliesListCache === 'function') {
+          app.invalidateFamiliesListCache()
+        }
 
         // 更新用户信息显示
         this.setData({

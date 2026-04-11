@@ -252,7 +252,10 @@
   <!-- 无孩子提示 -->
   <view class="no-child" wx:if="{{!currentChild && !isLoading && !needFamily}}">
     <view class="no-child-icon">👶</view>
-    <view class="no-child-text">{{i18n.children.noChildren || '暂无孩子，请先添加'}}</view>
+    <view class="no-child-text">
+      <text wx:if="{{currentFamily}}">{{currentFamily.name}} 暂无孩子，请先添加</text>
+      <text wx:else>{{i18n.children.noChildren || '暂无孩子，请先添加'}}</text>
+    </view>
     <button class="add-child-btn" bindtap="goToAddChild">{{i18n.children.addChild || '添加孩子'}}</button>
   </view>
 
