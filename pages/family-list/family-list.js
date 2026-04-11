@@ -71,11 +71,19 @@ Page({
       const localFamilies = wx.getStorageSync('localFamilies') || []
       console.log('[家庭列表] 本地家庭数量:', localFamilies.length)
 
-      // 补充 isCreator 标记（兼容旧本地数据）
-      const processedLocalFamilies = localFamilies.map(f => ({
-        ...f,
-        isCreator: f.isCreator !== undefined ? f.isCreator : (f.role === 'admin')
-      }))
+      // 补充 isCreator 标记和 childCount（兼容旧本地数据）
+      const processedLocalFamilies = localFamilies.map(f => {
+        // 计算该家庭的儿童数量
+        const storageKey = `localChildren_${f.familyId}`
+        const familyChildren = wx.getStorageSync(storageKey) || []
+
+        return {
+          ...f,
+          isCreator: f.isCreator !== undefined ? f.isCreator : (f.role === 'admin'),
+          childCount: familyChildren.length,
+          parentCount: 1  // 本地模式只有一个家长（创建者）
+        }
+      })
 
       this.setData({ families: processedLocalFamilies })
 
@@ -319,7 +327,7 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'getFamilyChildren',
-          data: { familyId: familyId }
+          familyId: familyId
         }
       })
 
@@ -334,7 +342,7 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'getFamilyMembers',
-          data: { familyId: familyId }
+          familyId: familyId
         }
       })
 
@@ -353,9 +361,10 @@ Page({
 
       if (myChildrenRes.result.success) {
         // 过滤出未分配到当前家庭的儿童
-        const myChildren = (myChildrenRes.result.children || []).filter(
-          child => child.familyId !== familyId
-        )
+        const myChildren = (myChildrenRes.result.children || []).filter(child => {
+          const familyIds = child.familyIds || []
+          return !familyIds.includes(familyId)
+        })
         this.setData({ myChildren: myChildren })
       }
 
@@ -541,10 +550,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'createFamily',
-          data: {
-            name: familyName.trim(),
-            creatorNickname: creatorNickname.trim()
-          }
+          name: familyName.trim(),
+          creatorNickname: creatorNickname.trim()
         }
       })
 
@@ -567,7 +574,7 @@ Page({
             name: 'manageFamilies',
             data: {
               action: 'getFamilyChildren',
-              data: { familyId: family.familyId }
+              familyId: family.familyId
             }
           })
 
@@ -612,10 +619,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'joinFamily',
-          data: {
-            inviteCode: inviteCode.trim().toUpperCase(),
-            nickname: nickname.trim()
-          }
+          inviteCode: inviteCode.trim().toUpperCase(),
+          nickname: nickname.trim()
         }
       })
 
@@ -708,11 +713,9 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'assignChildToFamily',
-          data: {
-            familyId: this.data.myFamily.familyId,
-            childId: this.data.assigningChild.childId,
-            initialCoins: initialCoins
-          }
+          familyId: this.data.myFamily.familyId,
+          childId: this.data.assigningChild.childId,
+          initialCoins: initialCoins
         }
       })
 
@@ -756,7 +759,8 @@ Page({
         name: 'manageChildren',
         data: {
           action: 'updateChild',
-          data: { childId: childid, familyId: null }
+          childId: childid,
+          familyIds: []  // 从所有家庭移除
         }
       })
 
@@ -809,7 +813,7 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'regenerateInviteCode',
-          data: { familyId: this.data.myFamily.familyId }
+          familyId: this.data.myFamily.familyId
         }
       })
 
@@ -902,10 +906,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'updateMemberAvatar',
-          data: {
-            familyId: that.data.currentFamilyId,
-            avatar: fileID
-          }
+          familyId: that.data.currentFamilyId,
+          avatar: fileID
         }
       })
 
@@ -985,10 +987,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'updateMemberNickname',
-          data: {
-            familyId: this.data.currentFamilyId,
-            nickname: newNickname
-          }
+          familyId: this.data.currentFamilyId,
+          nickname: newNickname
         }
       })
 

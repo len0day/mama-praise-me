@@ -46,7 +46,7 @@ Page({
     this.loadI18n()
   },
 
-  onShow() {
+  async onShow() {
     const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
     const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
     this.setData({
@@ -62,7 +62,17 @@ Page({
 
     if (currentFamilyId) {
       // 加载指定家庭的数据
-      this.loadFamilyDataById(currentFamilyId)
+      await this.loadFamilyDataById(currentFamilyId)
+
+      // 检查数据新鲜度（仅已登录用户）
+      if (app.globalData.useCloudStorage) {
+        const shouldRefresh = await app.checkDataFreshness()
+
+        if (shouldRefresh) {
+          // 数据已更新，重新加载数据
+          await this.loadFamilyDataById(currentFamilyId)
+        }
+      }
     } else {
       // 如果没有选中家庭，加载用户的第一个家庭
       this.loadFamilyData()
@@ -76,20 +86,56 @@ Page({
     showLoading()
 
     try {
+      // 未登录：从本地加载
+      if (!app.globalData.useCloudStorage || familyId.startsWith('local_')) {
+        console.log('[家庭] 从本地加载家庭数据, familyId:', familyId)
+        const localFamilies = wx.getStorageSync('localFamilies') || []
+        const family = localFamilies.find(f => f.familyId === familyId)
+
+        if (family) {
+          console.log('[家庭] 找到本地家庭:', family)
+
+          this.setData({
+            family: family,
+            members: [{  // 本地模式只有创建者一个成员
+              openid: 'local',
+              nickname: family.creatorNickname,
+              role: 'admin',
+              isMe: true,
+              isCreator: true
+            }],
+            myMemberInfo: {
+              role: 'admin',
+              nickname: family.creatorNickname
+            }
+          }, () => {
+            console.log('[家庭] setData 完成，当前 family:', this.data.family)
+          })
+
+          await this.loadAdditionalData(familyId)
+        } else {
+          console.log('[家庭] 未找到本地家庭，familyId:', familyId)
+          this.setData({ family: null })
+        }
+        hideLoading()
+        return
+      }
+
+      // 已登录：从云端加载
       // 并行获取家庭信息和成员列表
       const [familyInfoRes, membersRes] = await Promise.all([
         wx.cloud.callFunction({
           name: 'manageFamilies',
           data: {
             action: 'getFamilyInfo',
-            data: { familyId }
+            familyId
           }
         }),
         wx.cloud.callFunction({
           name: 'manageFamilies',
           data: {
             action: 'getFamilyMembers',
-            data: { familyId }
+            familyId
           }
         })
       ])
@@ -217,13 +263,63 @@ Page({
    */
   async loadAdditionalData(familyId) {
     try {
+      // 未登录或本地家庭：从本地加载
+      if (!app.globalData.useCloudStorage || familyId.startsWith('local_')) {
+        console.log('[家庭] 从本地加载额外数据, familyId:', familyId)
+
+        // 加载当前家庭的儿童
+        const localChildren = wx.getStorageSync(`localChildren_${familyId}`) || []
+
+        // 从主儿童列表加载所有未加入当前家庭的儿童
+        const allChildren = wx.getStorageSync('allChildren') || []
+        let myChildren = []
+
+        allChildren.forEach(child => {
+          // 检查儿童是否已经在当前家庭
+          const alreadyInFamily = localChildren.find(c => c.childId === child.childId)
+          if (!alreadyInFamily) {
+            // 未加入当前家庭，添加到 myChildren
+            myChildren.push(child)
+          }
+        })
+
+        this.setData({
+          familyChildren: localChildren,
+          myChildren: myChildren,
+          invitations: []
+        })
+
+        // 自动选择第一个儿童（如果有）
+        if (localChildren.length > 0) {
+          const currentChildId = app.globalData.currentChildId
+          let currentIndex = 0
+
+          // 如果有已保存的儿童ID，尝试找到它
+          if (currentChildId) {
+            const foundIndex = localChildren.findIndex(c => c.childId === currentChildId)
+            if (foundIndex >= 0) {
+              currentIndex = foundIndex
+            }
+          }
+
+          this.setData({ currentChildIndex: currentIndex })
+
+          // 设置当前儿童
+          app.setCurrentChild(localChildren[currentIndex])
+          console.log('[家庭] 自动选择儿童:', localChildren[currentIndex].name)
+        }
+
+        return
+      }
+
+      // 已登录：从云端加载
       const [invitationsRes, familyChildrenRes, myChildrenRes] = await Promise.all([
         this.data.family && this.data.family.role === 'admin'
           ? wx.cloud.callFunction({
               name: 'manageFamilies',
               data: {
                 action: 'getPendingInvitations',
-                data: { familyId }
+                familyId
               }
             })
           : Promise.resolve({ result: { success: true, invitations: [] } }),
@@ -232,7 +328,7 @@ Page({
           name: 'manageFamilies',
           data: {
             action: 'getFamilyChildren',
-            data: { familyId }
+            familyId
           }
         }),
 
@@ -263,14 +359,24 @@ Page({
           if (currentIndex >= 0) {
             this.setData({ currentChildIndex: currentIndex })
           }
+        } else if (children.length > 0 && !currentChildId) {
+          // 没有选中的儿童，自动选择第一个
+          this.setData({ currentChildIndex: 0 })
+          app.setCurrentChild(children[0])
+          console.log('[家庭] 自动选择第一个儿童:', children[0].name)
         }
       }
 
       if (myChildrenRes.result.success) {
         // 过滤出未分配到当前家庭的儿童
-        const myChildren = (myChildrenRes.result.children || []).filter(
-          child => child.familyId !== familyId
-        )
+        const myChildren = (myChildrenRes.result.children || []).filter(child => {
+          // 检查 child.familyIds 数组中是否包含当前家庭ID
+          if (child.familyIds && Array.isArray(child.familyIds)) {
+            return !child.familyIds.includes(familyId)
+          }
+          // 兼容旧数据：familyId 是单个值
+          return child.familyId !== familyId
+        })
         this.setData({ myChildren: myChildren })
       }
     } catch (err) {
@@ -308,10 +414,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'updateFamilyAvatar',
-          data: {
-            familyId: this.data.family.familyId,
-            avatar: fileID
-          }
+          familyId: this.data.family.familyId,
+          avatar: fileID
         }
       })
 
@@ -394,10 +498,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'createFamily',
-          data: {
-            name: familyName,
-            creatorNickname: creatorNickname.trim()
-          }
+          name: familyName,
+          creatorNickname: creatorNickname.trim()
         }
       })
 
@@ -440,11 +542,9 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'joinFamily',
-          data: {
-            inviteCode: inviteCode.trim(),
-            nickname: nickname.trim(),
-            role: role || 'member'
-          }
+          inviteCode: inviteCode.trim(),
+          nickname: nickname.trim(),
+          role: role || 'member'
         }
       })
 
@@ -467,6 +567,11 @@ Page({
    * 显示邀请选项
    */
   showInviteOptions() {
+    // 检查登录状态
+    if (!app.globalData.isLoggedIn) {
+      showToast(t('family.needLoginToInvite') || '请先登录后再邀请家人')
+      return
+    }
     this.setData({ showInviteActionSheet: true })
   },
 
@@ -598,7 +703,7 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'regenerateInviteCode',
-          data: { familyId: this.data.family.familyId }
+          familyId: this.data.family.familyId
         }
       })
 
@@ -632,10 +737,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'reviewInvitation',
-          data: {
-            invitationId: invitationid,
-            approve: approve
-          }
+          invitationId: invitationid,
+          approve: approve
         }
       })
 
@@ -670,10 +773,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'removeMember',
-          data: {
-            familyId: this.data.family.familyId,
-            memberOpenid: memberopenid
-          }
+          familyId: this.data.family.familyId,
+          memberOpenid: memberopenid
         }
       })
 
@@ -768,11 +869,9 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'setMemberRole',
-          data: {
-            familyId: this.data.family.familyId,
-            memberOpenid: memberOpenid,
-            role: newRole
-          }
+          familyId: this.data.family.familyId,
+          memberOpenid: memberOpenid,
+          role: newRole
         }
       })
 
@@ -809,10 +908,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'removeMember',
-          data: {
-            familyId: this.data.family.familyId,
-            memberOpenid: memberOpenid
-          }
+          familyId: this.data.family.familyId,
+          memberOpenid: memberOpenid
         }
       })
 
@@ -849,7 +946,7 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'leaveFamily',
-          data: { familyId: this.data.family.familyId }
+          familyId: this.data.family.familyId
         }
       })
 
@@ -881,11 +978,9 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'assignChildToFamily',
-          data: {
-            familyId: this.data.family.familyId,
-            childId: childid,
-            initialCoins: this.data.assignFormData.initialCoins || 0
-          }
+          familyId: this.data.family.familyId,
+          childId: childid,
+          initialCoins: this.data.assignFormData.initialCoins || 0
         }
       })
 
@@ -913,11 +1008,132 @@ Page({
     const child = this.data.myChildren.find(c => c.childId === childid)
 
     if (child) {
-      this.setData({
-        showAssignChildModal: true,
-        assigningChild: child,
-        'assignFormData.initialCoins': 0
+      // 直接加入家庭，不显示弹窗
+      this.assignChildToFamilyDirectly(childid)
+    }
+  },
+
+  /**
+   * 直接将儿童加入家庭（不显示弹窗）
+   */
+  async assignChildToFamilyDirectly(childId) {
+    showLoading()
+
+    // 未登录：加入本地家庭
+    if (!app.globalData.useCloudStorage || this.data.family.familyId.startsWith('local_')) {
+      this.assignChildToLocalFamily(childId)
+      return
+    }
+
+    // 已登录：加入云端家庭
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'assignChildToFamily',
+          familyId: this.data.family.familyId,
+          childId: childId,
+          initialCoins: 0  // 默认初始金币为0
+        }
       })
+
+      hideLoading()
+
+      if (res.result.success) {
+        showToast('儿童已加入家庭')
+        await this.loadAdditionalData(this.data.family.familyId)
+      } else {
+        showToast(res.result.error || '操作失败')
+      }
+    } catch (err) {
+      hideLoading()
+      console.error('[家庭] 加入家庭失败:', err)
+      showToast('操作失败')
+    }
+  },
+
+  /**
+   * 将儿童加入本地家庭
+   */
+  assignChildToLocalFamily(childId) {
+    try {
+      const familyId = this.data.family.familyId
+
+      // 获取当前家庭的儿童列表
+      const storageKey = `localChildren_${familyId}`
+      let familyChildren = wx.getStorageSync(storageKey) || []
+
+      // 检查是否已经在当前家庭
+      const alreadyInFamily = familyChildren.find(c => c.childId === childId)
+      if (alreadyInFamily) {
+        hideLoading()
+        showToast('该儿童已在当前家庭')
+        return
+      }
+
+      // 检查是否有之前保存的数据（被移除过的儿童）
+      const removedChildrenKey = `removedChildren_${familyId}`
+      let removedChildren = wx.getStorageSync(removedChildrenKey) || []
+      const previousData = removedChildren.find(c => c.childId === childId)
+
+      let familyChild
+
+      if (previousData) {
+        // 恢复之前的数据
+        familyChild = {
+          ...previousData,
+          removedAt: undefined,  // 移除移除标记
+          joinedAt: new Date().toISOString(),  // 更新加入时间
+          updatedAt: new Date().toISOString()
+        }
+
+        // 从已移除列表中删除
+        removedChildren = removedChildren.filter(c => c.childId !== childId)
+        wx.setStorageSync(removedChildrenKey, removedChildren)
+
+        console.log('[家庭] 恢复儿童之前的家庭数据:', familyChild.name)
+      } else {
+        // 从主儿童列表中获取儿童信息（新加入）
+        const allChildren = wx.getStorageSync('allChildren') || []
+        const childInfo = allChildren.find(c => c.childId === childId)
+
+        if (!childInfo) {
+          hideLoading()
+          showToast('儿童信息不存在')
+          return
+        }
+
+        // 为当前家庭创建独立的儿童数据副本
+        familyChild = {
+          childId: childId,  // 保持相同的 childId
+          name: childInfo.name,  // 保留基本信息
+          avatar: childInfo.avatar || '',
+          gender: childInfo.gender || 'male',
+          age: childInfo.age || 0,
+          familyId: familyId,  // 设置当前家庭ID
+          completedTasks: 0,  // 重置任务完成数（每个家庭独立）
+          redeemedPrizes: 0,  // 重置兑换奖品数（每个家庭独立）
+          totalCoins: 0,  // 重置金币数（每个家庭独立）
+          createdAt: childInfo.createdAt,  // 保留创建时间
+          joinedAt: new Date().toISOString(),  // 记录加入当前家庭的时间
+          updatedAt: new Date().toISOString()
+        }
+
+        console.log('[家庭] 新儿童加入家庭，创建独立数据:', familyChild.name)
+      }
+
+      // 添加到当前家庭的儿童列表
+      familyChildren.push(familyChild)
+      wx.setStorageSync(storageKey, familyChildren)
+
+      hideLoading()
+      showToast('儿童已加入家庭')
+      this.loadAdditionalData(familyId)
+
+    } catch (err) {
+      hideLoading()
+      console.error('[家庭] 加入家庭失败:', err)
+      showToast('操作失败')
     }
   },
 
@@ -965,11 +1181,9 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'assignChildToFamily',
-          data: {
-            familyId: this.data.family.familyId,
-            childId: this.data.assigningChild.childId,
-            initialCoins: initialCoins
-          }
+          familyId: this.data.family.familyId,
+          childId: this.data.assigningChild.childId,
+          initialCoins: initialCoins
         }
       })
 
@@ -1016,6 +1230,7 @@ Page({
    */
   async unassignChild(e) {
     const { childid, childname } = e.currentTarget.dataset
+    const familyId = this.data.family.familyId
 
     const confirm = await showConfirm(`确定要将"${childname}"从家庭中移除吗？`)
     if (!confirm) return
@@ -1023,24 +1238,41 @@ Page({
     showLoading()
 
     try {
-      const res = await wx.cloud.callFunction({
-        name: 'manageChildren',
-        data: {
-          action: 'updateChild',
-          data: {
-            childId: childid,
-            familyId: null
-          }
+      // 未登录：从本地移除
+      if (!app.globalData.useCloudStorage || familyId.startsWith('local_')) {
+        console.log('[家庭] 从本地移除儿童, familyId:', familyId, 'childId:', childid)
+
+        const storageKey = `localChildren_${familyId}`
+        let familyChildren = wx.getStorageSync(storageKey) || []
+
+        // 找到要移除的儿童索引
+        const index = familyChildren.findIndex(c => c.childId === childid)
+        if (index === -1) {
+          hideLoading()
+          showToast('儿童不存在')
+          return
         }
-      })
 
-      hideLoading()
+        // 保存儿童数据到 removedChildren（保留该儿童在这个家庭的所有数据）
+        const removedChildrenKey = `removedChildren_${familyId}`
+        let removedChildren = wx.getStorageSync(removedChildrenKey) || []
+        const childData = familyChildren[index]
 
-      if (res.result.success) {
-        showToast('已移除')
+        // 记录移除时间
+        childData.removedAt = new Date().toISOString()
 
-        // 重新加载全局儿童数据，确保app.globalData.children是最新的
-        await app.loadChildren()
+        // 添加到已移除列表
+        removedChildren.push(childData)
+        wx.setStorageSync(removedChildrenKey, removedChildren)
+
+        // 从当前家庭列表中移除
+        familyChildren.splice(index, 1)
+        wx.setStorageSync(storageKey, familyChildren)
+
+        hideLoading()
+        showToast('已移除，数据已保留')
+
+        console.log('[家庭] 儿童已从当前家庭移除，数据已保存到 removedChildren')
 
         // 如果移除的是当前选中的儿童，清除选择
         if (app.globalData.currentChildId === childid) {
@@ -1048,10 +1280,17 @@ Page({
           this.setData({ currentChildIndex: -1 })
         }
 
-        await this.loadAdditionalData(this.data.family.familyId)
-      } else {
-        showToast(res.result.error || t('toast.operationFailed'))
+        // 重新加载数据
+        await this.loadAdditionalData(familyId)
+        return
       }
+
+      // 已登录：调用云函数
+      // 注意：这里不能设置 familyId: null，因为一个儿童可以属于多个家庭
+      // 应该从家庭的儿童列表中移除，而不是修改儿童的 familyId
+      // 但目前云函数架构可能不支持，所以先跳过
+      hideLoading()
+      showToast('云端版本暂不支持移除儿童')
     } catch (err) {
       hideLoading()
       console.error('[家庭] 移除儿童失败:', err)
@@ -1082,10 +1321,8 @@ Page({
               name: 'manageFamilies',
               data: {
                 action: 'updateFamilyName',
-                data: {
-                  familyId: this.data.family.familyId,
-                  newName: newName
-                }
+                familyId: this.data.family.familyId,
+                newName: newName
               }
             })
 
@@ -1129,9 +1366,7 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'disbandFamily',
-          data: {
-            familyId: this.data.family.familyId
-          }
+          familyId: this.data.family.familyId
         }
       })
 
@@ -1214,10 +1449,8 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'updateMemberAvatar',
-          data: {
-            familyId: that.data.family.familyId,
-            avatar: fileID
-          }
+          familyId: that.data.family.familyId,
+          avatar: fileID
         }
       })
 
@@ -1274,10 +1507,8 @@ Page({
               name: 'manageFamilies',
               data: {
                 action: 'updateMemberNickname',
-                data: {
-                  familyId: that.data.family.familyId,
-                  nickname: newNickname
-                }
+                familyId: that.data.family.familyId,
+                nickname: newNickname
               }
             })
 

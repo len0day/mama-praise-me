@@ -714,14 +714,30 @@
 }
 
 .child-remove-btn {
-  padding: 10rpx 20rpx;
+  /* 重置微信小程序button默认样式 */
+  width: auto !important;
+  min-width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: auto !important;
+  padding: 8rpx 20rpx !important;  /* 增大一倍：4rpx 10rpx → 8rpx 20rpx */
   background: linear-gradient(145deg, #FFEBEE, #FFCDD2);
   color: #F44336;
-  border: none;
-  border-radius: 12rpx;
-  font-size: 26rpx;
+  border: none !important;  /* 移除边框 */
+  border-radius: 12rpx;  /* 圆角 */
+  font-size: 22rpx !important;  /* 增大一倍：18rpx → 22rpx */
+  font-weight: 500;  /* 字重 */
   transition: all 0.3s ease;
   box-shadow: 0 2rpx 6rpx rgba(244, 67, 54, 0.2);
+  margin-left: auto !important;  /* 靠右对齐 */
+  white-space: nowrap;  /* 防止换行 */
+  line-height: 1.2;  /* 行高 */
+  /* 重置button默认的flex布局 */
+  display: inline-block;
+  /* 移除默认的margin */
+  margin: 0 !important;
+  /* 移除默认的定位 */
+  position: static;
 }
 
 .child-remove-btn:active {
@@ -797,15 +813,30 @@
 }
 
 .add-child-btn {
-  padding: 14rpx 28rpx;
+  /* 重置微信小程序button默认样式 */
+  width: auto !important;
+  min-width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: auto !important;
+  padding: 8rpx 20rpx !important;  /* 增大一倍：4rpx 10rpx → 8rpx 20rpx */
   background: linear-gradient(135deg, #FF9800, #FFB74D);
-  color: #FFFFFF;
-  border: none;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  font-weight: bold;
+  color: #FFFFFF !important;  /* 确保白色文字 */
+  border: none !important;  /* 移除边框 */
+  border-radius: 12rpx;  /* 圆角 */
+  font-size: 22rpx !important;  /* 增大一倍：18rpx → 22rpx */
+  font-weight: 600;  /* 字重 */
   transition: all 0.3s ease;
   box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.3);
+  margin-left: auto !important;  /* 靠右对齐 */
+  white-space: nowrap;  /* 防止换行 */
+  line-height: 1.2;  /* 行高 */
+  /* 重置button默认的flex布局 */
+  display: inline-block;
+  /* 移除默认的margin */
+  margin: 0 !important;
+  /* 移除默认的定位 */
+  position: static;
 }
 
 .add-child-btn:active {
@@ -1789,4 +1820,329 @@
 .style-girl .modal-title {
   color: #C2185B;
   font-weight: 900;
+}
+
+/* 童趣模式 - 移除和加入按钮调整（增大一倍、靠右） */
+.style-girl .child-remove-btn {
+  padding: 8rpx 20rpx !important;  /* 增大一倍：4rpx 10rpx → 8rpx 20rpx */
+  font-size: 22rpx !important;     /* 增大一倍：18rpx → 22rpx */
+  border-radius: 12rpx; /* 圆角 */
+  margin-left: auto !important;    /* 靠右对齐 */
+  white-space: nowrap;  /* 防止换行 */
+  line-height: 1.2;  /* 行高 */
+  min-width: auto !important;  /* 移除最小宽度 */
+  height: auto !important;  /* 自动高度 */
+  width: auto !important;
+  display: inline-block;
+}
+
+.style-girl .add-child-btn {
+  padding: 8rpx 20rpx !important;  /* 增大一倍：4rpx 10rpx → 8rpx 20rpx */
+  font-size: 22rpx !important;     /* 增大一倍：18rpx → 22rpx */
+  border-radius: 12rpx; /* 圆角 */
+  margin-left: auto !important;    /* 靠右对齐 */
+  white-space: nowrap;  /* 防止换行 */
+  line-height: 1.2;  /* 行高 */
+  min-width: auto !important;  /* 移除最小宽度 */
+  height: auto !important;  /* 自动高度 */
+  width: auto !important;
+  display: inline-block;
+}
+
+/* 童趣模式 - 男孩色调（蓝色系） */
+.style-girl.color-tone-boy .child-remove-btn {
+  background: linear-gradient(145deg, #FFEBEE, #FFCDD2) !important;
+  color: #D32F2F !important;  /* 深红色，确保可读性 */
+  font-weight: 500;
+}
+
+.style-girl.color-tone-boy .add-child-btn {
+  background: linear-gradient(135deg, #42A5F5, #1976D2) !important;
+  color: #FFFFFF !important;  /* 白色文字，确保可读性 */
+  font-weight: 600;
+}
+
+.style-girl.color-tone-boy .section-title {
+  color: #0D47A1;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-boy .child-name {
+  color: #0D47A1;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-boy .child-coins {
+  color: #42A5F5;
+  font-weight: 600;
+}
+
+/* 童趣模式 - 女孩色调（粉色系） */
+.style-girl.color-tone-girl .child-remove-btn {
+  background: linear-gradient(145deg, #FFEBEE, #FFCDD2) !important;
+  color: #D32F2F !important;  /* 深红色，确保可读性 */
+  font-weight: 500;
+}
+
+.style-girl.color-tone-girl .add-child-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1) !important;
+  color: #FFFFFF !important;  /* 白色文字，确保可读性 */
+  font-weight: 600;
+}
+
+.style-girl.color-tone-girl .section-title {
+  color: #C2185B;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-girl .child-name {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-girl .child-coins {
+  color: #FF69B4;
+  font-weight: 600;
+}
+
+/* 童趣模式 - 可爱色调（黄色系） */
+.style-girl.color-tone-cute .child-remove-btn {
+  background: linear-gradient(145deg, #FFF8E1, #FFECB3) !important;
+  color: #E65100 !important;  /* 深橙色，确保可读性 */
+  font-weight: 500;
+}
+
+.style-girl.color-tone-cute .add-child-btn {
+  background: linear-gradient(135deg, #FFA726, #FF9800) !important;
+  color: #FFFFFF !important;  /* 白色文字，确保可读性 */
+  font-weight: 600;
+}
+
+.style-girl.color-tone-cute .section-title {
+  color: #E65100;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-cute .child-name {
+  color: #E65100;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-cute .child-coins {
+  color: #FFA726;
+  font-weight: 600;
+}
+
+/* 童趣模式 - 中性色调（灰色系） */
+.style-girl.color-tone-neutral .child-remove-btn {
+  background: linear-gradient(145deg, #F5F5F5, #E0E0E0) !important;
+  color: #424242 !important;  /* 深灰色，确保可读性 */
+  font-weight: 500;
+}
+
+.style-girl.color-tone-neutral .add-child-btn {
+  background: linear-gradient(135deg, #9E9E9E, #757575) !important;
+  color: #FFFFFF !important;  /* 白色文字，确保可读性 */
+  font-weight: 600;
+}
+
+.style-girl.color-tone-neutral .section-title {
+  color: #424242;
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-neutral .child-name {
+  color: #424242;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-neutral .child-coins {
+  color: #757575;
+  font-weight: 600;
+}
+
+/* 童趣模式 - 邀请家人按钮、当前家庭、当前儿童的适配 */
+
+/* 男孩色调（蓝色系） */
+.style-girl.color-tone-boy .invite-header-btn {
+  background: linear-gradient(135deg, #42A5F5, #1976D2);
+  color: #FFFFFF;
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(13, 71, 161, 0.3),
+    0 8rpx 20rpx rgba(25, 118, 210, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-boy .current-selector {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 25rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(25, 118, 210, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(25, 118, 210, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl.color-tone-boy .selector-label {
+  color: #1976D2;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-boy .selector-value {
+  color: #0D47A1;
+  font-weight: 600;
+}
+
+.style-girl.color-tone-boy .family-name-display {
+  color: #0D47A1;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-boy .picker {
+  color: #0D47A1;
+  font-weight: 600;
+}
+
+/* 女孩色调（粉色系） */
+.style-girl.color-tone-girl .invite-header-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  color: #FFFFFF;
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-girl .current-selector {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 25rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 182, 193, 0.3),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 182, 193, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl.color-tone-girl .selector-label {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-girl .selector-value {
+  color: #880E4F;
+  font-weight: 600;
+}
+
+.style-girl.color-tone-girl .family-name-display {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-girl .picker {
+  color: #880E4F;
+  font-weight: 600;
+}
+
+/* 可爱色调（黄色系） */
+.style-girl.color-tone-cute .invite-header-btn {
+  background: linear-gradient(135deg, #FFA726, #FF9800);
+  color: #FFFFFF;
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(230, 81, 0, 0.3),
+    0 8rpx 20rpx rgba(255, 152, 0, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-cute .current-selector {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 25rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(255, 152, 0, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(255, 152, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl.color-tone-cute .selector-label {
+  color: #E65100;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-cute .selector-value {
+  color: #BF360C;
+  font-weight: 600;
+}
+
+.style-girl.color-tone-cute .family-name-display {
+  color: #E65100;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-cute .picker {
+  color: #BF360C;
+  font-weight: 600;
+}
+
+/* 中性色调（灰色系） */
+.style-girl.color-tone-neutral .invite-header-btn {
+  background: linear-gradient(135deg, #9E9E9E, #757575);
+  color: #FFFFFF;
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(66, 66, 66, 0.3),
+    0 8rpx 20rpx rgba(117, 117, 117, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-neutral .current-selector {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+  padding: 25rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(117, 117, 117, 0.2),
+    inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
+    0 10rpx 25rpx rgba(117, 117, 117, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.style-girl.color-tone-neutral .selector-label {
+  color: #424242;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-neutral .selector-value {
+  color: #212121;
+  font-weight: 600;
+}
+
+.style-girl.color-tone-neutral .family-name-display {
+  color: #424242;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-neutral .picker {
+  color: #212121;
+  font-weight: 600;
 }

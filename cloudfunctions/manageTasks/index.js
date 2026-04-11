@@ -42,7 +42,7 @@ function getMonthIdentifier(date) {
  */
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { action, data } = event
+  const { action, ...data } = event
 
   console.log('[manageTasks] action:', action)
   console.log('[manageTasks] openid:', OPENID)
@@ -414,14 +414,12 @@ exports.main = async (event, context) => {
         name: 'manageFamilyCoins',
         data: {
           action: 'addCoins',
-          data: {
-            childId: childId,
-            familyId: familyId,
-            amount: finalCoinEarned,
-            taskId: taskId,
-            taskTitle: task.title,
-            recordType: recordType
-          }
+          childId: childId,
+          familyId: familyId,
+          amount: finalCoinEarned,
+          taskId: taskId,
+          taskTitle: task.title,
+          recordType: recordType
         }
       })
 

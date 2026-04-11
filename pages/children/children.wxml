@@ -4,11 +4,15 @@
 
   <!-- 孩子列表 -->
   <view class="children-list">
+    <!-- 当前家庭的孩子 -->
+    <view class="section-title" wx:if="{{children.length > 0}}">
+      <text>当前家庭的孩子</text>
+    </view>
     <view
       class="child-item {{currentChildId === item.childId ? 'active' : ''}}"
       wx:for="{{children}}"
       wx:key="childId">
-      <view class="child-card" data-childid="{{item.childId}}" bindtap="switchChild">
+      <view class="child-card" data-childid="{{item.childId}}" bindtap="viewChildDetail">
         <view class="child-avatar">
           <image wx:if="{{item.avatar && (item.avatar.indexOf('http') === 0 || item.avatar.indexOf('cloud://') === 0)}}" src="{{item.avatar}}" mode="aspectFill" />
           <text wx:else>{{item.avatar || item.name.substring(0, 1)}}</text>
@@ -32,8 +36,43 @@
       </view>
     </view>
 
+    <!-- 可加入当前家庭的孩子 -->
+    <view class="section-title other" wx:if="{{otherChildren.length > 0}}">
+      <text>可加入当前家庭的孩子</text>
+    </view>
+    <view
+      class="child-item other-family"
+      wx:for="{{otherChildren}}"
+      wx:for-item="otherChild"
+      wx:key="childId">
+      <view class="child-card">
+        <view class="child-avatar">
+          <image wx:if="{{otherChild.avatar && (otherChild.avatar.indexOf('http') === 0 || otherChild.avatar.indexOf('cloud://') === 0)}}" src="{{otherChild.avatar}}" mode="aspectFill" />
+          <text wx:else>{{otherChild.avatar || otherChild.name.substring(0, 1)}}</text>
+        </view>
+        <view class="child-info">
+          <view class="child-name">{{otherChild.name}}</view>
+          <view class="child-stats">
+            <text class="stat-item">{{otherChild.age || 0}}岁</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="child-actions">
+        <button class="action-btn edit" data-childid="{{otherChild.childId}}" bindtap="editChild">
+          编辑
+        </button>
+        <button class="action-btn delete" data-childid="{{otherChild.childId}}" bindtap="deleteChild">
+          删除
+        </button>
+        <button class="action-btn join" data-childid="{{otherChild.childId}}" bindtap="joinChildToFamily">
+          加入{{currentFamilyName}}
+        </button>
+      </view>
+    </view>
+
     <!-- 空状态 -->
-    <view class="empty-state" wx:if="{{children.length === 0}}">
+    <view class="empty-state" wx:if="{{children.length === 0 && otherChildren.length === 0}}">
       <text class="empty-icon">👶</text>
       <text class="empty-text">{{i18n.children.noChildren || '暂无孩子'}}</text>
     </view>

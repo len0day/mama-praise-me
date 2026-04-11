@@ -1148,10 +1148,18 @@
   text-shadow: 1rpx 1rpx 0 #FFF;
 }
 
+.style-girl .families-section {
+  padding: 10rpx;  /* 减少外层padding */
+}
+
+.style-girl .families-list {
+  gap: 8rpx;  /* 减少卡片间距 */
+}
+
 .style-girl .family-card {
   background: rgba(255, 255, 255, 0.6);
   border-radius: 30rpx;
-  padding: 35rpx;
+  padding: 16rpx;  /* 减少padding，从35rpx改为16rpx */
   margin-bottom: 0; /* 移除底部空白 */
   border: 3rpx solid rgba(255, 255, 255, 0.9);
   box-shadow:
@@ -1159,6 +1167,10 @@
     inset 8rpx 8rpx 20rpx rgba(255, 255, 255, 0.9),
     0 10rpx 25rpx rgba(255, 182, 193, 0.2);
   backdrop-filter: blur(10px);
+}
+
+.style-girl .family-main {
+  padding: 20rpx 24rpx;  /* 减少内部padding，从44rpx 36rpx改为20rpx 24rpx */
 }
 
 .style-girl .family-card.current {
@@ -1241,12 +1253,17 @@
 }
 
 .style-girl .family-detail {
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 20rpx;
-  margin-top: 15rpx;
+  /* 移除装饰性背景和边框，并移除间距 */
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-top: 0;
   margin-bottom: 0;
-  padding: 15rpx;
-  border: 2rpx solid rgba(255, 255, 255, 0.7);
+  padding: 0;
+}
+
+.style-girl .admin-section {
+  padding: 8rpx 12rpx;  /* 减少padding使内容更紧凑 */
 }
 
 .style-girl .detail-item {
@@ -1316,4 +1333,304 @@
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
   font-size: 20rpx;
+}
+
+/* 童趣模式 - 男孩色调 (蓝色系) */
+.style-girl.color-tone-boy .action-btn {
+  background: linear-gradient(135deg, #64B5F6, #42A5F5);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(13, 71, 161, 0.3),
+    0 8rpx 20rpx rgba(25, 118, 210, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-boy .action-btn.primary {
+  background: linear-gradient(135deg, #42A5F5, #1976D2);
+}
+
+.style-girl.color-tone-boy .action-btn.secondary {
+  background: rgba(255, 255, 255, 0.7);
+  color: #0D47A1;
+  border-color: #42A5F5;
+}
+
+.style-girl.color-tone-boy .modal-btn.confirm {
+  background: linear-gradient(135deg, #42A5F5, #1976D2);
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(13, 71, 161, 0.3),
+    0 8rpx 20rpx rgba(25, 118, 210, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-boy .form-input {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: #42A5F5;
+  border-radius: 20rpx;
+  color: #0D47A1;
+}
+
+.style-girl.color-tone-boy .form-label {
+  color: #0D47A1;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-boy .child-action-btn {
+  background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+  color: #1976D2;
+  border-radius: 20rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.style-girl.color-tone-boy .assign-btn {
+  background: linear-gradient(135deg, #42A5F5, #1976D2);
+  border-radius: 30rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* 童趣模式 - 女孩色调 (粉色系) */
+.style-girl.color-tone-girl .action-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-girl .action-btn.primary {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+}
+
+.style-girl.color-tone-girl .action-btn.secondary {
+  background: rgba(255, 255, 255, 0.7);
+  color: #C2185B;
+  border-color: #FF69B4;
+}
+
+.style-girl.color-tone-girl .modal-btn.confirm {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(194, 24, 91, 0.3),
+    0 8rpx 20rpx rgba(255, 20, 147, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-girl .form-input {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: #FF69B4;
+  border-radius: 20rpx;
+  color: #C2185B;
+}
+
+.style-girl.color-tone-girl .form-label {
+  color: #C2185B;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-girl .child-action-btn {
+  background: linear-gradient(135deg, #FFE4E1, #FFC0CB);
+  color: #C2185B;
+  border-radius: 20rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.style-girl.color-tone-girl .assign-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  border-radius: 30rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* 童趣模式 - 可爱色调 (黄色系) */
+.style-girl.color-tone-cute .action-btn {
+  background: linear-gradient(135deg, #FFD54F, #FFA726);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(230, 81, 0, 0.3),
+    0 8rpx 20rpx rgba(255, 152, 0, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-cute .action-btn.primary {
+  background: linear-gradient(135deg, #FFA726, #FF9800);
+}
+
+.style-girl.color-tone-cute .action-btn.secondary {
+  background: rgba(255, 255, 255, 0.7);
+  color: #E65100;
+  border-color: #FFA726;
+}
+
+.style-girl.color-tone-cute .modal-btn.confirm {
+  background: linear-gradient(135deg, #FFA726, #FF9800);
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(230, 81, 0, 0.3),
+    0 8rpx 20rpx rgba(255, 152, 0, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-cute .form-input {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: #FFA726;
+  border-radius: 20rpx;
+  color: #E65100;
+}
+
+.style-girl.color-tone-cute .form-label {
+  color: #E65100;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-cute .child-action-btn {
+  background: linear-gradient(135deg, #FFF8E1, #FFECB3);
+  color: #E65100;
+  border-radius: 20rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.style-girl.color-tone-cute .assign-btn {
+  background: linear-gradient(135deg, #FFA726, #FF9800);
+  border-radius: 30rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* 童趣模式 - 中性色调 (灰色系) */
+.style-girl.color-tone-neutral .action-btn {
+  background: linear-gradient(135deg, #BDBDBD, #9E9E9E);
+  border-radius: 50rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(66, 66, 66, 0.3),
+    0 8rpx 20rpx rgba(117, 117, 117, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-neutral .action-btn.primary {
+  background: linear-gradient(135deg, #9E9E9E, #757575);
+}
+
+.style-girl.color-tone-neutral .action-btn.secondary {
+  background: rgba(255, 255, 255, 0.7);
+  color: #424242;
+  border-color: #9E9E9E;
+}
+
+.style-girl.color-tone-neutral .modal-btn.confirm {
+  background: linear-gradient(135deg, #9E9E9E, #757575);
+  border: 3rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset -5rpx -5rpx 15rpx rgba(66, 66, 66, 0.3),
+    0 8rpx 20rpx rgba(117, 117, 117, 0.3);
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl.color-tone-neutral .form-input {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: #9E9E9E;
+  border-radius: 20rpx;
+  color: #424242;
+}
+
+.style-girl.color-tone-neutral .form-label {
+  color: #424242;
+  font-weight: 700;
+}
+
+.style-girl.color-tone-neutral .child-action-btn {
+  background: linear-gradient(135deg, #F5F5F5, #E0E0E0);
+  color: #424242;
+  border-radius: 20rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.style-girl.color-tone-neutral .assign-btn {
+  background: linear-gradient(135deg, #9E9E9E, #757575);
+  border-radius: 30rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* 通用童趣模式样式（所有色调共享） */
+.style-girl .modal-btn {
+  border-radius: 50rpx;
+  font-weight: 700;
+}
+
+.style-girl .modal-btn.cancel {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2rpx solid rgba(0, 0, 0, 0.1);
+}
+
+.style-girl .form-hint {
+  color: #666666;
+  font-size: 24rpx;
+}
+
+.style-girl .invite-code-display {
+  background: rgba(255, 255, 255, 0.6);
+  border: 3rpx solid rgba(0, 0, 0, 0.1);
+  border-radius: 20rpx;
+}
+
+.style-girl .invite-code {
+  font-weight: 900;
+  text-shadow: 1rpx 1rpx 0 #FFF;
+}
+
+.style-girl .invite-action-btn {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2rpx solid rgba(0, 0, 0, 0.1);
+  border-radius: 20rpx;
+}
+
+.style-girl .empty-text {
+  font-weight: 700;
+}
+
+.style-girl .empty-tips {
+  color: #666666;
+}
+
+.style-girl .detail-header {
+  border-bottom: 2rpx solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 8rpx;
+}
+
+.style-girl .children-section {
+  background: transparent;
+}
+
+.style-girl .assign-child-item {
+  background: rgba(255, 255, 255, 0.5);
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+  border-radius: 20rpx;
+}
+
+.style-girl .child-avatar-small {
+  border: 2rpx solid #FFFFFF;
+}
+
+.style-girl .child-name-small {
+  font-weight: 700;
 }

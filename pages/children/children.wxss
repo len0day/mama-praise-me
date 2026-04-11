@@ -112,7 +112,7 @@
   border: none;
   background: transparent;
   padding: 20rpx;
-  font-size: 28rpx;
+  font-size: 24rpx;  /* 缩小字体以适应3个按钮 */
   margin: 0;
   border-radius: 0;
 }
@@ -128,6 +128,11 @@
 
 .action-btn.delete {
   color: #F44336;
+  border-right: 1rpx solid #E0E0E0;
+}
+
+.theme-dark .action-btn.delete {
+  border-right: 1rpx solid #333333;
 }
 
 /* 空状态 */
@@ -672,3 +677,85 @@
   font-weight: 900;
 }
 
+/* 分组标题 */
+.section-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #666666;
+  margin: 30rpx 20rpx 15rpx;
+  padding-left: 10rpx;
+  border-left: 4rpx solid #FF9800;
+}
+
+.theme-dark .section-title {
+  color: #AAAAAA;
+}
+
+.section-title.other {
+  border-left-color: #4CAF50;
+  margin-top: 40rpx;
+}
+
+/* 可加入当前家庭的儿童卡片 */
+.child-item.other-family {
+  background: #F5F5F5;
+  border: 2rpx dashed #4CAF50;
+}
+
+.theme-dark .child-item.other-family {
+  background: #1C1C1E;
+  border-color: #4CAF50;
+}
+
+/* 加入按钮 */
+.action-btn.join {
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: #FFFFFF;
+  border: none;
+}
+
+.child-item.orphan {
+  border-color: #FF9800;
+  background: #FFF3E0;
+}
+
+.theme-dark .child-item.orphan {
+  background: #3E2723;
+  border-color: #FF9800;
+}
+
+.family-badge {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  padding: 4rpx 12rpx;
+  background: #9E9E9E;
+  color: #FFFFFF;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+}
+
+.theme-dark .family-badge {
+  background: #616161;
+}
+
+.orphan-badge {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  padding: 4rpx 12rpx;
+  background: #FF9800;
+  color: #FFFFFF;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+}
+
+.section-title.orphan {
+  border-left-color: #FF9800;
+}
+
+.action-btn.view {
+  background: #9E9E9E;
+  color: #FFFFFF;
+  border: none;
+}

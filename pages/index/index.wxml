@@ -105,7 +105,7 @@
             {{currentChild.familyName || '家庭'}}
             <text class="dropdown-arrow">▼</text>
           </view>
-          <view class="child-name {{currentFamilyChildren.length > 1 ? 'with-arrow' : ''}}" bindtap="currentFamilyChildren.length > 1 ? showChildPicker : ''">
+          <view class="child-name {{currentFamilyChildren.length > 1 ? 'with-arrow' : ''}}" bindtap="onChildNameTap">
             {{currentChild.name}}
             <text class="dropdown-arrow" wx:if="{{currentFamilyChildren.length > 1}}">▼</text>
           </view>
@@ -232,8 +232,21 @@
   <!-- 无家庭提示 -->
   <view class="no-child" wx:if="{{needFamily}}">
     <view class="no-child-icon">🏠</view>
-    <view class="no-child-text">请先加入或创建一个家庭</view>
-    <button class="add-child-btn" bindtap="goToFamily">去添加家庭</button>
+    <view class="no-child-text">请点击下方按钮开始创建或加入已有家庭</view>
+    <view class="action-buttons">
+      <button class="action-btn secondary" bindtap="showJoinFamilyModal">
+        <text class="btn-icon">🔗</text>
+        <text class="btn-text">加入家庭</text>
+      </button>
+      <button class="action-btn primary" bindtap="showCreateFamilyModal">
+        <text class="btn-icon">➕</text>
+        <text class="btn-text">创建家庭</text>
+      </button>
+    </view>
+    <button class="start-wizard-btn" bindtap="startWizard">
+      <text class="start-wizard-icon">🎯</text>
+      <text class="start-wizard-text">启动向导</text>
+    </button>
   </view>
 
   <!-- 无孩子提示 -->
@@ -349,6 +362,306 @@
       <!-- 空状态 -->
       <view class="empty-state" wx:if="{{tasks.length === 0}}">
         <text>{{i18n.common.noData || '暂无数据'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 创建家庭弹窗 -->
+  <view class="modal" wx:if="{{showCreateFamilyModal}}">
+    <view class="modal-mask" catchtap="closeFamilyModals"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">创建家庭</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-group">
+          <view class="form-label">家庭名称</view>
+          <input
+            class="form-input"
+            value="{{familyFormData.familyName}}"
+            data-field="familyName"
+            bindinput="onFamilyInputChange"
+            placeholder="请输入家庭名称"
+            focus="{{showCreateFamilyModal}}"
+          />
+        </view>
+        <view class="form-group">
+          <view class="form-label">您的身份</view>
+          <input
+            class="form-input"
+            value="{{familyFormData.creatorNickname}}"
+            data-field="creatorNickname"
+            bindinput="onFamilyInputChange"
+            placeholder="例如：妈妈、爸爸、外婆"
+          />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeFamilyModals">取消</button>
+        <button class="modal-btn confirm" bindtap="createFamily">创建</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加入家庭弹窗 -->
+  <view class="modal" wx:if="{{showJoinFamilyModal}}">
+    <view class="modal-mask" catchtap="closeFamilyModals"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">加入家庭</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-group">
+          <view class="form-label">邀请码</view>
+          <input
+            class="form-input"
+            value="{{familyFormData.inviteCode}}"
+            data-field="inviteCode"
+            bindinput="onFamilyInputChange"
+            style="text-transform: uppercase;"
+            placeholder="请输入6位邀请码"
+            maxlength="6"
+          />
+        </view>
+        <view class="form-group">
+          <view class="form-label">昵称</view>
+          <input
+            class="form-input"
+            value="{{familyFormData.nickname}}"
+            data-field="nickname"
+            bindinput="onFamilyInputChange"
+            placeholder="请输入您在家庭中的昵称"
+          />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeFamilyModals">取消</button>
+        <button class="modal-btn confirm" bindtap="joinFamily">加入</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 创建第一个儿童弹窗 -->
+  <view class="modal" wx:if="{{showCreateChildModal}}">
+    <view class="modal-mask" catchtap="closeCreateChildModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">创建第一个孩子</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-group">
+          <view class="form-label">孩子姓名 *</view>
+          <input
+            class="form-input"
+            value="{{childFormData.name}}"
+            data-field="name"
+            bindinput="onChildInputChange"
+            placeholder="请输入孩子姓名"
+            focus="{{showCreateChildModal}}"
+          />
+        </view>
+        <view class="form-group">
+          <view class="form-label">性别</view>
+          <view class="gender-selector">
+            <view
+              class="gender-option {{childFormData.gender === 'male' ? 'selected' : ''}}"
+              data-gender="male"
+              bindtap="selectGender">
+              <text class="gender-icon">👦</text>
+              <text class="gender-text">男孩</text>
+            </view>
+            <view
+              class="gender-option {{childFormData.gender === 'female' ? 'selected' : ''}}"
+              data-gender="female"
+              bindtap="selectGender">
+              <text class="gender-icon">👧</text>
+              <text class="gender-text">女孩</text>
+            </view>
+          </view>
+        </view>
+        <view class="form-group">
+          <view class="form-label">年龄</view>
+          <input
+            class="form-input"
+            type="number"
+            value="{{childFormData.age}}"
+            data-field="age"
+            bindinput="onChildInputChange"
+            placeholder="请输入年龄"
+          />
+        </view>
+        <view class="form-group">
+          <view class="form-label">初始金币</view>
+          <input
+            class="form-input"
+            type="number"
+            value="{{childFormData.initialCoins}}"
+            data-field="initialCoins"
+            bindinput="onChildInputChange"
+            placeholder="请输入初始金币数量"
+          />
+          <view class="form-hint">孩子在该家庭中的初始金币数量</view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeCreateChildModal">取消</button>
+        <button class="modal-btn confirm" bindtap="createFirstChild">创建</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 首次使用流程 - 创建家庭对话框 -->
+  <view class="create-family-modal" wx:if="{{showCreateFamilyInput}}">
+    <view class="modal-mask" bindtap="onCancelCreateFamily"></view>
+    <view class="modal-content" catchtap="doNothing">
+      <view class="modal-header">
+        <text class="modal-title">{{i18n.firstTimeFlow.createFamily || '创建家庭'}}</text>
+        <text class="modal-close" bindtap="onCancelCreateFamily">×</text>
+      </view>
+      <view class="modal-body">
+        <text class="input-label">{{i18n.firstTimeFlow.inputFamilyName || '请输入家庭名称'}}</text>
+        <input
+          class="family-name-input"
+          type="text"
+          placeholder="{{i18n.firstTimeFlow.familyNamePlaceholder || '我的家庭'}}"
+          value="{{familyNameInput}}"
+          bindinput="onFamilyNameInput"
+          catchtap="doNothing"
+        />
+        <text class="input-label" style="margin-top: 20rpx;">{{i18n.firstTimeFlow.inputCreatorNickname || '您的身份'}}</text>
+        <input
+          class="family-name-input"
+          type="text"
+          placeholder="{{i18n.firstTimeFlow.creatorNicknamePlaceholder || '例如：妈妈、爸爸、外婆'}}"
+          value="{{creatorNicknameInput}}"
+          bindinput="onCreatorNicknameInput"
+          catchtap="doNothing"
+        />
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="onCancelCreateFamily">{{i18n.common.cancel || '取消'}}</button>
+        <button class="modal-btn confirm" bindtap="onCreateFamily">{{i18n.family.create || '创建'}}</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 首次使用流程 - 创建儿童对话框 -->
+  <view class="create-child-modal" wx:if="{{showCreateChildInput}}">
+    <view class="modal-mask" bindtap="onCancelCreateChild"></view>
+    <view class="modal-content" catchtap="doNothing">
+      <view class="modal-header">
+        <text class="modal-title">{{i18n.firstTimeFlow.createChild || '创建儿童'}}</text>
+        <text class="modal-close" bindtap="onCancelCreateChild">×</text>
+      </view>
+      <view class="modal-body">
+        <text class="input-label">{{i18n.firstTimeFlow.inputChildName || '请输入儿童姓名'}}</text>
+        <input
+          class="child-name-input"
+          type="text"
+          placeholder="{{i18n.firstTimeFlow.childNamePlaceholder || '宝宝'}}"
+          value="{{childNameInput}}"
+          bindinput="onChildNameInput"
+          catchtap="doNothing"
+        />
+
+        <text class="input-label" style="margin-top: 20rpx;">{{i18n.firstTimeFlow.childGender || '性别'}}</text>
+        <view class="gender-selector">
+          <view
+            class="gender-option {{childGenderInput === 'male' ? 'selected' : ''}}"
+            bindtap="onSelectMaleGender">
+            <text class="gender-icon">👦</text>
+            <text class="gender-text">男孩</text>
+          </view>
+          <view
+            class="gender-option {{childGenderInput === 'female' ? 'selected' : ''}}"
+            bindtap="onSelectFemaleGender">
+            <text class="gender-icon">👧</text>
+            <text class="gender-text">女孩</text>
+          </view>
+        </view>
+
+        <text class="input-label" style="margin-top: 20rpx;">{{i18n.firstTimeFlow.childAge || '年龄'}}</text>
+        <input
+          class="child-name-input"
+          type="number"
+          placeholder="{{i18n.firstTimeFlow.childAgePlaceholder || '请输入年龄'}}"
+          value="{{childAgeInput}}"
+          bindinput="onChildAgeInput"
+          catchtap="doNothing"
+        />
+
+        <text class="input-label" style="margin-top: 20rpx;">{{i18n.firstTimeFlow.initialCoins || '初始金币'}}</text>
+        <input
+          class="child-name-input"
+          type="number"
+          placeholder="{{i18n.firstTimeFlow.initialCoinsPlaceholder || '请输入初始金币数'}}"
+          value="{{childCoinsInput}}"
+          bindinput="onChildCoinsInput"
+          catchtap="doNothing"
+        />
+
+        <view class="avatar-section">
+          <text class="input-label">{{i18n.firstTimeFlow.avatarOptional || '头像（可选）'}}</text>
+
+          <!-- 当前选中头像预览 -->
+          <view class="current-avatar-preview" wx:if="{{childAvatarInput}}">
+            <view class="avatar-display-large">
+              <image wx:if="{{childAvatarInput.indexOf('http') === 0 || childAvatarInput.indexOf('cloud://') === 0 || childAvatarInput.indexOf('wxfile://') === 0}}" src="{{childAvatarInput}}" mode="aspectFill"></image>
+              <text wx:else class="avatar-emoji-large">{{childAvatarInput}}</text>
+            </view>
+          </view>
+
+          <!-- 预设头像选择 -->
+          <view class="form-label-small">选择预设头像</view>
+          <view class="preset-avatars-grid">
+            <view
+              class="preset-avatar-item {{childAvatarInput === item ? 'selected' : ''}}"
+              wx:for="{{['👦', '👧', '🧒', '👶', '🧑', '🐱', '🐶', '🐰', '🦊', '🐻']}}"
+              wx:key="*this"
+              bindtap="onSelectPresetAvatar"
+              data-avatar="{{item}}">
+              <text class="preset-avatar-text">{{item}}</text>
+            </view>
+          </view>
+
+          <!-- 上传自定义头像 -->
+          <view class="form-label-small">或上传自定义头像</view>
+          <button class="upload-avatar-btn" bindtap="onChooseChildAvatar">
+            <text class="upload-icon">📷</text>
+            <text>从相册选择</text>
+          </button>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="onCancelCreateChild">{{i18n.common.cancel || '取消'}}</button>
+        <button class="modal-btn confirm" bindtap="onCreateChild">{{i18n.common.confirm || '创建'}}</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 首次使用流程 - 加入家庭对话框 -->
+  <view class="join-family-modal" wx:if="{{showJoinFamilyInput}}">
+    <view class="modal-mask" bindtap="onCancelJoinFamily"></view>
+    <view class="modal-content" catchtap="doNothing">
+      <view class="modal-header">
+        <text class="modal-title">{{i18n.firstTimeFlow.joinFamily || '加入家庭'}}</text>
+        <text class="modal-close" bindtap="onCancelJoinFamily">×</text>
+      </view>
+      <view class="modal-body">
+        <text class="input-label">{{i18n.firstTimeFlow.inputInviteCode || '请输入6位邀请码'}}</text>
+        <input
+          class="invite-code-input"
+          type="text"
+          maxlength="6"
+          placeholder="{{i18n.firstTimeFlow.inviteCodePlaceholder || 'XXXXXX'}}"
+          value="{{inviteCodeInput}}"
+          bindinput="onInviteCodeInput"
+          catchtap="doNothing"
+        />
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="onCancelJoinFamily">{{i18n.common.cancel || '取消'}}</button>
+        <button class="modal-btn confirm" bindtap="onJoinFamily">{{i18n.family.join || '加入'}}</button>
       </view>
     </view>
   </view>

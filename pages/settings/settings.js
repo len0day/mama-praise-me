@@ -92,6 +92,14 @@ Page({
         },
         common: {
           noChild: t('children.noChildren')
+        },
+        firstTimeFlow: {
+          logoutConfirm: t('firstTimeFlow.logoutConfirm'),
+          askDataRetention: t('firstTimeFlow.askDataRetention'),
+          keepLocalData: t('firstTimeFlow.keepLocalData'),
+          clearLocalData: t('firstTimeFlow.clearLocalData'),
+          logoutSuccessKeep: t('firstTimeFlow.logoutSuccessKeep'),
+          logoutSuccessClear: t('firstTimeFlow.logoutSuccessClear')
         }
       }
     })
@@ -121,10 +129,8 @@ Page({
           name: 'manageFamilyCoins',
           data: {
             action: 'getChildCoinsInFamily',
-            data: {
-              childId: currentChild.childId,
-              familyId: currentFamilyId
-            }
+            childId: currentChild.childId,
+            familyId: currentFamilyId
           }
         }),
         // 获取完成任务数
@@ -132,10 +138,8 @@ Page({
           name: 'manageTasks',
           data: {
             action: 'getAllCompletions',
-            data: {
-              childId: currentChild.childId,
-              familyId: currentFamilyId
-            }
+            childId: currentChild.childId,
+            familyId: currentFamilyId
           }
         }),
         // 获取兑换奖品数
@@ -143,10 +147,8 @@ Page({
           name: 'manageRedemptions',
           data: {
             action: 'getRedemptions',
-            data: {
-              childId: currentChild.childId,
-              familyId: currentFamilyId
-            }
+            childId: currentChild.childId,
+            familyId: currentFamilyId
           }
         })
       ])
@@ -385,9 +387,7 @@ Page({
             name: 'manageFamilies',
             data: {
               action: 'getFamilyChildren',
-              data: {
-                familyId: firstFamily.familyId
-              }
+              familyId: firstFamily.familyId
             }
           })
 
@@ -594,61 +594,31 @@ Page({
    * 退出登录
    */
   async logout() {
-    const confirm = await showConfirm('退出登录后，数据将保存在本地，无法使用家庭功能和云端同步。确定要退出吗？')
+    const confirm = await showConfirm(t('firstTimeFlow.logoutConfirm'))
     if (!confirm) return
 
-    // 检查是否有云端数据
-    try {
-      const familiesRes = await wx.cloud.callFunction({
-        name: 'manageFamilies',
-        data: { action: 'getAllMyFamilies' }
-      })
-
-      const hasCloudData = familiesRes.result.success && (familiesRes.result.families || []).length > 0
-
-      if (hasCloudData) {
-        // 有云端数据，询问用户如何处理
-        this.showLogoutDataDialog()
-        return
-      }
-    } catch (err) {
-      console.error('[设置] 检查云端数据失败:', err)
-    }
-
-    // 没有云端数据，直接退出
-    this.performLogout()
+    // 用户确认退出，询问数据处理
+    this.askAboutDataRetention()
   },
 
   /**
-   * 显示退出登录数据选择对话框
+   * 询问数据保留方式
    */
-  showLogoutDataDialog() {
+  askAboutDataRetention() {
     wx.hideToast()
 
     setTimeout(() => {
       wx.showModal({
-        title: '退出登录',
-        content: '检测到云端有数据，退出登录时如何处理？\n\n• 保留云端：将云端数据下载到本地\n• 保留本地：继续使用本地数据',
-        confirmText: '保留云端',
-        cancelText: '保留本地',
-        success: async (res) => {
+        title: t('firstTimeFlow.askDataRetention'),
+        confirmText: t('firstTimeFlow.keepLocalData'),
+        cancelText: t('firstTimeFlow.clearLocalData'),
+        success: (res) => {
           if (res.confirm) {
-            // 用户选择保留云端数据
-            try {
-              wx.showLoading({ title: '处理中...' })
-              await app.downloadCloudDataToLocal()
-              wx.hideLoading()
-              showToast('已下载云端数据')
-              this.performLogout()
-            } catch (err) {
-              wx.hideLoading()
-              showToast('下载数据失败')
-              // 即使失败也继续退出
-              this.performLogout()
-            }
-          } else if (res.cancel) {
-            // 用户选择保留本地数据，直接退出
-            this.performLogout()
+            // 保留本地数据
+            this.performLogoutKeepData()
+          } else {
+            // 清空本地数据
+            this.performLogoutClearData()
           }
         }
       })
@@ -656,22 +626,45 @@ Page({
   },
 
   /**
-   * 执行退出登录
+   * 退出登录并保留数据
    */
-  performLogout() {
-    wx.removeStorageSync('userInfo')
-    app.globalData.currentUserOpenid = null
+  performLogoutKeepData() {
+    // 保留所有本地数据，仅清除登录信息
     app.globalData.useCloudStorage = false
+    app.globalData.currentUserOpenid = null
+    wx.removeStorageSync('userInfo')
 
-    this.checkLoginStatus()
-
-    showToast('已退出登录，数据将保存在本地')
+    showToast(t('firstTimeFlow.logoutSuccessKeep'))
 
     setTimeout(() => {
       wx.reLaunch({
         url: '/pages/index/index'
       })
-    }, 500)
+    }, 1500)
+  },
+
+  /**
+   * 退出登录并清空数据
+   */
+  performLogoutClearData() {
+    // 清空所有本地数据
+    wx.clearStorageSync()
+
+    // 重置全局状态
+    app.globalData.useCloudStorage = false
+    app.globalData.currentUserOpenid = null
+    app.globalData.currentFamilyId = null
+    app.globalData.currentChildId = null
+    app.globalData.families = []
+    app.globalData.children = []
+
+    showToast(t('firstTimeFlow.logoutSuccessClear'))
+
+    setTimeout(() => {
+      wx.reLaunch({
+        url: '/pages/index/index'
+      })
+    }, 1500)
   },
 
   /**

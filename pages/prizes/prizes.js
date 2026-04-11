@@ -105,8 +105,9 @@ Page({
       // 获取当前家庭ID
       const currentFamilyId = app.getCurrentFamilyId()
 
-      // 如果儿童的家庭ID和当前家庭ID不一致，不显示
-      if (currentFamilyId && child.familyId !== currentFamilyId) {
+      // 检查儿童是否属于当前家庭（通过 familyIds 数组）
+      const familyIds = child.familyIds || []
+      if (currentFamilyId && !familyIds.includes(currentFamilyId)) {
         console.warn('[奖品] 儿童不属于当前家庭')
         return null
       }
@@ -139,17 +140,15 @@ Page({
           name: 'manageFamilies',
           data: {
             action: 'getFamilyInfo',
-            data: { familyId: child.familyId }
+            familyId: currentFamilyId
           }
         }),
         wx.cloud.callFunction({
           name: 'manageFamilyCoins',
           data: {
             action: 'getChildCoinsInFamily',
-            data: {
-              childId: child.childId,
-              familyId: child.familyId
-            }
+            childId: child.childId,
+            familyId: currentFamilyId
           }
         })
       ])
@@ -238,14 +237,15 @@ Page({
           name: 'managePrizes',
           data: {
             action: 'getPrizes',
-            data: { familyId: currentFamilyId }
+            familyId: currentFamilyId
           }
         }),
         wx.cloud.callFunction({
           name: 'manageFamilyCoins',
           data: {
             action: 'getCoinRecords',
-            data: { childId: currentChildId, limit: 10 }
+            childId: currentChildId,
+            limit: 10
           }
         })
       ])
@@ -449,12 +449,10 @@ Page({
         name: 'managePrizes',
         data: {
           action: 'redeemPrize',
-          data: {
-            prizeId: selectedPrize.prizeId,
-            childId: currentChild.childId,
-            familyId: currentFamilyId,
-            quantity: redeemQuantity
-          }
+          prizeId: selectedPrize.prizeId,
+          childId: currentChild.childId,
+          familyId: currentFamilyId,
+          quantity: redeemQuantity
         }
       })
 
@@ -462,9 +460,12 @@ Page({
       hideLoading()
 
       if (res.result.success) {
+        // 更新时间戳（关键！）
+        await app.updateChildTimestamp()
+
         const prizeId = selectedPrize.prizeId
         this.closeRedeemModal()
-        
+
         // 加入动画效果
         if (this.data.themeStyle === 'girl') {
           this.setData({ celebratingPrizeId: prizeId })
@@ -475,7 +476,7 @@ Page({
         } else {
           showToast(t('prizes.redeemSuccess'))
         }
-        
+
         await this.loadPrizes()
         // 更新全局孩子数据
         const index = app.globalData.children.findIndex(c => c.childId === currentChild.childId)

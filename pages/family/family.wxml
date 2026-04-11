@@ -211,9 +211,9 @@
         </button>
       </view>
 
-      <!-- 添加儿童按钮（仅管理员） -->
-      <view class="add-child-btn-wrapper" wx:if="{{family.role === 'admin' && myChildren.length > 0}}">
-        <view class="add-child-title">添加我的儿童</view>
+      <!-- 待加入儿童列表 -->
+      <view class="add-child-btn-wrapper" wx:if="{{myChildren.length > 0}}">
+        <view class="add-child-title">待加入当前家庭的儿童</view>
         <view class="my-children-list">
           <view
             class="my-child-item"
@@ -221,15 +221,15 @@
             wx:for-item="myChild"
             wx:key="childId">
             <view class="child-avatar-small">
-              <image wx:if="{{myChild.avatar}}" src="{{myChild.avatar}}" mode="aspectFill" />
-              <text wx:else>{{myChild.name.substring(0, 1)}}</text>
+              <image wx:if="{{myChild.avatar && (myChild.avatar.indexOf('http') === 0 || myChild.avatar.indexOf('cloud://') === 0)}}" src="{{myChild.avatar}}" mode="aspectFill" />
+              <text wx:else>{{myChild.avatar || myChild.name.substring(0, 1)}}</text>
             </view>
             <view class="child-name-small">{{myChild.name}}</view>
             <button
               class="add-child-btn"
               data-childid="{{myChild.childId}}"
               bindtap="showAssignChildModal">
-              添加
+              加入
             </button>
           </view>
         </view>

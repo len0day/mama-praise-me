@@ -22,7 +22,7 @@ function generateRedemptionId() {
  */
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { action, data } = event
+  const { action, ...data } = event
 
   console.log('[manageRedemptions] action:', action)
   console.log('[manageRedemptions] openid:', OPENID)
@@ -241,10 +241,8 @@ exports.main = async (event, context) => {
         name: 'manageFamilyCoins',
         data: {
           action: 'getChildCoinsInFamily',
-          data: {
-            childId: childId,
-            familyId: familyId
-          }
+          childId: childId,
+          familyId: familyId
         }
       })
 
@@ -277,13 +275,11 @@ exports.main = async (event, context) => {
         name: 'manageFamilyCoins',
         data: {
           action: 'deductCoins',
-          data: {
-            childId: childId,
-            familyId: familyId,
-            amount: prize.coinCost,
-            prizeId: prizeId,
-            prizeName: prize.name
-          }
+          childId: childId,
+          familyId: familyId,
+          amount: prize.coinCost,
+          prizeId: prizeId,
+          prizeName: prize.name
         }
       })
 
@@ -412,11 +408,9 @@ exports.main = async (event, context) => {
         name: 'manageFamilyCoins',
         data: {
           action: 'addCoins',
-          data: {
-            childId: redemption.childId,
-            familyId: familyId,
-            amount: redemption.coinCost
-          }
+          childId: redemption.childId,
+          familyId: familyId,
+          amount: redemption.coinCost
         }
       })
 

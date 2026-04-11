@@ -22,10 +22,11 @@ function generateChildId() {
  */
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { action, data } = event
+  const { action, ...data } = event
 
   console.log('[manageChildren] action:', action)
   console.log('[manageChildren] openid:', OPENID)
+  console.log('[manageChildren] event:', JSON.stringify(event))
 
   try {
     // 获取孩子列表
@@ -45,7 +46,7 @@ exports.main = async (event, context) => {
           name: child.name,
           gender: child.gender,
           age: child.age,
-          familyId: child.familyId,
+          familyIds: child.familyIds || [],  // 返回所有家庭ID数组
           createdAt: child.createdAt,
           updatedAt: child.updatedAt
         }
@@ -149,7 +150,7 @@ exports.main = async (event, context) => {
           })
           .update({
             data: {
-              familyId: familyId,
+              familyIds: [familyId],  // 使用数组存储
               name: name,
               avatar: avatar || '',
               gender: gender || 'male',
@@ -178,7 +179,7 @@ exports.main = async (event, context) => {
       const childData = {
         openid: OPENID,
         childId: newChildId,
-        familyId: familyId,  // 必须有家庭ID
+        familyIds: familyId ? [familyId] : [],  // 使用数组存储多个家庭ID
         name: name,
         avatar: avatar || '',
         gender: gender || 'male',
@@ -192,26 +193,28 @@ exports.main = async (event, context) => {
         data: childData
       })
 
-      // 再创建该儿童在此家庭的金币余额记录（初始为0）
-      try {
-        await db.collection('family_coin_balances').add({
-          data: {
-            childId: newChildId,
-            familyId: familyId,
-            balance: 0,
-            totalEarned: 0,
-            totalSpent: 0,
-            createdAt: new Date(),
-            updatedAt: new Date()
+      // 如果提供了家庭ID，创建该儿童在此家庭的金币余额记录
+      if (familyId) {
+        try {
+          await db.collection('family_coin_balances').add({
+            data: {
+              childId: newChildId,
+              familyId: familyId,
+              balance: 0,
+              totalEarned: 0,
+              totalSpent: 0,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          })
+        } catch (balanceErr) {
+          console.error('[manageChildren] 创建金币余额记录失败:', balanceErr)
+          // 如果金币余额记录创建失败，删除已创建的儿童记录（回滚）
+          await db.collection('children').doc(childRes._id).remove()
+          return {
+            success: false,
+            error: '创建金币余额记录失败，请重试'
           }
-        })
-      } catch (balanceErr) {
-        console.error('[manageChildren] 创建金币余额记录失败:', balanceErr)
-        // 如果金币余额记录创建失败，删除已创建的儿童记录（回滚）
-        await db.collection('children').doc(childRes._id).remove()
-        return {
-          success: false,
-          error: '创建金币余额记录失败，请重试'
         }
       }
 
@@ -253,6 +256,21 @@ exports.main = async (event, context) => {
     if (action === 'deleteChild') {
       const { childId } = data
 
+      // 先删除该孩子在所有家庭的金币余额记录
+      try {
+        const balancesRes = await db.collection('family_coin_balances')
+          .where({
+            childId: childId
+          })
+          .remove()
+
+        console.log('[deleteChild] 删除儿童', childId, '的金币余额记录，删除数:', balancesRes.stats.removed)
+      } catch (balanceErr) {
+        console.error('[deleteChild] 删除金币余额记录失败:', balanceErr)
+        // 继续删除孩子记录
+      }
+
+      // 删除孩子记录
       const res = await db.collection('children')
         .where({
           openid: OPENID,
@@ -266,9 +284,6 @@ exports.main = async (event, context) => {
           error: '孩子不存在或无权删除'
         }
       }
-
-      // 注意：这里保留相关的任务完成记录、兑换记录、金币记录
-      // 这些记录作为历史数据保留
 
       return {
         success: true
@@ -296,6 +311,289 @@ exports.main = async (event, context) => {
       return {
         success: true,
         child: res.data[0]
+      }
+    }
+
+    // 将孩子加入家庭
+    if (action === 'assignChildToFamily') {
+      const { childId, familyId } = data
+
+      console.log('[assignChildToFamily] 开始处理 - childId:', childId, 'familyId:', familyId)
+
+      // 验证家庭是否存在且用户是成员
+      const memberRes = await db.collection('family_members')
+        .where({
+          openid: OPENID,
+          familyId: familyId,
+          status: 'active'
+        })
+        .get()
+
+      if (memberRes.data.length === 0) {
+        return {
+          success: false,
+          error: '您不是该家庭成员，无法添加儿童'
+        }
+      }
+
+      // 验证儿童是否存在且属于当前用户
+      const childRes = await db.collection('children')
+        .where({
+          openid: OPENID,
+          childId: childId
+        })
+        .get()
+
+      if (childRes.data.length === 0) {
+        return {
+          success: false,
+          error: '儿童不存在或无权修改'
+        }
+      }
+
+      // 检查该儿童是否已经在这个家庭中（通过 familyIds 数组）
+      const childData = childRes.data[0]
+      const currentFamilyIds = childData.familyIds || []
+
+      console.log('[assignChildToFamily] 儿童', childId, '当前的家庭IDs:', currentFamilyIds)
+
+      if (currentFamilyIds.includes(familyId)) {
+        // 已经在这个家庭中
+        console.log('[assignChildToFamily] 儿童', childId, '已在家庭', familyId, '中')
+        return {
+          success: false,
+          error: '该儿童已在此家庭中'
+        }
+      }
+
+      // 添加家庭ID到数组
+      currentFamilyIds.push(familyId)
+      console.log('[assignChildToFamily] 更新后的familyIds:', currentFamilyIds)
+
+      const updateRes = await db.collection('children')
+        .where({
+          openid: OPENID,
+          childId: childId
+        })
+        .update({
+          data: {
+            familyIds: currentFamilyIds,
+            updatedAt: new Date()
+          }
+        })
+
+      console.log('[assignChildToFamily] 更新children结果:', updateRes.stats)
+
+      if (updateRes.stats.updated === 0) {
+        console.error('[assignChildToFamily] 更新children失败！')
+      }
+
+      // 创建该儿童在新家庭的金币余额记录
+      console.log('[assignChildToFamily] 准备为儿童', childId, '创建家庭', familyId, '的金币余额记录')
+      const balanceRes = await db.collection('family_coin_balances').add({
+        data: {
+          childId: childId,
+          familyId: familyId,
+          balance: 0,
+          totalEarned: 0,
+          totalSpent: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      })
+
+      console.log('[assignChildToFamily] 金币余额记录创建结果:', balanceRes._id)
+
+      return {
+        success: true
+      }
+    }
+
+    // 获取孩子的最后更新时间
+    if (action === 'getChildLastUpdateTime') {
+      const { childId, familyId } = data
+
+      // 验证权限：必须是该家庭的成员
+      const memberRes = await db.collection('family_members')
+        .where({
+          openid: OPENID,
+          familyId: familyId,
+          status: 'active'
+        })
+        .get()
+
+      if (memberRes.data.length === 0) {
+        return {
+          success: false,
+          error: '您不是该家庭成员'
+        }
+      }
+
+      // 获取儿童的最后更新时间（不再需要查询 familyId，因为孩子可以属于多个家庭）
+      const childRes = await db.collection('children')
+        .where({
+          childId: childId
+        })
+        .field({
+          updatedAt: true
+        })
+        .get()
+
+      if (childRes.data.length === 0) {
+        return {
+          success: false,
+          error: '儿童不存在'
+        }
+      }
+
+      const child = childRes.data[0]
+      const lastUpdateTime = child.updatedAt ? new Date(child.updatedAt).getTime() : 0
+
+      return {
+        success: true,
+        lastUpdateTime: lastUpdateTime
+      }
+    }
+
+    // 更新儿童时间戳
+    if (action === 'updateChildTimestamp') {
+      const { childId, familyId, timestamp } = data
+
+      // 验证权限：必须是该家庭的成员
+      const memberRes = await db.collection('family_members')
+        .where({
+          openid: OPENID,
+          familyId: familyId,
+          status: 'active'
+        })
+        .get()
+
+      if (memberRes.data.length === 0) {
+        return {
+          success: false,
+          error: '您不是该家庭成员'
+        }
+      }
+
+      // 更新儿童的 updatedAt 时间戳（不再需要查询 familyId）
+      const updateDate = timestamp ? new Date(timestamp) : new Date()
+      const res = await db.collection('children')
+        .where({
+          childId: childId
+        })
+        .update({
+          data: {
+            updatedAt: updateDate
+          }
+        })
+
+      if (res.stats.updated === 0) {
+        return {
+          success: false,
+          error: '儿童不存在或无权修改'
+        }
+      }
+
+      return {
+        success: true
+      }
+    }
+
+    // 获取家庭的儿童列表（通过 children.familyIds 数组）
+    if (action === 'getFamilyChildrenById') {
+      const { familyId } = data
+
+      console.log('[getFamilyChildrenById] familyId:', familyId)
+
+      if (!familyId) {
+        console.error('[getFamilyChildrenById] familyId为空')
+        return {
+          success: false,
+          error: '家庭ID不能为空'
+        }
+      }
+
+      console.log('[getFamilyChildrenById] 开始查询家庭', familyId, '的儿童')
+
+      // 验证权限：必须是该家庭的成员
+      const memberRes = await db.collection('family_members')
+        .where({
+          openid: OPENID,
+          familyId: familyId,
+          status: 'active'
+        })
+        .get()
+
+      if (memberRes.data.length === 0) {
+        console.log('[getFamilyChildrenById] 用户不是该家庭成员')
+        return {
+          success: false,
+          error: '您不是该家庭成员'
+        }
+      }
+
+      // 直接查询 children 集合，找到 familyIds 数组中包含该家庭ID的儿童
+      const childrenRes = await db.collection('children')
+        .where({
+          familyIds: db.command.eq(familyId)
+        })
+        .orderBy('createdAt', 'asc')
+        .get()
+
+      console.log('[getFamilyChildrenById] 查询到的儿童数:', childrenRes.data.length)
+
+      // 处理头像URL
+      const fileList = []
+      const childrenWithAvatar = childrenRes.data.map(child => {
+        const result = {
+          childId: child.childId,
+          name: child.name,
+          gender: child.gender,
+          age: child.age,
+          familyIds: child.familyIds || [],  // 返回完整的家庭ID数组
+          createdAt: child.createdAt,
+          updatedAt: child.updatedAt
+        }
+
+        if (child.avatar && child.avatar.startsWith('cloud://')) {
+          result.avatar = child.avatar
+          fileList.push(child.avatar)
+        }
+
+        return result
+      })
+
+      // 转换头像URL
+      let tempUrlMap = {}
+      if (fileList.length > 0) {
+        try {
+          const tempUrlRes = await cloud.getTempFileURL({
+            fileList: fileList
+          })
+
+          tempUrlRes.fileList.forEach((item, index) => {
+            if (item.status === 0) {
+              tempUrlMap[fileList[index]] = item.tempFileURL
+            }
+          })
+        } catch (err) {
+          console.error('[manageChildren] getFamilyChildrenById - 头像URL转换失败:', err)
+        }
+      }
+
+      const processedChildren = childrenWithAvatar.map(child => {
+        if (child.avatar && tempUrlMap[child.avatar]) {
+          return {
+            ...child,
+            avatar: tempUrlMap[child.avatar]
+          }
+        }
+        return child
+      })
+
+      return {
+        success: true,
+        children: processedChildren
       }
     }
 

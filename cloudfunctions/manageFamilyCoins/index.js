@@ -15,7 +15,7 @@ const _ = db.command
  */
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { action, data } = event
+  const { action, ...data } = event
 
   console.log('[manageFamilyCoins] action:', action)
   console.log('[manageFamilyCoins] openid:', OPENID)

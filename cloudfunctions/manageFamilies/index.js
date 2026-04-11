@@ -34,7 +34,7 @@ function generateInviteCode() {
  */
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { action, data } = event
+  const { action, ...data } = event
 
   console.log('[manageFamilies] action:', action)
   console.log('[manageFamilies] openid:', OPENID)
@@ -209,7 +209,8 @@ exports.main = async (event, context) => {
         db.collection('tasks').where({ familyId: _.in(familyIds) }).get(),
         db.collection('prizes').where({ familyId: _.in(familyIds) }).get(),
         db.collection('family_members').where({ familyId: _.in(familyIds), status: 'active' }).get(),
-        db.collection('children').where({ familyId: _.in(familyIds) }).get()
+        // 查询所有儿童，然后在内存中过滤（因为 familyIds 是数组）
+        db.collection('children').get()
       ])
 
       console.log('[getAllMyFamilies] 任务查询结果:', tasksRes.data.length)
@@ -228,10 +229,24 @@ exports.main = async (event, context) => {
         prizeCountMap[prize.familyId] = (prizeCountMap[prize.familyId] || 0) + 1
       })
 
+      // 统计每个家庭的儿童数量
       const childCountMap = {}
       childrenRes.data.forEach(child => {
-        childCountMap[child.familyId] = (childCountMap[child.familyId] || 0) + 1
+        if (child.familyIds && Array.isArray(child.familyIds)) {
+          // familyIds 是数组，遍历统计
+          child.familyIds.forEach(fid => {
+            // 只统计我们查询的家庭
+            if (familyIds.includes(fid)) {
+              childCountMap[fid] = (childCountMap[fid] || 0) + 1
+            }
+          })
+        } else if (child.familyId && familyIds.includes(child.familyId)) {
+          // 兼容旧数据：familyId 是单个值
+          childCountMap[child.familyId] = (childCountMap[child.familyId] || 0) + 1
+        }
       })
+
+      console.log('[getAllMyFamilies] 每个家庭的儿童数量:', childCountMap)
 
       const parentCountMap = {}
       membersRes.data.forEach(member => {
@@ -874,16 +889,18 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 检查儿童是否已经分配到该家庭
+      // 检查儿童是否已经分配到该家庭（通过 familyIds 数组）
       const existingChild = childRes.data[0]
-      if (existingChild.familyId === familyId) {
+      const currentFamilyIds = existingChild.familyIds || []
+      if (currentFamilyIds.includes(familyId)) {
         return {
           success: false,
           error: '该儿童已经在该家庭中'
         }
       }
 
-      // 更新儿童的家庭ID
+      // 更新儿童的家庭ID列表
+      currentFamilyIds.push(familyId)
       await db.collection('children')
         .where({
           openid: OPENID,
@@ -891,7 +908,7 @@ exports.main = async (event, context) => {
         })
         .update({
           data: {
-            familyId: familyId
+            familyIds: currentFamilyIds
           }
         })
 
@@ -963,38 +980,34 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 获取所有分配到该家庭的儿童
+      // 直接查询 children 集合，找到 familyIds 数组中包含该家庭ID的儿童
       const childrenRes = await db.collection('children')
         .where({
-          familyId: familyId
+          familyIds: _.eq(familyId)
         })
+        .orderBy('createdAt', 'asc')
         .get()
+
+      console.log('[manageFamilies] getFamilyChildren - 查询到的儿童数:', childrenRes.data.length)
 
       // 获取这些儿童在该家庭的金币余额
       const childIds = childrenRes.data.map(c => c.childId)
       let coinsMap = {}
 
-      console.log('[manageFamilies] getFamilyChildren - childIds:', childIds)
-
       if (childIds.length > 0) {
         const coinsRes = await db.collection('family_coin_balances')
           .where({
-            familyId: familyId
+            familyId: familyId,
+            childId: _.in(childIds)
           })
           .get()
 
         console.log('[manageFamilies] getFamilyChildren - 金币记录:', coinsRes.data.length)
-        console.log('[manageFamilies] getFamilyChildren - 金币记录详情:', coinsRes.data.map(r => ({
-          childId: r.childId,
-          balance: r.balance
-        })))
 
         // 建立 childId -> balance 的映射
         coinsRes.data.forEach(record => {
           coinsMap[record.childId] = record.balance
         })
-
-        console.log('[manageFamilies] getFamilyChildren - coinsMap:', coinsMap)
       }
 
       // 为每个儿童添加 familyCoins 字段，并处理头像URL
@@ -1005,7 +1018,7 @@ exports.main = async (event, context) => {
           name: child.name,
           gender: child.gender,
           age: child.age,
-          familyId: child.familyId,
+          familyIds: child.familyIds || [],  // 返回完整的家庭ID数组
           familyCoins: coinsMap[child.childId] || 0,
           createdAt: child.createdAt,
           updatedAt: child.updatedAt
@@ -1229,15 +1242,24 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 验证是否是家庭创建者
+      // 验证是否是家庭创建者（兼容旧数据，同时检查 creatorOpenid 和 openid）
       const familyRes = await db.collection('families')
         .where({
-          familyId: familyId,
-          creatorOpenid: OPENID
+          familyId: familyId
         })
         .get()
 
       if (familyRes.data.length === 0) {
+        return {
+          success: false,
+          error: '家庭不存在'
+        }
+      }
+
+      const family = familyRes.data[0]
+      const isCreator = family.creatorOpenid === OPENID || family.openid === OPENID
+
+      if (!isCreator) {
         return {
           success: false,
           error: '只有家庭创建者可以修改家庭名称'
@@ -1266,15 +1288,35 @@ exports.main = async (event, context) => {
     if (action === 'disbandFamily') {
       const { familyId } = data
 
-      // 验证是否是家庭创建者
+      console.log('[disbandFamily] familyId:', familyId)
+      console.log('[disbandFamily] OPENID:', OPENID)
+
+      // 验证是否是家庭创建者（兼容旧数据，同时检查 creatorOpenid 和 openid）
       const familyRes = await db.collection('families')
         .where({
-          familyId: familyId,
-          creatorOpenid: OPENID
+          familyId: familyId
         })
         .get()
 
+      console.log('[disbandFamily] 查询到家庭数:', familyRes.data.length)
+      if (familyRes.data.length > 0) {
+        console.log('[disbandFamily] 家庭 creatorOpenid:', familyRes.data[0].creatorOpenid)
+        console.log('[disbandFamily] 家庭 openid:', familyRes.data[0].openid)
+      }
+
       if (familyRes.data.length === 0) {
+        return {
+          success: false,
+          error: '家庭不存在'
+        }
+      }
+
+      const family = familyRes.data[0]
+      const isCreator = family.creatorOpenid === OPENID || family.openid === OPENID
+
+      console.log('[disbandFamily] isCreator:', isCreator)
+
+      if (!isCreator) {
         return {
           success: false,
           error: '只有家庭创建者可以解散家庭'
@@ -1303,16 +1345,27 @@ exports.main = async (event, context) => {
           })
       }
 
-      // 将所有儿童的 familyId 设为 null
-      await db.collection('children')
+      // 从所有儿童的 familyIds 数组中移除该家庭ID
+      const childrenRes = await db.collection('children')
         .where({
-          familyId: familyId
+          familyIds: _.eq(familyId)
         })
-        .update({
-          data: {
-            familyId: null
-          }
-        })
+        .get()
+
+      console.log('[disbandFamily] 找到需要移除家庭ID的儿童数:', childrenRes.data.length)
+
+      for (const child of childrenRes.data) {
+        const newFamilyIds = (child.familyIds || []).filter(id => id !== familyId)
+        await db.collection('children')
+          .where({
+            childId: child.childId
+          })
+          .update({
+            data: {
+              familyIds: newFamilyIds
+            }
+          })
+      }
 
       // 标记家庭为已解散（保留数据和金币记录）
       await db.collection('families')
@@ -1344,15 +1397,24 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 验证是否是家庭创建者
+      // 验证是否是家庭创建者（兼容旧数据，同时检查 creatorOpenid 和 openid）
       const familyRes = await db.collection('families')
         .where({
-          familyId: familyId,
-          creatorOpenid: OPENID
+          familyId: familyId
         })
         .get()
 
       if (familyRes.data.length === 0) {
+        return {
+          success: false,
+          error: '家庭不存在'
+        }
+      }
+
+      const family = familyRes.data[0]
+      const isCreator = family.creatorOpenid === OPENID || family.openid === OPENID
+
+      if (!isCreator) {
         return {
           success: false,
           error: '只有家庭创建者可以修改家庭头像'

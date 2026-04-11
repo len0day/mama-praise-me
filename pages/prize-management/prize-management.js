@@ -84,7 +84,7 @@ Page({
         name: 'managePrizes',
         data: {
           action: 'getPrizes',
-          data: { familyId: currentFamilyId }
+          familyId: currentFamilyId
         }
       })
 
@@ -215,7 +215,7 @@ Page({
         name: 'managePrizes',
         data: {
           action: 'deletePrize',
-          data: { prizeId }
+          prizeId
         }
       })
 
@@ -348,10 +348,8 @@ Page({
           name: 'managePrizes',
           data: {
             action: 'updatePrize',
-            data: {
-              prizeId: editingPrize.prizeId,
-              ...prizeData
-            }
+            prizeId: editingPrize.prizeId,
+            ...prizeData
           }
         })
       } else {
@@ -360,7 +358,7 @@ Page({
           name: 'managePrizes',
           data: {
             action: 'createPrize',
-            data: prizeData
+            ...prizeData
           }
         })
       }

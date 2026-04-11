@@ -91,10 +91,8 @@ Page({
         name: 'manageRedemptions',
         data: {
           action: 'getRedemptions',
-          data: {
-            childId: currentChildId,
-            familyId: currentFamilyId  // ✅ 添加 familyId 参数
-          }
+          childId: currentChildId,
+          familyId: currentFamilyId  // ✅ 添加 familyId 参数
         }
       })
 
@@ -325,10 +323,8 @@ Page({
         name: 'manageRedemptions',
         data: {
           action: 'usePrize',
-          data: {
-            redemptionId: redemption.redemptionId,
-            quantity: quantity
-          }
+          redemptionId: redemption.redemptionId,
+          quantity: quantity
         }
       })
 

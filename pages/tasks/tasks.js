@@ -81,9 +81,42 @@ Page({
     }
 
     const currentFamilyId = app.getCurrentFamilyId()
-    const currentChild = app.getCurrentChild()
 
-    if (!currentFamilyId || !currentChild) {
+    if (!currentFamilyId) {
+      this.setData({
+        currentFamily: null,
+        currentChild: null,
+        allFamilies: []
+      })
+      return
+    }
+
+    // 获取当前家庭的儿童（而不是使用全局的当前孩子）
+    const allChildren = app.globalData.children || []
+    const familyChildren = allChildren.filter(child => {
+      const familyIds = child.familyIds || []
+      return familyIds.includes(currentFamilyId)
+    })
+
+    // 如果当前家庭有儿童，自动选择第一个（或上次选择的）
+    let currentChild = null
+    if (familyChildren.length > 0) {
+      const familyConfig = wx.getStorageSync('familyConfig') || {}
+      const savedChildId = familyConfig[currentFamilyId]?.currentChildId
+
+      if (savedChildId) {
+        currentChild = familyChildren.find(child => child.childId === savedChildId) || familyChildren[0]
+      } else {
+        currentChild = familyChildren[0]
+      }
+
+      // 保存当前选择的孩子ID
+      if (currentChild) {
+        app.saveCurrentChildId(currentChild.childId)
+      }
+    }
+
+    if (!currentChild) {
       this.setData({
         currentFamily: null,
         currentChild: null,
@@ -125,7 +158,7 @@ Page({
           name: 'manageFamilies',
           data: {
             action: 'getFamilyInfo',
-            data: { familyId: currentFamilyId }
+            familyId: currentFamilyId
           }
         }),
         wx.cloud.callFunction({
@@ -141,9 +174,11 @@ Page({
         const allFamilies = familiesRes.result.success ? (familiesRes.result.families || []) : []
 
         // 筛选当前家庭的儿童
-        const currentFamilyId = app.getCurrentFamilyId()
         const allChildren = app.globalData.children || []
-        const familyChildren = allChildren.filter(child => child.familyId === currentFamilyId)
+        const familyChildren = allChildren.filter(child => {
+          const familyIds = child.familyIds || []
+          return familyIds.includes(currentFamilyId)
+        })
 
         this.setData({
           currentFamily: family,
@@ -189,10 +224,8 @@ Page({
         name: 'manageTasks',
         data: {
           action: 'getTasks',
-          data: {
-            familyId: currentFamilyId,
-            childId: currentChild.childId
-          }
+          familyId: currentFamilyId,
+          childId: currentChild.childId
         }
       })
 
@@ -353,13 +386,16 @@ Page({
         name: 'manageTasks',
         data: {
           action: 'deleteTask',
-          data: { taskId: taskid }
+          taskId: taskid
         }
       })
 
       hideLoading()
 
       if (res.result.success) {
+        // 更新时间戳（关键！）
+        await app.updateChildTimestamp()
+
         showToast(t('tasks.taskDeleted'))
         await this.loadTasks()
       } else {
@@ -484,11 +520,9 @@ Page({
           name: 'manageTasks',
           data: {
             action: 'updateTask',
-            data: {
-              familyId: currentFamilyId,
-              taskId: editingTask.taskId,
-              ...taskData
-            }
+            familyId: currentFamilyId,
+            taskId: editingTask.taskId,
+            ...taskData
           }
         })
       } else {
@@ -497,10 +531,8 @@ Page({
           name: 'manageTasks',
           data: {
             action: 'createTask',
-            data: {
-              familyId: currentFamilyId,
-              ...taskData
-            }
+            familyId: currentFamilyId,
+            ...taskData
           }
         })
       }
@@ -508,6 +540,9 @@ Page({
       hideLoading()
 
       if (res.result.success) {
+        // 更新时间戳（关键！）
+        await app.updateChildTimestamp()
+
         showToast(editingTask ? t('tasks.taskUpdated') : t('tasks.taskCreated'))
         this.setData({ showAddModal: false })
         await this.loadTasks()
@@ -891,7 +926,7 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'getFamilyChildren',
-          data: { familyId: familyid }
+          familyId: familyid
         }
       })
 

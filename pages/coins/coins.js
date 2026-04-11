@@ -90,7 +90,8 @@ Page({
         name: 'manageCoins',
         data: {
           action: 'getCoinRecords',
-          data: { childId: currentChildId, limit: 100 }
+          childId: currentChildId,
+          limit: 100
         }
       })
 

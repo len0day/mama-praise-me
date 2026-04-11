@@ -18,6 +18,7 @@ Page({
     currentFamilyId: null,   // 当前家庭ID
     currentFamilyChildren: [], // 当前家庭的儿童列表
     showChildPicker: false, // 显示儿童选择器
+    childPickerTop: 0,      // 儿童选择器位置
     currentFilter: 'all',   // 当前任务分类筛选
     allTasks: [],           // 所有任务（用于筛选）
     currentFamily: null,      // 当前选中的家庭详情 (包含背景图)
@@ -45,8 +46,41 @@ Page({
       percentage: 0          // 完成百分比
     },
     countdownTimer: null,    // 倒计时更新定时器
-    showThemeMenu: false     // 主题快捷菜单显示状态
+    showThemeMenu: false,    // 主题快捷菜单显示状态
+    showCreateFamilyModal: false,  // 显示创建家庭弹窗
+    showJoinFamilyModal: false,    // 显示加入家庭弹窗
+    showCreateChildModal: false,   // 显示创建第一个儿童弹窗
+    familyFormData: {        // 家庭表单数据
+      familyName: '',
+      creatorNickname: '',
+      inviteCode: '',
+      nickname: ''
+    },
+    childFormData: {         // 儿童表单数据
+      name: '',
+      gender: 'male',
+      age: 6,
+      initialCoins: 0
+    },
+    // 首次使用流程对话框状态
+    showCreateFamilyInput: false,
+    showCreateChildInput: false,
+    showJoinFamilyInput: false,
+    familyNameInput: '',
+    creatorNicknameInput: '',
+    childNameInput: '',
+    childGenderInput: 'male',
+    childAgeInput: '',
+    childCoinsInput: '0',
+    childAvatarInput: '',
+    inviteCodeInput: '',
+    needFamily: true  // 默认显示需要家庭提示，避免先显示添加孩子
   },
+
+  // 记录上次显示的家庭ID，用于检测家庭切换
+  _lastDisplayedFamilyId: null,
+
+  i18n: {},
 
   onLoad() {
     const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
@@ -65,6 +99,9 @@ Page({
       userInfo: userInfo
     })
 
+    // 加载国际化文本
+    this.loadI18n()
+
     // 读取飘动动画设置
     try {
       const enableFloatAnimation = wx.getStorageSync('enableFloatAnimation')
@@ -80,12 +117,6 @@ Page({
   },
 
   async onShow() {
-    // 刷新用户信息
-    let userInfo = null
-    if (app.globalData.useCloudStorage && app.globalData.currentUserOpenid) {
-      userInfo = wx.getStorageSync('userInfo') || null
-    }
-
     // 先更新主题，让用户立即看到主题变化
     const themeStyle = app.globalData.settings.themeStyle || 'simple-light'
     const isFunTheme = ['boy', 'girl', 'cute', 'neutral'].includes(themeStyle)
@@ -100,13 +131,19 @@ Page({
       themeClass = 'theme-light'
     }
 
-    console.log('[首页 onShow] 设置主题:', { themeClass, themeStyle, isFunTheme })
+    // 刷新用户信息
+    let userInfo = null
+    if (app.globalData.useCloudStorage && app.globalData.currentUserOpenid) {
+      userInfo = wx.getStorageSync('userInfo') || null
+    }
 
+    // 先设置主题和用户信息，避免页面空白
     this.setData({
       themeClass: themeClass,
       themeStyle: themeStyle,
       colorTone: app.globalData.colorTone || 'neutral',
       isFunTheme: isFunTheme,
+      isLoading: false,  // 先设置为false，避免一直加载
       userInfo: userInfo
     })
 
@@ -116,10 +153,42 @@ Page({
       this.getTabBar().applyTheme()
     }
 
-    this.setData({ isLoading: true })
+    // 确保加载当前家庭ID（从本地存储恢复）
+    app.loadCurrentFamilyId()
+    app.loadCurrentChildId()
+
+    // 检查家庭是否切换了
+    const currentFamilyId = app.getCurrentFamilyId()
+    const familyChanged = this._lastDisplayedFamilyId !== currentFamilyId
+    console.log('[首页 onShow] 家庭切换检测:', {
+      上次: this._lastDisplayedFamilyId,
+      当前: currentFamilyId,
+      切换: familyChanged
+    })
+
+    // 检查是否是首次使用（无家庭、无儿童、无本地数据）
+    const isFirstTime = this.isFirstTimeUser()
+    console.log('[首页 onShow] 是否首次使用:', isFirstTime)
+
+    if (isFirstTime) {
+      // 显示首次使用流程
+      console.log('[首页 onShow] 开始首次使用流程')
+      this.showFirstTimeFlow()
+      return
+    }
+
+    // 继续正常的页面加载流程
+    console.log('[首页 onShow] 设置主题:', { themeClass, themeStyle, isFunTheme })
+
+    // 如果刚刚强制刷新过（登录后），保持加载状态
+    if (this._justForceRefreshed) {
+      this.setData({ isLoading: true })
+    } else {
+      this.setData({ isLoading: true })
+    }
 
     // 检查是否有家庭
-    if (!app.getCurrentFamilyId()) {
+    if (!app.getCurrentFamilyId() && !this._justForceRefreshed) {
       this.setData({
         currentChild: null,
         tasks: [],
@@ -130,8 +199,16 @@ Page({
       return
     }
 
-    // 加载孩子数据（根据登录状态自动选择本地或云端）
-    await app.loadChildren()
+    // 如果正在强制刷新（登录后），等待数据加载
+    if (this._justForceRefreshed) {
+      // 延迟一下，让数据加载完成
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
+    // 加载孩子数据
+    // 如果家庭切换了，强制刷新；否则使用缓存
+    const shouldForceRefresh = familyChanged || this._justForceRefreshed
+    await app.loadChildren(shouldForceRefresh)
 
     // 获取当前孩子（会自动选择）
     let currentChild = app.getCurrentChild()
@@ -154,8 +231,8 @@ Page({
 
       // 筛选当前家庭的儿童
       const familyChildren = allChildren.filter(child => {
-        const childFamilyId = child.familyId || currentFamilyId
-        return childFamilyId === currentFamilyId
+        const familyIds = child.familyIds || []
+        return familyIds.includes(currentFamilyId)
       })
 
       if (familyChildren.length > 0) {
@@ -192,13 +269,8 @@ Page({
     await this.loadCurrentFamilyChildren()
 
     // 补充家庭信息和金币余额
-    // 确保 child 有 familyId 字段
-    const childWithFamilyId = {
-      ...currentChild,
-      familyId: currentChild.familyId || app.getCurrentFamilyId()
-    }
     // 加载家庭名称和金币余额
-    const enrichedChild = await this.enrichChildInfo(childWithFamilyId)
+    const enrichedChild = await this.enrichChildInfo(currentChild)
 
     // 生成日历选项
     this.generateCalendarItems()
@@ -216,8 +288,26 @@ Page({
       currentFamilyId: app.getCurrentFamilyId()
     })
 
+    // 记录当前显示的家庭ID
+    this._lastDisplayedFamilyId = app.getCurrentFamilyId()
+    console.log('[首页 onShow] 记录当前家庭ID:', this._lastDisplayedFamilyId)
+
     // 加载数据（包含计算金币统计）
     await this.loadData()
+
+    // 检查数据新鲜度（仅已登录用户，且不是刚刚强制刷新过的）
+    // 登录后会强制刷新，这里跳过检查避免重复加载
+    if (app.globalData.useCloudStorage && !this._justForceRefreshed) {
+      const shouldRefresh = await app.checkDataFreshness()
+
+      if (shouldRefresh) {
+        // 数据已更新，重新加载数据
+        await this.loadData()
+      }
+    }
+
+    // 清除强制刷新标记
+    this._justForceRefreshed = false
   },
 
   /**
@@ -228,19 +318,12 @@ Page({
       // 获取当前家庭ID
       const currentFamilyId = app.getCurrentFamilyId()
 
-      // 确保 child 有 familyId
-      const childWithFamilyId = {
-        ...child,
-        familyId: child.familyId || currentFamilyId
-      }
-
-      // 如果儿童的家庭ID和当前家庭ID不一致，不显示
-      if (currentFamilyId && childWithFamilyId.familyId !== currentFamilyId) {
+      // 检查儿童是否属于当前家庭（通过 familyIds 数组）
+      const familyIds = child.familyIds || []
+      if (currentFamilyId && !familyIds.includes(currentFamilyId)) {
+        // 儿童不属于当前家庭，不显示
         return child
       }
-
-      // 使用带 familyId 的 child
-      child = childWithFamilyId
 
       let familyName = '家庭'
       let familyCoins = 0
@@ -270,17 +353,15 @@ Page({
           name: 'manageFamilies',
           data: {
             action: 'getFamilyInfo',
-            data: { familyId: currentFamilyId }
+            familyId: currentFamilyId
           }
         }),
         wx.cloud.callFunction({
           name: 'manageFamilyCoins',
           data: {
             action: 'getChildCoinsInFamily',
-            data: {
-              childId: child.childId,
-              familyId: currentFamilyId
-            }
+            childId: child.childId,
+            familyId: currentFamilyId
           }
         })
       ])
@@ -306,11 +387,19 @@ Page({
     // 未登录：从本地加载
     if (!app.globalData.useCloudStorage) {
       const localFamilies = wx.getStorageSync('localFamilies') || []
-      // 补充 isCreator 标记（兼容旧本地数据）
-      const processedLocalFamilies = localFamilies.map(f => ({
-        ...f,
-        isCreator: f.isCreator !== undefined ? f.isCreator : (f.role === 'admin')
-      }))
+      // 补充 isCreator 标记和 childCount（兼容旧本地数据）
+      const processedLocalFamilies = localFamilies.map(f => {
+        // 计算该家庭的儿童数量
+        const storageKey = `localChildren_${f.familyId}`
+        const familyChildren = wx.getStorageSync(storageKey) || []
+
+        return {
+          ...f,
+          isCreator: f.isCreator !== undefined ? f.isCreator : (f.role === 'admin'),
+          childCount: familyChildren.length,
+          parentCount: 1  // 本地模式只有一个家长（创建者）
+        }
+      })
       this.setData({ allFamilies: processedLocalFamilies })
       return
     }
@@ -348,7 +437,10 @@ Page({
 
     // 已登录：从全局数据中筛选
     const allChildren = app.globalData.children || []
-    const familyChildren = allChildren.filter(child => child.familyId === currentFamilyId)
+    const familyChildren = allChildren.filter(child => {
+      const familyIds = child.familyIds || []
+      return familyIds.includes(currentFamilyId)
+    })
     this.setData({ currentFamilyChildren: familyChildren })
   },
 
@@ -678,20 +770,16 @@ Page({
           name: 'manageTasks',
           data: {
             action: 'getTasks',
-            data: {
-              familyId: currentFamilyId,
-              childId: currentChild.childId
-            }
+            familyId: currentFamilyId,
+            childId: currentChild.childId
           }
         }),
         wx.cloud.callFunction({
           name: 'manageTasks',
           data: {
             action: 'getAllCompletions',
-            data: {
-              familyId: currentFamilyId,
-              childId: currentChild.childId
-            }
+            familyId: currentFamilyId,
+            childId: currentChild.childId
           }
         })
       ])
@@ -1260,27 +1348,32 @@ Page({
    */
   async completeTaskToCloud(taskId) {
     try {
+      // 1. 先更新云端（确保数据一致性）
       const res = await wx.cloud.callFunction({
         name: 'manageTasks',
         data: {
           action: 'completeTask',
-          data: {
-            taskId: taskId,
-            childId: this.data.currentChild.childId,
-            familyId: this.data.currentFamilyId
-          }
+          taskId: taskId,
+          childId: this.data.currentChild.childId,
+          familyId: this.data.currentFamilyId
         }
       })
 
-      hideLoading()
-
       if (res.result.success) {
+        // 2. 更新本地数据
+        this.completeTaskToLocal(taskId)
+
+        // 3. 立即更新时间戳（关键！）
+        await app.updateChildTimestamp()
+
+        hideLoading()
         showToast('任务完成！')
         // 重新加载数据
         await this.loadData()
         // 更新全局孩子数据
         await this.refreshChildData()
       } else {
+        hideLoading()
         showToast(res.result.error || '操作失败')
       }
     } catch (err) {
@@ -1305,7 +1398,7 @@ Page({
           name: 'manageChildren',
           data: {
             action: 'getChild',
-            data: { childId: this.data.currentChild.childId }
+            childId: this.data.currentChild.childId
           }
         })
 
@@ -1405,9 +1498,20 @@ Page({
     // 未登录：从本地加载
     if (!app.globalData.useCloudStorage) {
       const localFamilies = wx.getStorageSync('localFamilies') || []
-      const currentFamily = localFamilies.find(f => f.familyId === app.getCurrentFamilyId())
+
+      // 保存所有家庭到全局数据（包括没有孩子的家庭）
+      app.globalData.families = localFamilies
+
+      // 过滤掉没有儿童的家庭用于显示
+      const familiesWithChildren = localFamilies.filter(family => {
+        const storageKey = `localChildren_${family.familyId}`
+        const familyChildren = wx.getStorageSync(storageKey) || []
+        return familyChildren.length > 0
+      })
+
+      const currentFamily = familiesWithChildren.find(f => f.familyId === app.getCurrentFamilyId())
       this.setData({
-        allFamilies: localFamilies,
+        allFamilies: familiesWithChildren,
         currentFamily: currentFamily || null,
         showFamilyPicker: show === true
       })
@@ -1425,9 +1529,19 @@ Page({
 
       if (res.result.success) {
         const families = res.result.families || []
-        const currentFamily = families.find(f => f.familyId === app.getCurrentFamilyId())
+
+        // 保存所有家庭到全局数据（包括没有孩子的家庭）
+        app.globalData.families = families
+
+        // 过滤掉没有儿童的家庭用于显示
+        // 使用云函数返回的 childCount 字段来判断
+        const familiesWithChildren = families.filter(family => {
+          return (family.childCount || 0) > 0
+        })
+
+        const currentFamily = familiesWithChildren.find(f => f.familyId === app.getCurrentFamilyId())
         this.setData({
-          allFamilies: families,
+          allFamilies: familiesWithChildren,
           currentFamily: currentFamily || null,
           showFamilyPicker: show === true
         })
@@ -1469,7 +1583,7 @@ Page({
         name: 'manageFamilies',
         data: {
           action: 'getFamilyChildren',
-          data: { familyId: familyid }
+          familyId: familyid
         }
       })
 
@@ -1548,6 +1662,16 @@ Page({
         this.hideFamilyPicker()
         showToast(`已切换到${family.name}`)
       }
+    }
+  },
+
+  /**
+   * 点击儿童名称
+   */
+  onChildNameTap() {
+    // 只有当有多个儿童时才显示选择器
+    if (this.data.currentFamilyChildren.length > 1) {
+      this.showChildPicker()
     }
   },
 
@@ -2221,11 +2345,9 @@ Page({
           name: 'manageFamilyCoins',
           data: {
             action: 'getCoinRecords',
-            data: {
-              childId: currentChildId,
-              familyId: currentFamilyId,
-              limit: 1000  // 获取更多记录以支持范围筛选
-            }
+            childId: currentChildId,
+            familyId: currentFamilyId,
+            limit: 1000  // 获取更多记录以支持范围筛选
           }
         })
 
@@ -2453,38 +2575,95 @@ Page({
           isLoading: true
         })
 
-        wx.hideLoading()
-        wx.showToast({
-          title: '登录成功',
-          icon: 'success'
-        })
+        try {
+          // 同步本地数据到云端
+          await app.syncLocalDataToCloud()
 
-        // 同步本地数据到云端
-        await app.syncLocalDataToCloud()
+          // 延迟确保全局状态更新完成
+          await new Promise(resolve => setTimeout(resolve, 500))
 
-        // 延迟确保全局状态更新完成
-        await new Promise(resolve => setTimeout(resolve, 500))
+          // 强制加载家庭和孩子数据（即使本地有缓存）
+          console.log('[首页登录] 开始加载家庭和孩子数据')
+          await this.loadAllFamilies()
+          await app.loadChildren(true)  // 登录后强制刷新
 
-        // 强制加载家庭和孩子数据（即使本地有缓存）
-        console.log('[首页登录] 开始加载家庭和孩子数据')
-        await app.loadChildren()
-        await app.loadFamilies()
+          // 优先恢复上次选择的家庭/儿童
+          const lastFamilyId = app.getCurrentFamilyId()
+          const lastChildId = app.getCurrentChildId()
 
-        // 检查是否有家庭，如果没有则创建默认家庭
-        if (!app.getCurrentFamilyId()) {
-          console.log('[首页登录] 没有家庭，创建默认家庭')
-          await this.createDefaultFamily()
+          if (lastFamilyId && this.data.allFamilies && this.data.allFamilies.length > 0) {
+            // 检查上次选择的家庭是否还存在
+            const familyExists = this.data.allFamilies.some(f => f.familyId === lastFamilyId)
+            if (familyExists) {
+              // 恢复上次选择的家庭
+              app.saveCurrentFamilyId(lastFamilyId)
+              console.log('[首页登录] 恢复上次选择的家庭:', lastFamilyId)
+
+              // 恢复上次选择的儿童
+              if (lastChildId) {
+                const familyChildren = app.globalData.children || []
+                const childExists = familyChildren.some(c => c.childId === lastChildId)
+                if (childExists) {
+                  app.setCurrentChildById(lastChildId)
+                  console.log('[首页登录] 恢复上次选择的儿童:', lastChildId)
+                }
+              }
+            } else {
+              // 上次选择的家庭不存在，选择第一个家庭
+              const firstFamily = this.data.allFamilies[0]
+              app.saveCurrentFamilyId(firstFamily.familyId)
+              console.log('[首页登录] 上次家庭不存在，选择第一个家庭:', firstFamily.name)
+            }
+          } else if (this.data.allFamilies && this.data.allFamilies.length > 0) {
+            // 没有上次选择记录，选择第一个家庭
+            const firstFamily = this.data.allFamilies[0]
+            app.saveCurrentFamilyId(firstFamily.familyId)
+            console.log('[首页登录] 无上次记录，选择第一个家庭:', firstFamily.name)
+          } else if (!app.getCurrentFamilyId()) {
+            // 没有家庭，创建默认家庭
+            console.log('[首页登录] 没有家庭，创建默认家庭')
+            await this.createDefaultFamily()
+          }
+
+          // 检查当前家庭是否有孩子
+          const currentFamilyId = app.getCurrentFamilyId()
+          const allChildren = app.globalData.children || []
+          const familyChildren = allChildren.filter(child => {
+            const familyIds = child.familyIds || []
+            return familyIds.includes(currentFamilyId)
+          })
+
+          if (familyChildren.length === 0) {
+            // 当前家庭没有孩子
+            if (allChildren.length > 0) {
+              // 有孩子但没分配到当前家庭，分配第一个孩子到当前家庭
+              console.log('[首页登录] 有孩子但未分配到当前家庭，进行分配')
+              const firstChild = allChildren[0]
+              await this.assignChildToFamily(firstChild.childId, currentFamilyId)
+            } else {
+              // 完全没有孩子，创建默认孩子
+              console.log('[首页登录] 没有孩子，创建默认孩子')
+              await this.createDefaultChild()
+            }
+          }
+
+          // 完全重新加载页面数据
+          this._justForceRefreshed = true  // 标记刚刚强制刷新过
+          await this.onShow()
+
+          wx.hideLoading()
+          wx.showToast({
+            title: '登录成功',
+            icon: 'success'
+          })
+        } catch (dataLoadError) {
+          wx.hideLoading()
+          console.error('[首页登录] 加载数据失败:', dataLoadError)
+          wx.showToast({
+            title: '登录成功，但加载数据失败',
+            icon: 'none'
+          })
         }
-
-        // 检查是否有孩子，如果没有则创建默认孩子
-        const allChildren = app.globalData.children || []
-        if (allChildren.length === 0) {
-          console.log('[首页登录] 没有孩子，创建默认孩子')
-          await this.createDefaultChild()
-        }
-
-        // 完全重新加载页面数据
-        await this.onShow()
       } else {
         wx.hideLoading()
         wx.showToast({
@@ -2544,14 +2723,14 @@ Page({
    */
   async createDefaultFamily() {
     try {
+      const userInfo = wx.getStorageSync('userInfo')
       const familyName = '我的家庭'
       const res = await wx.cloud.callFunction({
-        name: 'manageFamily',
+        name: 'manageFamilies',
         data: {
           action: 'createFamily',
-          data: {
-            name: familyName
-          }
+          name: familyName,
+          creatorNickname: userInfo?.nickName || '创建者'
         }
       })
 
@@ -2571,14 +2750,21 @@ Page({
   async createDefaultChild() {
     try {
       const childName = '宝贝'
+      const familyId = app.getCurrentFamilyId()
+
+      if (!familyId) {
+        console.error('[首页] 创建默认孩子失败: 没有家庭ID')
+        return
+      }
+
       const res = await wx.cloud.callFunction({
         name: 'manageChildren',
         data: {
           action: 'createChild',
-          data: {
-            name: childName,
-            age: 6
-          }
+          name: childName,
+          age: 6,
+          gender: 'male',
+          familyId: familyId
         }
       })
 
@@ -2589,6 +2775,1754 @@ Page({
       }
     } catch (err) {
       console.error('[首页] 创建默认孩子失败:', err)
+    }
+  },
+
+  /**
+   * 将孩子分配到家庭
+   */
+  async assignChildToFamily(childId, familyId) {
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'assignChildToFamily',
+          familyId: familyId,
+          childId: childId,
+          initialCoins: 0
+        }
+      })
+
+      if (res.result && res.result.success) {
+        console.log('[首页] 孩子分配到家庭成功:', childId, '->', familyId)
+        // 重新加载孩子数据
+        await app.loadChildren()
+      }
+    } catch (err) {
+      console.error('[首页] 分配孩子到家庭失败:', err)
+    }
+  },
+
+  /**
+   * 显示创建家庭弹窗
+   */
+  showCreateFamilyModal() {
+    this.setData({
+      showCreateFamilyModal: true,
+      familyFormData: {
+        familyName: '',
+        creatorNickname: '',
+        inviteCode: '',
+        nickname: ''
+      }
+    })
+  },
+
+  /**
+   * 显示加入家庭弹窗
+   */
+  showJoinFamilyModal() {
+    // 未登录时不允许加入家庭
+    if (!app.globalData.useCloudStorage) {
+      wx.showModal({
+        title: '需要登录',
+        content: '加入其他家庭需要登录账号',
+        confirmText: '去登录',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.switchTab({
+              url: '/pages/settings/settings'
+            })
+          }
+        }
+      })
+      return
+    }
+
+    this.setData({
+      showJoinFamilyModal: true,
+      familyFormData: {
+        familyName: '',
+        creatorNickname: '',
+        inviteCode: '',
+        nickname: ''
+      }
+    })
+  },
+
+  /**
+   * 关闭所有家庭弹窗
+   */
+  closeFamilyModals() {
+    this.setData({
+      showCreateFamilyModal: false,
+      showJoinFamilyModal: false
+    })
+  },
+
+  /**
+   * 家庭表单输入处理
+   */
+  onFamilyInputChange(e) {
+    const field = e.currentTarget.dataset.field
+    const value = e.detail.value
+    this.setData({
+      [`familyFormData.${field}`]: value
+    })
+  },
+
+  /**
+   * 创建家庭
+   */
+  async createFamily() {
+    const { familyName, creatorNickname } = this.data.familyFormData
+
+    if (!familyName || !familyName.trim()) {
+      wx.showToast({
+        title: '请输入家庭名称',
+        icon: 'none'
+      })
+      return
+    }
+
+    if (!creatorNickname || !creatorNickname.trim()) {
+      wx.showToast({
+        title: '请输入您的身份',
+        icon: 'none'
+      })
+      return
+    }
+
+    try {
+      wx.showLoading({
+        title: '创建中...'
+      })
+
+      // 未登录：保存到本地
+      if (!app.globalData.useCloudStorage) {
+        const localFamilies = wx.getStorageSync('localFamilies') || []
+        const newFamily = {
+          familyId: `local_${Date.now()}`,
+          name: familyName.trim(),
+          creatorNickname: creatorNickname.trim(),
+          role: 'admin',
+          memberCount: 1,
+          inviteCode: null,  // 本地家庭没有邀请码
+          isCreator: true,   // 本地创建的默认为创建者
+          createdAt: new Date().toISOString()
+        }
+
+        localFamilies.push(newFamily)
+        wx.setStorageSync('localFamilies', localFamilies)
+
+        // 保存当前家庭ID
+        app.saveCurrentFamilyId(newFamily.familyId)
+
+        wx.hideLoading()
+        wx.showToast({
+          title: '创建成功',
+          icon: 'success'
+        })
+
+        this.closeFamilyModals()
+
+        // 重新加载数据
+        await this.loadAllFamilies()
+        await this.onShow()
+
+        // 检查是否有儿童，如果没有则显示创建第一个儿童的弹窗
+        const allChildren = wx.getStorageSync('allChildren') || []
+        if (allChildren.length === 0) {
+          // 没有儿童，显示创建第一个儿童弹窗
+          setTimeout(() => {
+            this.setData({
+              showCreateChildModal: true,
+              childFormData: {
+                name: '',
+                gender: 'male',
+                age: 6,
+                initialCoins: 0
+              }
+            })
+          }, 500)
+        }
+        return
+      }
+
+      // 已登录：调用云函数
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'createFamily',
+          name: familyName.trim(),
+          creatorNickname: creatorNickname.trim()
+        }
+      })
+
+      wx.hideLoading()
+
+      if (res.result && res.result.success) {
+        const familyId = res.result.family.familyId
+
+        this.closeFamilyModals()
+
+        // 保存当前家庭ID
+        app.saveCurrentFamilyId(familyId)
+
+        // 等待云数据库完全写入
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // 重新加载数据
+        await this.loadAllFamilies()
+        await app.loadChildren()
+
+        // 再等待一小段时间确保数据完全同步
+        await new Promise(resolve => setTimeout(resolve, 200))
+
+        // 刷新页面显示
+        await this.onShow()
+
+        wx.showToast({
+          title: '创建成功',
+          icon: 'success'
+        })
+      } else {
+        wx.showToast({
+          title: res.result?.error || '创建失败',
+          icon: 'none'
+        })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首页] 创建家庭失败:', err)
+      wx.showToast({
+        title: '创建失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
+   * 创建第一个儿童（创建家庭后）
+   */
+  async createFirstChild() {
+    const { name, gender, age, initialCoins } = this.data.childFormData
+
+    if (!name || !name.trim()) {
+      wx.showToast({
+        title: '请输入孩子姓名',
+        icon: 'none'
+      })
+      return
+    }
+
+    const initialCoinsNum = parseInt(initialCoins) || 0
+    if (initialCoinsNum < 0) {
+      wx.showToast({
+        title: '初始金币不能为负数',
+        icon: 'none'
+      })
+      return
+    }
+
+    try {
+      wx.showLoading({
+        title: '创建中...'
+      })
+
+      const currentFamilyId = app.getCurrentFamilyId()
+      if (!currentFamilyId) {
+        wx.hideLoading()
+        wx.showToast({
+          title: '请先创建家庭',
+          icon: 'none'
+        })
+        return
+      }
+
+      // 未登录：保存到本地
+      if (!app.globalData.useCloudStorage) {
+        // 创建儿童数据
+        const newChild = {
+          childId: `child_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+          name: name.trim(),
+          avatar: '',
+          gender: gender || 'male',
+          age: parseInt(age) || 0,
+          familyId: currentFamilyId,
+          totalCoins: initialCoinsNum,  // 使用用户设置的初始金币
+          completedTasks: 0,
+          redeemedPrizes: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+
+        // 添加到主儿童列表
+        let allChildren = wx.getStorageSync('allChildren') || []
+        allChildren.push(newChild)
+        wx.setStorageSync('allChildren', allChildren)
+
+        // 添加到当前家庭的儿童列表
+        const storageKey = `localChildren_${currentFamilyId}`
+        let familyChildren = wx.getStorageSync(storageKey) || []
+        familyChildren.push(newChild)
+        wx.setStorageSync(storageKey, familyChildren)
+
+        // 设置为当前儿童
+        app.setCurrentChild(newChild)
+
+        wx.hideLoading()
+        wx.showToast({
+          title: '创建成功',
+          icon: 'success'
+        })
+
+        this.setData({ showCreateChildModal: false })
+
+        // 重新加载数据
+        await this.onShow()
+        return
+      }
+
+      // 已登录：调用云函数
+      const res = await wx.cloud.callFunction({
+        name: 'manageChildren',
+        data: {
+          action: 'createChild',
+          name: name.trim(),
+          gender: gender || 'male',
+          age: parseInt(age) || 0,
+          familyId: currentFamilyId,
+          initialCoins: initialCoinsNum  // 传递初始金币
+        }
+      })
+
+      wx.hideLoading()
+
+      if (res.result && res.result.success) {
+        wx.showToast({
+          title: '创建成功',
+          icon: 'success'
+        })
+
+        this.setData({ showCreateChildModal: false })
+
+        // 重新加载数据
+        await app.loadChildren()
+        await this.onShow()
+      } else {
+        wx.showToast({
+          title: res.result?.error || '创建失败',
+          icon: 'none'
+        })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首页] 创建儿童失败:', err)
+      wx.showToast({
+        title: '创建失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
+   * 关闭创建儿童弹窗
+   */
+  closeCreateChildModal() {
+    this.setData({ showCreateChildModal: false })
+  },
+
+  /**
+   * 儿童表单输入
+   */
+  onChildInputChange(e) {
+    const { field } = e.currentTarget.dataset
+    const value = e.detail.value
+    this.setData({
+      [`childFormData.${field}`]: value
+    })
+  },
+
+  /**
+   * 选择性别
+   */
+  selectGender(e) {
+    const { gender } = e.currentTarget.dataset
+    this.setData({
+      'childFormData.gender': gender
+    })
+  },
+
+  /**
+   * 加入家庭
+   */
+  async joinFamily() {
+    const { inviteCode, nickname } = this.data.familyFormData
+
+    if (!inviteCode || !inviteCode.trim()) {
+      wx.showToast({
+        title: '请输入邀请码',
+        icon: 'none'
+      })
+      return
+    }
+
+    if (!nickname || !nickname.trim()) {
+      wx.showToast({
+        title: '请输入您的昵称',
+        icon: 'none'
+      })
+      return
+    }
+
+    try {
+      wx.showLoading({
+        title: '加入中...'
+      })
+
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'joinFamily',
+          inviteCode: inviteCode.trim().toUpperCase(),
+          nickname: nickname.trim(),
+          role: 'member'
+        }
+      })
+
+      wx.hideLoading()
+
+      if (res.result && res.result.success) {
+        wx.showToast({
+          title: '申请已提交，等待审核',
+          icon: 'success'
+        })
+
+        this.closeFamilyModals()
+      } else {
+        wx.showToast({
+          title: res.result?.error || '加入失败',
+          icon: 'none'
+        })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首页] 加入家庭失败:', err)
+      wx.showToast({
+        title: '加入失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
+   * 加载国际化文本
+   */
+  loadI18n() {
+    this.setData({
+      i18n: {
+        common: {
+          confirm: t('common.confirm'),
+          cancel: t('common.cancel')
+        },
+        family: {
+          create: t('family.create'),
+          join: t('family.join')
+        },
+        toast: {
+          loading: t('toast.loading'),
+          loginSuccess: t('toast.loginSuccess'),
+          loadSuccess: t('common.success'),
+          saveSuccess: t('toast.saveSuccess'),
+          operationFailed: t('toast.operationFailed')
+        },
+        firstTimeFlow: {
+          welcome: t('firstTimeFlow.welcome'),
+          askLogin: t('firstTimeFlow.askLogin'),
+          login: t('firstTimeFlow.login'),
+          notLoginNow: t('firstTimeFlow.notLoginNow'),
+          needLogin: t('firstTimeFlow.needLogin'),
+          needLoginForInviteCode: t('firstTimeFlow.needLoginForInviteCode'),
+          goLogin: t('firstTimeFlow.goLogin'),
+          hasInviteCode: t('firstTimeFlow.hasInviteCode'),
+          hasInviteCodeConfirm: t('firstTimeFlow.hasInviteCodeConfirm'),
+          hasInviteCodeCancel: t('firstTimeFlow.hasInviteCodeCancel'),
+          cloudDataExists: t('firstTimeFlow.cloudDataExists'),
+          cloudAndLocalDataExists: t('firstTimeFlow.cloudAndLocalDataExists'),
+          useCloudData: t('firstTimeFlow.useCloudData'),
+          useLocalData: t('firstTimeFlow.useLocalData'),
+          mergeData: t('firstTimeFlow.mergeData'),
+          autoCreateFamily: t('firstTimeFlow.autoCreateFamily'),
+          autoCreateConfirm: t('firstTimeFlow.autoCreateConfirm'),
+          autoCreateCancel: t('firstTimeFlow.autoCreateCancel'),
+          dataSyncPrompt: t('firstTimeFlow.dataSyncPrompt'),
+          loginToSync: t('firstTimeFlow.loginToSync'),
+          logoutConfirm: t('firstTimeFlow.logoutConfirm'),
+          askDataRetention: t('firstTimeFlow.askDataRetention'),
+          keepLocalData: t('firstTimeFlow.keepLocalData'),
+          clearLocalData: t('firstTimeFlow.clearLocalData'),
+          logoutSuccessKeep: t('firstTimeFlow.logoutSuccessKeep'),
+          logoutSuccessClear: t('firstTimeFlow.logoutSuccessClear'),
+          updatingData: t('firstTimeFlow.updatingData'),
+          createFamily: t('firstTimeFlow.createFamily'),
+          inputFamilyName: t('firstTimeFlow.inputFamilyName'),
+          familyNamePlaceholder: t('firstTimeFlow.familyNamePlaceholder'),
+          creating: t('firstTimeFlow.creating'),
+          createSuccess: t('firstTimeFlow.createSuccess'),
+          createFailed: t('firstTimeFlow.createFailed'),
+          createChild: t('firstTimeFlow.createChild'),
+          inputChildName: t('firstTimeFlow.inputChildName'),
+          childNamePlaceholder: t('firstTimeFlow.childNamePlaceholder'),
+          avatarOptional: t('firstTimeFlow.avatarOptional'),
+          tapToChooseAvatar: t('firstTimeFlow.tapToChooseAvatar'),
+          joinFamily: t('firstTimeFlow.joinFamily'),
+          inputInviteCode: t('firstTimeFlow.inputInviteCode'),
+          inviteCodePlaceholder: t('firstTimeFlow.inviteCodePlaceholder'),
+          inviteCodeLength: t('firstTimeFlow.inviteCodeLength'),
+          joining: t('firstTimeFlow.joining'),
+          joinSuccess: t('firstTimeFlow.joinSuccess'),
+          joinFailed: t('firstTimeFlow.joinFailed'),
+          loginFailed: t('firstTimeFlow.loginFailed'),
+          pleaseInputFamilyName: t('firstTimeFlow.pleaseInputFamilyName'),
+          pleaseInputChildName: t('firstTimeFlow.pleaseInputChildName'),
+          pleaseInputInviteCode: t('firstTimeFlow.pleaseInputInviteCode'),
+          inputCreatorNickname: t('firstTimeFlow.inputCreatorNickname'),
+          creatorNicknamePlaceholder: t('firstTimeFlow.creatorNicknamePlaceholder')
+        }
+      }
+    })
+  },
+
+  // ========== 首次使用流程 ==========
+
+  /**
+   * 检查是否是首次使用
+   */
+  isFirstTimeUser() {
+    console.log('[isFirstTimeUser] 开始检查是否首次使用')
+
+    // 检查是否已经完成向导
+    const hasCompletedWizard = wx.getStorageSync('hasCompletedWizard') || false
+    console.log('[isFirstTimeUser] hasCompletedWizard:', hasCompletedWizard)
+    if (hasCompletedWizard) {
+      console.log('[isFirstTimeUser] 已完成向导，不是首次使用')
+      return false
+    }
+
+    // 未登录
+    const isLoggedIn = app.globalData.useCloudStorage
+    console.log('[isFirstTimeUser] isLoggedIn:', isLoggedIn)
+    if (isLoggedIn) {
+      console.log('[isFirstTimeUser] 已登录，不是首次使用')
+      return false
+    }
+
+    // 检查本地是否有家庭数据
+    const localFamilies = wx.getStorageSync('localFamilies') || []
+    const hasLocalFamilies = localFamilies.length > 0
+    console.log('[isFirstTimeUser] localFamilies:', localFamilies)
+    console.log('[isFirstTimeUser] hasLocalFamilies:', hasLocalFamilies)
+
+    // 检查是否有当前家庭ID
+    const currentFamilyId = app.getCurrentFamilyId()
+    const hasCurrentFamily = !!currentFamilyId
+    console.log('[isFirstTimeUser] currentFamilyId:', currentFamilyId)
+    console.log('[isFirstTimeUser] hasCurrentFamily:', hasCurrentFamily)
+
+    // 检查全局数据中是否有儿童
+    const globalChildren = app.globalData.children || []
+    const hasGlobalChildren = globalChildren.length > 0
+    console.log('[isFirstTimeUser] globalChildren:', globalChildren)
+    console.log('[isFirstTimeUser] hasGlobalChildren:', hasGlobalChildren)
+
+    // 检查本地是否有儿童数据
+    const currentFamilyId2 = app.getCurrentFamilyId()
+    if (currentFamilyId2) {
+      const localChildren = wx.getStorageSync(`localChildren_${currentFamilyId2}`) || []
+      console.log('[isFirstTimeUser] localChildren:', localChildren)
+      if (localChildren.length > 0) {
+        console.log('[isFirstTimeUser] 有本地儿童数据，不是首次使用')
+        return false
+      }
+    }
+
+    const isFirstTime = !hasLocalFamilies && !hasCurrentFamily && !hasGlobalChildren
+
+    // 特殊情况：如果有currentFamilyId但没有localFamilies，说明数据不一致，重置
+    if (hasCurrentFamily && !hasLocalFamilies) {
+      console.log('[isFirstTimeUser] 检测到数据不一致：有currentFamilyId但无localFamilies')
+      console.log('[isFirstTimeUser] 重置currentFamilyId')
+      app.globalData.currentFamilyId = null
+      wx.removeStorageSync('currentFamilyId')
+      return true  // 认为是首次使用
+    }
+
+    console.log('[isFirstTimeUser] 判断结果:', {
+      hasLocalFamilies,
+      hasCurrentFamily,
+      hasGlobalChildren,
+      isFirstTime
+    })
+
+    return isFirstTime
+  },
+
+  /**
+   * 显示首次使用流程
+   */
+  showFirstTimeFlow() {
+    console.log('[首次使用流程] 开始')
+
+    // 步骤1：询问是否登录
+    wx.showModal({
+      title: '欢迎使用',
+      content: '登录后可以同步数据到云端，多设备使用',
+      confirmText: '登录',
+      cancelText: '暂不登录',
+      success: (res) => {
+        console.log('[首次使用流程] 用户选择登录:', res.confirm)
+        if (res.confirm) {
+          // 选择登录
+          this.performLogin()
+        } else {
+          // 选择不登录，继续步骤2
+          console.log('[首次使用流程] 用户选择暂不登录，准备进入步骤2')
+          setTimeout(() => {
+            this.askAboutInviteCode()
+          }, 300)
+        }
+      }
+    })
+  },
+
+  /**
+   * 执行登录流程
+   */
+  async performLogin() {
+    console.log('[首次使用流程] 执行登录')
+
+    try {
+      // 先获取用户头像昵称
+      const userProfile = await wx.getUserProfile({
+        desc: '用于保存您的设置和历史记录'
+      })
+
+      wx.showLoading({
+        title: '登录中...',
+        mask: true
+      })
+
+      // 调用微信登录云函数
+      const loginRes = await wx.cloud.callFunction({
+        name: 'login',
+        data: {
+          userInfo: userProfile.userInfo
+        }
+      })
+
+      wx.hideLoading()
+
+      if (loginRes.result && loginRes.result.success) {
+        const userInfo = loginRes.result.data
+
+        // 保存用户信息
+        app.globalData.useCloudStorage = true
+        app.globalData.currentUserOpenid = userInfo.openid
+        wx.setStorageSync('userInfo', userInfo)
+
+        // 更新用户信息显示
+        this.setData({
+          userInfo: userInfo,
+          isLoading: true  // 登录后立即显示加载状态
+        })
+
+        // 加载家庭和孩子数据
+        try {
+          await app.syncLocalDataToCloud()
+          await new Promise(resolve => setTimeout(resolve, 500))
+          await this.loadAllFamilies()
+          await app.loadChildren(true)  // 登录后强制刷新
+
+          // 优先恢复上次选择的家庭
+          const lastFamilyId = app.getCurrentFamilyId()
+          const lastChildId = app.getCurrentChildId()
+
+          if (lastFamilyId && this.data.allFamilies && this.data.allFamilies.length > 0) {
+            // 检查上次选择的家庭是否还存在
+            const familyExists = this.data.allFamilies.some(f => f.familyId === lastFamilyId)
+            if (familyExists) {
+              // 恢复上次选择的家庭
+              app.saveCurrentFamilyId(lastFamilyId)
+              console.log('[首次使用] 恢复上次选择的家庭:', lastFamilyId)
+
+              // 恢复上次选择的儿童
+              if (lastChildId) {
+                const familyChildren = app.globalData.children || []
+                const childExists = familyChildren.some(c => c.childId === lastChildId)
+                if (childExists) {
+                  app.setCurrentChildById(lastChildId)
+                  console.log('[首次使用] 恢复上次选择的儿童:', lastChildId)
+                }
+              }
+            } else {
+              // 上次选择的家庭不存在，选择第一个家庭
+              const firstFamily = this.data.allFamilies[0]
+              app.saveCurrentFamilyId(firstFamily.familyId)
+              console.log('[首次使用] 上次家庭不存在，选择第一个家庭:', firstFamily.name)
+            }
+          } else if (this.data.allFamilies && this.data.allFamilies.length > 0) {
+            // 没有上次选择记录，选择第一个家庭
+            const firstFamily = this.data.allFamilies[0]
+            app.saveCurrentFamilyId(firstFamily.familyId)
+            console.log('[首次使用] 无上次记录，选择第一个家庭:', firstFamily.name)
+          }
+
+          // 重新加载页面数据
+          setTimeout(() => {
+            this._justForceRefreshed = true  // 标记刚刚强制刷新过
+            this.onShow()
+          }, 300)
+        } catch (err) {
+          console.error('[首次使用] 加载数据失败:', err)
+          // 加载失败，清除加载状态
+          this.setData({ isLoading: false })
+        }
+      } else {
+        wx.showToast({
+          title: t('firstTimeFlow.loginFailed'),
+          icon: 'none'
+        })
+        // 登录失败，继续步骤2
+        this.askAboutInviteCode()
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首次使用] 登录失败:', err)
+
+      // 用户取消授权
+      if (err.errMsg && err.errMsg.includes('getUserProfile:fail')) {
+        wx.showToast({
+          title: '需要授权才能登录',
+          icon: 'none'
+        })
+        // 继续步骤2
+        setTimeout(() => {
+          this.askAboutInviteCode()
+        }, 1500)
+      } else {
+        wx.showToast({
+          title: t('firstTimeFlow.loginFailed'),
+          icon: 'none'
+        })
+        // 登录失败，继续步骤2
+        this.askAboutInviteCode()
+      }
+    }
+  },
+
+  /**
+   * 检查云端数据并同步
+   */
+  async checkCloudDataAndSync() {
+    try {
+      // 检查云端是否有家庭数据
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'getFamilies'
+        }
+      })
+
+      if (res.result && res.result.success && res.result.families && res.result.families.length > 0) {
+        // 云端有家庭数据，直接加载并显示首页
+        console.log('[首次使用] 云端有家庭数据，直接加载')
+        // 直接加载页面数据，不触发向导
+        this._justForceRefreshed = true
+        await this.onShow()
+      } else {
+        // 云端无数据，触发向导流程
+        console.log('[首次使用] 云端无家庭数据，触发向导')
+        this.askAboutInviteCode()
+      }
+    } catch (err) {
+      console.error('[首次使用] 检查云端数据失败:', err)
+      // 出错，触发向导流程
+      this.askAboutInviteCode()
+    }
+  },
+
+  /**
+   * 询问是否有邀请码
+   */
+  askAboutInviteCode() {
+    console.log('[首次使用流程] 步骤2：询问邀请码')
+    try {
+      wx.showModal({
+      title: '邀请码',
+      content: '您是否有邀请码加入现有家庭？',
+      confirmText: '有邀请码',
+      cancelText: '无邀请码',
+      success: (res) => {
+        console.log('[首次使用流程] 用户选择有邀请码:', res.confirm)
+        if (res.confirm) {
+          // 有邀请码，检查登录状态
+          if (app.globalData.useCloudStorage) {
+            // 已登录，直接弹出加入家庭对话框
+            console.log('[首次使用流程] 已登录，显示加入家庭对话框')
+            this.showJoinFamilyModal()
+          } else {
+            // 未登录，要求先登录
+            console.log('[首次使用流程] 未登录，要求登录')
+            wx.showModal({
+              title: '需要登录',
+              content: '使用邀请码需要先登录账号',
+              confirmText: '去登录',
+              cancelText: '返回',
+              success: (res2) => {
+                console.log('[首次使用流程] 用户选择去登录:', res2.confirm)
+                if (res2.confirm) {
+                  // 同意登录，执行登录流程
+                  this.performLoginForInviteCode()
+                } else {
+                  // 返回步骤2
+                  console.log('[首次使用流程] 用户选择返回，重新显示步骤2')
+                  setTimeout(() => {
+                    this.askAboutInviteCode()
+                  }, 300)
+                }
+              }
+            })
+          }
+        } else {
+          // 没有邀请码，询问是否跳过向导
+          console.log('[首次使用流程] 用户选择无邀请码，询问是否跳过向导')
+          wx.showModal({
+            title: '提示',
+            content: '是否要继续设置向导？',
+            confirmText: '继续向导',
+            cancelText: '跳过向导',
+            success: (res2) => {
+              if (res2.confirm) {
+                // 继续向导，进入步骤3
+                console.log('[首次使用流程] 用户选择继续向导')
+                setTimeout(() => {
+                  this.askAboutAutoCreate()
+                }, 300)
+              } else {
+                // 跳过向导
+                console.log('[首次使用流程] 用户选择跳过向导')
+                this.exitWizardFlow()
+              }
+            }
+          })
+        }
+      },
+      fail: (err) => {
+        console.error('[首次使用流程] 步骤2的 wx.showModal 失败:', err)
+      }
+    })
+    } catch (error) {
+      console.error('[首次使用流程] askAboutInviteCode 异常:', error)
+    }
+  },
+
+  /**
+   * 为邀请码执行登录
+   */
+  async performLoginForInviteCode() {
+    console.log('[首次使用流程] 执行邀请码登录')
+    wx.showLoading({
+      title: '登录中...',
+      mask: true
+    })
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'login',
+        data: {}
+      })
+
+      wx.hideLoading()
+
+      if (res.result && res.result.success) {
+        // 保存登录信息
+        app.globalData.currentUserOpenid = res.result.openid
+        app.globalData.useCloudStorage = true
+        wx.setStorageSync('userInfo', res.result.userInfo)
+
+        // 登录成功，弹出加入家庭对话框
+        console.log('[首次使用流程] 登录成功，显示加入家庭对话框')
+        this.showJoinFamilyModal()
+      } else {
+        wx.showToast({
+          title: '登录失败',
+          icon: 'none'
+        })
+        // 登录失败，继续步骤3
+        this.askAboutAutoCreate()
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首次使用] 登录失败:', err)
+      wx.showToast({
+        title: '登录失败',
+        icon: 'none'
+      })
+      // 登录失败，继续步骤3
+      this.askAboutAutoCreate()
+    }
+  },
+
+  /**
+   * 询问是否自动创建
+   */
+  askAboutAutoCreate() {
+    console.log('[首次使用流程] 步骤3：询问是否自动创建')
+    try {
+      wx.showModal({
+        title: '创建家庭',
+        content: '是否自动创建家庭和儿童？',
+        confirmText: '自动创建',
+        cancelText: '手动创建',
+        success: (res) => {
+          console.log('[首次使用流程] 用户选择自动创建:', res.confirm)
+          if (res.confirm) {
+            // 自动创建
+            console.log('[首次使用流程] 调用 autoCreateFamilyAndChild')
+            this.autoCreateFamilyAndChild()
+          } else {
+            // 手动创建
+            console.log('[首次使用流程] 调用 startManualCreationFlow')
+            this.startManualCreationFlow()
+          }
+        },
+        fail: (err) => {
+          console.error('[首次使用流程] wx.showModal 失败:', err)
+        }
+      })
+    } catch (error) {
+      console.error('[首次使用流程] askAboutAutoCreate 异常:', error)
+    }
+  },
+
+  /**
+   * 自动创建家庭和儿童
+   */
+  async autoCreateFamilyAndChild() {
+    console.log('[首次使用流程] 开始自动创建家庭和儿童')
+    wx.showLoading({
+      title: '创建中...',
+      mask: true
+    })
+
+    try {
+      // 创建家庭
+      console.log('[首次使用流程] 调用云函数创建家庭')
+
+      // 获取用户昵称（如果已登录）
+      let creatorNickname = '家长'
+      if (app.globalData.useCloudStorage) {
+        const userInfo = wx.getStorageSync('userInfo')
+        if (userInfo && userInfo.nickName) {
+          creatorNickname = userInfo.nickName
+        }
+      }
+
+      const familyRes = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'createFamily',
+          name: '我的家庭',
+          creatorNickname: creatorNickname
+        }
+      })
+
+      if (!familyRes.result || !familyRes.result.success) {
+        console.error('[首次使用流程] 创建家庭失败:', familyRes.result)
+        throw new Error('创建家庭失败')
+      }
+
+      const familyId = familyRes.result.family.familyId
+      console.log('[首次使用流程] 家庭创建成功，familyId:', familyId)
+
+      // 创建儿童
+      console.log('[首次使用流程] 调用云函数创建儿童')
+      const childRes = await wx.cloud.callFunction({
+        name: 'manageChildren',
+        data: {
+          action: 'createChild',
+          name: '宝宝',
+          familyId: familyId
+        }
+      })
+
+      wx.hideLoading()
+
+      if (childRes.result && childRes.result.success) {
+        console.log('[首次使用流程] 儿童创建成功')
+        wx.showToast({
+          title: '创建成功',
+          icon: 'success'
+        })
+
+        // 重新加载数据
+        setTimeout(() => {
+          console.log('[首次使用流程] 重新加载页面数据')
+          this.onShow()
+        }, 1500)
+      } else {
+        console.error('[首次使用流程] 创建儿童失败:', childRes.result)
+        throw new Error('创建儿童失败')
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首次使用流程] 自动创建失败:', err)
+      wx.showToast({
+        title: '创建失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
+   * 退出向导流程
+   */
+  exitWizardFlow() {
+    console.log('[首次使用流程] 退出向导流程')
+
+    // 标记已完成首次使用流程，避免再次触发
+    app.globalData.hasCompletedWizard = true
+    wx.setStorageSync('hasCompletedWizard', true)
+
+    // 显示提示
+    wx.showToast({
+      title: '已跳过向导，可随时在设置中创建家庭和儿童',
+      icon: 'none',
+      duration: 2000
+    })
+
+    // 重新加载页面，显示正常首页
+    setTimeout(() => {
+      this.onShow()
+    }, 2000)
+  },
+
+  /**
+   * 开始手动创建流程
+   */
+  startManualCreationFlow() {
+    // 标记：手动创建流程
+    app.globalData.isManualCreationFlow = true
+
+    // 保持在首页，弹出创建家庭对话框
+    this.showCreateFamilyModal()
+  },
+
+  /**
+   * 检查是否有本地数据
+   */
+  hasLocalData() {
+    const localFamilies = wx.getStorageSync('localFamilies') || []
+    return localFamilies.length > 0
+  },
+
+  /**
+   * 同步云端数据到本地
+   */
+  async syncCloudToLocal() {
+    wx.showLoading({
+      title: t('firstTimeFlow.updatingData'),
+      mask: true
+    })
+
+    try {
+      // 重新加载数据
+      await app.loadFamilies()
+      await app.loadChildren()
+
+      wx.hideLoading()
+      wx.showToast({
+        title: t('toast.loadSuccess'),
+        icon: 'success'
+      })
+
+      // 刷新页面
+      setTimeout(() => {
+        this.onShow()
+      }, 1500)
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首次使用] 同步失败:', err)
+      wx.showToast({
+        title: t('toast.operationFailed'),
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
+   * 同步本地数据到云端
+   */
+  async syncLocalToCloud() {
+    wx.showLoading({
+      title: t('firstTimeFlow.updatingData'),
+      mask: true
+    })
+
+    try {
+      // 上传本地家庭数据到云端
+      const localFamilies = wx.getStorageSync('localFamilies') || []
+
+      for (const family of localFamilies) {
+        await wx.cloud.callFunction({
+          name: 'manageFamilies',
+          data: {
+            action: 'createFamily',
+            familyName: family.familyName
+          }
+        })
+      }
+
+      wx.hideLoading()
+      wx.showToast({
+        title: t('toast.saveSuccess'),
+        icon: 'success'
+      })
+
+      // 刷新页面
+      setTimeout(() => {
+        this.onShow()
+      }, 1500)
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首次使用] 同步失败:', err)
+      wx.showToast({
+        title: t('toast.operationFailed'),
+        icon: 'none'
+      })
+    }
+  },
+
+  // ========== 对话框相关方法 ==========
+
+  /**
+   * 显示创建家庭对话框
+   */
+  showCreateFamilyModal() {
+    this.setData({
+      showCreateFamilyInput: true,
+      familyNameInput: '',
+      creatorNicknameInput: ''
+    })
+  },
+
+  /**
+   * 家庭名称输入
+   */
+  onFamilyNameInput(e) {
+    this.setData({
+      familyNameInput: e.detail.value
+    })
+  },
+
+  /**
+   * 创建者昵称输入
+   */
+  onCreatorNicknameInput(e) {
+    this.setData({
+      creatorNicknameInput: e.detail.value
+    })
+  },
+
+  /**
+   * 选择男孩性别
+   */
+  onSelectMaleGender() {
+    this.setData({
+      childGenderInput: 'male'
+    })
+  },
+
+  /**
+   * 选择女孩性别
+   */
+  onSelectFemaleGender() {
+    this.setData({
+      childGenderInput: 'female'
+    })
+  },
+
+  /**
+   * 儿童年龄输入
+   */
+  onChildAgeInput(e) {
+    this.setData({
+      childAgeInput: e.detail.value
+    })
+  },
+
+  /**
+   * 儿童金币输入
+   */
+  onChildCoinsInput(e) {
+    this.setData({
+      childCoinsInput: e.detail.value
+    })
+  },
+
+  /**
+   * 创建家庭
+   */
+  async onCreateFamily() {
+    const familyName = this.data.familyNameInput.trim()
+    const creatorNickname = this.data.creatorNicknameInput.trim()
+
+    if (!familyName) {
+      wx.showToast({
+        title: '请输入家庭名称',
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.showLoading({
+      title: '创建中...',
+      mask: true
+    })
+
+    try {
+      // 检查登录状态
+      if (app.globalData.useCloudStorage) {
+        // 已登录：调用云函数创建家庭
+        const res = await wx.cloud.callFunction({
+          name: 'manageFamilies',
+          data: {
+            action: 'createFamily',
+            name: familyName,
+            creatorNickname: creatorNickname || '家长'
+          }
+        })
+
+        wx.hideLoading()
+
+        if (res.result && res.result.success) {
+          const familyId = res.result.family.familyId
+          console.log('[创建家庭] 家庭创建成功，familyId:', familyId)
+
+          // 将新创建的家庭设置为当前家庭
+          app.saveCurrentFamilyId(familyId)
+          console.log('[创建家庭] 已设置为当前家庭')
+
+          wx.showToast({
+            title: '创建成功',
+            icon: 'success'
+          })
+
+          this.setData({
+            showCreateFamilyInput: false
+          })
+
+          // 如果是手动创建流程，继续创建第一个孩子
+          if (app.globalData.isManualCreationFlow) {
+            app.globalData.isManualCreationFlow = false
+            setTimeout(() => {
+              this.showCreateChildModal()
+            }, 500)
+          } else {
+            // 重新加载家庭数据
+            setTimeout(() => {
+              this.onShow()
+            }, 500)
+          }
+        } else {
+          wx.showToast({
+            title: res.result?.error || '创建失败',
+            icon: 'none'
+          })
+        }
+      } else {
+        // 未登录：创建本地家庭
+        const familyId = `local_family_${Date.now()}`
+        const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+
+        const localFamily = {
+          familyId: familyId,
+          name: familyName,
+          inviteCode: inviteCode,
+          role: 'creator',
+          isCreator: true,
+          createdAt: new Date().toISOString(),
+          creatorNickname: creatorNickname || '家长'
+        }
+
+        // 获取现有本地家庭列表
+        let localFamilies = wx.getStorageSync('localFamilies') || []
+        localFamilies.push(localFamily)
+
+        // 保存到本地存储
+        wx.setStorageSync('localFamilies', localFamilies)
+
+        // 设置为当前家庭
+        app.saveCurrentFamilyId(familyId)
+
+        // 更新全局数据
+        app.globalData.families = localFamilies
+
+        wx.hideLoading()
+
+        console.log('[创建家庭] 本地家庭创建成功，familyId:', familyId)
+
+        wx.showToast({
+          title: '创建成功',
+          icon: 'success'
+        })
+
+        this.setData({
+          showCreateFamilyInput: false
+        })
+
+        // 如果是手动创建流程，继续创建第一个孩子
+        if (app.globalData.isManualCreationFlow) {
+          app.globalData.isManualCreationFlow = false
+          setTimeout(() => {
+            this.showCreateChildModal()
+          }, 500)
+        } else {
+          // 重新加载家庭数据
+          setTimeout(() => {
+            this.onShow()
+          }, 500)
+        }
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首页] 创建家庭失败:', err)
+      wx.showToast({
+        title: '创建失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
+   * 取消创建家庭
+   */
+  onCancelCreateFamily() {
+    // 直接关闭对话框
+    this.setData({
+      showCreateFamilyInput: false
+    })
+  },
+
+  /**
+   * 显示创建儿童对话框
+   */
+  showCreateChildModal() {
+    this.setData({
+      showCreateChildInput: true,
+      childNameInput: '',
+      childGenderInput: 'male',
+      childAgeInput: '',
+      childCoinsInput: '0',
+      childAvatarInput: ''
+    })
+  },
+
+  /**
+   * 儿童名称输入
+   */
+  onChildNameInput(e) {
+    this.setData({
+      childNameInput: e.detail.value
+    })
+  },
+
+  /**
+   * 选择预设头像
+   */
+  onSelectPresetAvatar(e) {
+    const avatar = e.currentTarget.dataset.avatar
+    this.setData({
+      childAvatarInput: avatar
+    })
+  },
+
+  /**
+   * 选择儿童头像（从相册）
+   */
+  onChooseChildAvatar() {
+    wx.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const tempFilePath = res.tempFilePaths[0]
+        this.setData({
+          childAvatarInput: tempFilePath
+        })
+      }
+    })
+  },
+
+  /**
+   * 创建儿童
+   */
+  async onCreateChild() {
+    const childName = this.data.childNameInput.trim()
+    const childGender = this.data.childGenderInput || 'male'
+    const childAge = parseInt(this.data.childAgeInput) || 0
+    const childCoins = parseInt(this.data.childCoinsInput) || 0
+    const childAvatar = this.data.childAvatarInput
+
+    if (!childName) {
+      wx.showToast({
+        title: '请输入儿童姓名',
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.showLoading({
+      title: '创建中...',
+      mask: true
+    })
+
+    try {
+      // 如果有头像，先上传
+      let avatarUrl = ''
+      if (childAvatar) {
+        if (app.globalData.useCloudStorage) {
+          // 上传到云端
+          const cloudPath = `avatars/${Date.now()}_${Math.random().toString(36).substring(2, 11)}.jpg`
+          const uploadRes = await wx.cloud.uploadFile({
+            cloudPath: cloudPath,
+            filePath: childAvatar
+          })
+          avatarUrl = uploadRes.fileID
+        } else {
+          // 保存在本地
+          avatarUrl = childAvatar
+        }
+      }
+
+      // 获取当前家庭ID
+      const currentFamilyId = app.getCurrentFamilyId()
+      if (!currentFamilyId) {
+        wx.hideLoading()
+        wx.showToast({
+          title: '请先创建家庭',
+          icon: 'none'
+        })
+        return
+      }
+
+      // 已登录：调用云函数创建儿童
+      if (app.globalData.useCloudStorage) {
+        const res = await wx.cloud.callFunction({
+          name: 'manageChildren',
+          data: {
+            action: 'createChild',
+            name: childName,
+            gender: childGender,
+            age: childAge,
+            avatar: avatarUrl,
+            familyId: currentFamilyId,
+            initialCoins: childCoins
+          }
+        })
+
+        wx.hideLoading()
+
+        if (res.result && res.result.success) {
+          wx.showToast({
+            title: '创建成功',
+            icon: 'success'
+          })
+
+          this.setData({
+            showCreateChildInput: false
+          })
+
+          // 重新加载儿童数据
+          setTimeout(() => {
+            this.onShow()
+          }, 500)
+        } else {
+          wx.showToast({
+            title: res.result?.error || '创建失败',
+            icon: 'none'
+          })
+        }
+      } else {
+        // 未登录：创建本地儿童
+        const childId = `local_child_${Date.now()}`
+
+        // 创建本地儿童对象
+        const newChild = {
+          childId: childId,
+          name: childName,
+          gender: childGender,
+          age: childAge,
+          avatar: avatarUrl,
+          familyId: currentFamilyId,
+          totalCoins: childCoins,
+          completedTasks: 0,
+          redeemedPrizes: 0,
+          createdAt: new Date().toISOString()
+        }
+
+        // 保存到本地存储
+        const storageKey = `localChildren_${currentFamilyId}`
+        let familyChildren = wx.getStorageSync(storageKey) || []
+        familyChildren.push(newChild)
+        wx.setStorageSync(storageKey, familyChildren)
+
+        // 更新全局数据
+        app.globalData.children = familyChildren
+
+        // 设置为当前儿童
+        app.setCurrentChild(newChild)
+
+        wx.hideLoading()
+        wx.showToast({
+          title: '创建成功',
+          icon: 'success'
+        })
+
+        this.setData({
+          showCreateChildInput: false
+        })
+
+        // 重新加载儿童数据
+        setTimeout(() => {
+          this.onShow()
+        }, 500)
+
+        // 询问是否登录同步
+        setTimeout(() => {
+          wx.showModal({
+            title: '是否登录同步数据到云端？\n数据不同步，仅本设备可用',
+            confirmText: '登录同步',
+            cancelText: '暂不登录',
+            success: (res) => {
+              if (res.confirm) {
+                this.performLoginAndSync()
+              }
+            }
+          })
+        }, 1000)
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首页] 创建儿童失败:', err)
+      wx.showToast({
+        title: '创建失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
+   * 取消创建儿童
+   */
+  onCancelCreateChild() {
+    // 如果是首次使用流程中的手动创建，取消时询问是否跳过向导
+    if (app.globalData.isManualCreationFlow) {
+      wx.showModal({
+        title: '提示',
+        content: '是否要跳过向导？',
+        confirmText: '跳过向导',
+        cancelText: '继续创建',
+        success: (res) => {
+          if (res.confirm) {
+            // 跳过向导
+            app.globalData.isManualCreationFlow = false
+            this.exitWizardFlow()
+          } else {
+            // 继续创建，不关闭对话框
+            console.log('[首次使用流程] 用户选择继续创建')
+          }
+        }
+      })
+    } else {
+      // 非首次使用流程，直接关闭对话框
+      this.setData({
+        showCreateChildInput: false
+      })
+    }
+  },
+
+  /**
+   * 显示加入家庭对话框
+   */
+  showJoinFamilyModal() {
+    this.setData({
+      showJoinFamilyInput: true,
+      inviteCodeInput: ''
+    })
+  },
+
+  /**
+   * 邀请码输入
+   */
+  onInviteCodeInput(e) {
+    this.setData({
+      inviteCodeInput: e.detail.value
+    })
+  },
+
+  /**
+   * 加入家庭
+   */
+  async onJoinFamily() {
+    const inviteCode = this.data.inviteCodeInput.trim()
+
+    if (!inviteCode) {
+      wx.showToast({
+        title: t('firstTimeFlow.pleaseInputInviteCode'),
+        icon: 'none'
+      })
+      return
+    }
+
+    if (inviteCode.length !== 6) {
+      wx.showToast({
+        title: t('firstTimeFlow.inviteCodeLength'),
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.showLoading({
+      title: t('firstTimeFlow.joining'),
+      mask: true
+    })
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: {
+          action: 'joinFamily',
+          inviteCode: inviteCode,
+          nickname: app.globalData.userInfo?.nickName || '用户'
+        }
+      })
+
+      wx.hideLoading()
+
+      if (res.result && res.result.success) {
+        wx.showToast({
+          title: t('firstTimeFlow.joinSuccess'),
+          icon: 'success'
+        })
+
+        this.setData({
+          showJoinFamilyInput: false
+        })
+
+        // 重新加载家庭数据
+        setTimeout(() => {
+          this.onShow()
+        }, 500)
+      } else {
+        wx.showToast({
+          title: res.result?.error || t('firstTimeFlow.joinFailed'),
+          icon: 'none'
+        })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首页] 加入家庭失败:', err)
+      wx.showToast({
+        title: t('firstTimeFlow.joinFailed'),
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
+   * 取消加入家庭
+   */
+  onCancelJoinFamily() {
+    this.setData({
+      showJoinFamilyInput: false
+    })
+  },
+
+  /**
+   * 空方法，用于阻止事件冒泡
+   */
+  doNothing() {
+    // 阻止事件冒泡到遮罩层
+  },
+
+  /**
+   * 启动向导
+   */
+  startWizard() {
+    console.log('[首页] 启动向导')
+
+    // 清除完成向导标记
+    wx.removeStorageSync('hasCompletedWizard')
+    app.globalData.hasCompletedWizard = false
+
+    // 显示提示
+    wx.showToast({
+      title: '向导已启动',
+      icon: 'success'
+    })
+
+    // 延迟后直接进入步骤3：询问是否自动创建
+    setTimeout(() => {
+      this.askAboutAutoCreate()
+    }, 500)
+  },
+
+  /**
+   * 登录并同步数据
+   */
+  async performLoginAndSync() {
+    wx.showLoading({
+      title: '登录中...',
+      mask: true
+    })
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'login',
+        data: {}
+      })
+
+      if (res.result && res.result.success) {
+        // 保存登录信息
+        app.globalData.currentUserOpenid = res.result.openid
+        app.globalData.useCloudStorage = true
+        wx.setStorageSync('userInfo', res.result.userInfo)
+
+        // 上传本地数据到云端
+        await this.syncLocalToCloud()
+
+        wx.hideLoading()
+        wx.showToast({
+          title: t('toast.loginSuccess'),
+          icon: 'success'
+        })
+      } else {
+        wx.hideLoading()
+        wx.showToast({
+          title: t('firstTimeFlow.loginFailed'),
+          icon: 'none'
+        })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[首页] 登录失败:', err)
+      wx.showToast({
+        title: t('firstTimeFlow.loginFailed'),
+        icon: 'none'
+      })
     }
   }
 })
