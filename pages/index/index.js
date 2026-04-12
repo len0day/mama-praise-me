@@ -3994,11 +3994,19 @@ Page({
           icon: 'success'
         })
 
+        // 设置当前儿童
+        const newChild = childRes.result.child
+        app.globalData.currentChildId = newChild.childId
+        app.saveCurrentChildId(newChild.childId)
+
+        // 重新加载儿童数据
+        await app.loadChildren(true)
+
         // 重新加载数据
         setTimeout(() => {
           console.log('[首次使用流程] 重新加载页面数据')
           this.onShow()
-        }, 1500)
+        }, 500)
       } else {
         console.error('[首次使用流程] 创建儿童失败:', childRes.result)
         throw new Error('创建儿童失败')
@@ -4242,6 +4250,9 @@ Page({
           app.saveCurrentFamilyId(familyId)
           console.log('[创建家庭] 已设置为当前家庭')
 
+          // 重新加载儿童数据
+          await app.loadChildren(true)
+
           wx.showToast({
             title: '创建成功',
             icon: 'success'
@@ -4468,11 +4479,19 @@ Page({
             icon: 'success'
           })
 
+          // 设置当前儿童
+          const newChild = res.result.child
+          app.globalData.currentChildId = newChild.childId
+          app.saveCurrentChildId(newChild.childId)
+
+          // 重新加载儿童数据
+          await app.loadChildren(true)
+
           this.setData({
             showCreateChildInput: false
           })
 
-          // 重新加载儿童数据
+          // 重新加载页面数据
           setTimeout(() => {
             this.onShow()
           }, 500)
