@@ -1941,10 +1941,20 @@ page .container.theme-dark {
 .task-item.expired {
   opacity: 0.7;
   background: linear-gradient(145deg, #F5F5F5, #E0E0E0);
+  pointer-events: none;  /* 禁止点击 */
 }
 
 .style-girl .task-item.completed .task-title {
   color: #999999;
+}
+
+.style-girl .task-item.expired {
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.4) !important;
+  border: 4rpx dashed #C2185B;
+  box-shadow: none;
+  animation: none;  /* 已过期的气球不再飘动 */
+  pointer-events: none;  /* 禁止点击 */
 }
 
 .style-girl .task-item.expired .task-title {
@@ -2292,11 +2302,13 @@ page .container.theme-dark {
 .task-item.expired {
   opacity: 0.7;
   background: linear-gradient(145deg, #F5F5F5, #E0E0E0);
+  pointer-events: none;  /* 禁止点击 */
 }
 
 .theme-dark .task-item.expired {
   background: #2C2C2E !important;
   opacity: 0.85 !important;
+  pointer-events: none;  /* 禁止点击 */
 }
 
 .task-item.pending {
@@ -2956,6 +2968,7 @@ page .container.theme-dark {
   border: 4rpx dashed #C2185B;
   box-shadow: none;
   animation: none; /* 已完成的气球不再飘动，像落地的气球或静止状态 */
+  pointer-events: none;  /* 禁止点击 */
   transform: translateY(10rpx);
 }
 

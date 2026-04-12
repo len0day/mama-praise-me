@@ -1182,7 +1182,13 @@ Page({
 
     // 检查任务是否已过期
     if (task.taskStatus && task.taskStatus.status === 'expired') {
-      showToast('任务已过期')
+      showToast('任务已过期，无法完成')
+      return
+    }
+
+    // 检查是否可以完成（双重保险）
+    if (task.canComplete === false) {
+      showToast('任务当前无法完成')
       return
     }
 
