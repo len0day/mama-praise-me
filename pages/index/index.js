@@ -2739,10 +2739,36 @@ Page({
 
         try {
           // 同步本地数据到云端
-          await app.syncLocalDataToCloud()
+          const syncResult = await app.syncLocalDataToCloud()
 
-          // 延迟确保全局状态更新完成
-          await new Promise(resolve => setTimeout(resolve, 500))
+          // 如果有冲突，让用户选择
+          if (syncResult.status === 'conflict') {
+            wx.hideLoading()
+            const choice = await this.showConflictDialog(syncResult.localCount, syncResult.cloudCount)
+            if (choice === 'cancel') {
+              // 用户取消登录
+              app.globalData.useCloudStorage = false
+              app.globalData.currentUserOpenid = null
+              wx.removeStorageSync('userInfo')
+              wx.showToast({ title: '已取消登录', icon: 'none' })
+              return
+            } else if (choice === 'cloud') {
+              // 用云端覆盖本地
+              wx.showLoading({ title: '同步中...', mask: true })
+              await app.downloadCloudDataToLocal()
+              // 重新加载家庭和孩子数据
+              await app.loadChildren(true)
+            } else {
+              // 用本地上传到云端（保留本地数据）
+              wx.showLoading({ title: '同步中...', mask: true })
+              await app.uploadLocalDataToCloud(
+                wx.getStorageSync('localFamilies') || [],
+                this.getLocalChildrenData(),
+                false  // 不清除本地数据
+              )
+            }
+            await new Promise(resolve => setTimeout(resolve, 500))
+          }
 
           // 强制加载家庭和孩子数据（即使本地有缓存）
           console.log('[首页登录] 开始加载家庭和孩子数据')
@@ -3606,8 +3632,36 @@ Page({
 
         // 加载家庭和孩子数据
         try {
-          await app.syncLocalDataToCloud()
-          await new Promise(resolve => setTimeout(resolve, 500))
+          const syncResult = await app.syncLocalDataToCloud()
+
+          // 如果有冲突，让用户选择
+          if (syncResult.status === 'conflict') {
+            wx.hideLoading()
+            const choice = await this.showConflictDialog(syncResult.localCount, syncResult.cloudCount)
+            if (choice === 'cancel') {
+              // 用户取消登录
+              app.globalData.useCloudStorage = false
+              app.globalData.currentUserOpenid = null
+              wx.removeStorageSync('userInfo')
+              wx.showToast({ title: '已取消登录', icon: 'none' })
+              this.setData({ isLoading: false })
+              return
+            } else if (choice === 'cloud') {
+              // 用云端覆盖本地
+              wx.showLoading({ title: '同步中...', mask: true })
+              await app.downloadCloudDataToLocal()
+              await app.loadChildren(true)
+            } else {
+              // 用本地上传到云端
+              wx.showLoading({ title: '同步中...', mask: true })
+              await app.uploadLocalDataToCloud(
+                wx.getStorageSync('localFamilies') || [],
+                this.getLocalChildrenData()
+              )
+            }
+            await new Promise(resolve => setTimeout(resolve, 500))
+          }
+
           await this.loadAllFamilies()
           await app.loadChildren(true)  // 登录后强制刷新
 
@@ -4061,6 +4115,61 @@ Page({
   hasLocalData() {
     const localFamilies = wx.getStorageSync('localFamilies') || []
     return localFamilies.length > 0
+  },
+
+  /**
+   * 获取本地儿童数据（用于上传到云端）
+   */
+  getLocalChildrenData() {
+    const localFamilies = wx.getStorageSync('localFamilies') || []
+    const localChildrenData = {}
+    localFamilies.forEach(family => {
+      const familyChildren = wx.getStorageSync(`localChildren_${family.familyId}`) || []
+      if (familyChildren.length > 0) {
+        localChildrenData[family.familyId] = familyChildren
+      }
+    })
+    return localChildrenData
+  },
+
+  /**
+   * 显示数据冲突对话框
+   * @returns {Promise<'cloud'|'local'|'cancel'>}
+   */
+  showConflictDialog(localCount, cloudCount) {
+    return new Promise((resolve) => {
+      wx.showModal({
+        title: '数据冲突',
+        content: `检测到数据冲突：\n• 本地有 ${localCount} 个家庭\n• 云端有 ${cloudCount} 个家庭\n\n请选择保留哪边的数据？`,
+        confirmText: '使用云端',
+        cancelText: '使用本地',
+        success: (res) => {
+          if (res.confirm) {
+            resolve('cloud')
+          } else if (res.cancel) {
+            // 用户选择了"使用本地"还是"取消"？
+            // showModal 的 cancelText 默认是"取消"
+            // 需要再次询问是"使用本地"还是"取消"
+            wx.showModal({
+              title: '确认',
+              content: '确定要使用本地上传到云端吗？这将覆盖云端数据。',
+              confirmText: '确定上传',
+              cancelText: '取消',
+              success: (res2) => {
+                if (res2.confirm) {
+                  resolve('local')
+                } else {
+                  resolve('cancel')
+                }
+              }
+            })
+          }
+        },
+        fail: () => {
+          resolve('cancel')
+        }
+      })
+    })
   },
 
   /**

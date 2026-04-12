@@ -797,7 +797,7 @@ App({
 
   /**
    * 同步本地数据到云端（登录时调用）
-   * 返回值：'none' 无数据，'sync' 自动同步，'conflict' 需要用户选择，'cancel' 用户取消
+   * 返回值：{ status: 'none'|'sync'|'conflict'|'error', localCount: number, cloudCount: number }
    */
   async syncLocalDataToCloud() {
     try {
@@ -825,7 +825,7 @@ App({
       // 如果没有本地数据，直接返回
       if (localFamilies.length === 0 && localChildrenCount === 0) {
         console.log('[妈妈表扬我] 没有本地数据需要同步，返回 none')
-        return 'none'
+        return { status: 'none', localCount: 0, cloudCount: 0 }
       }
 
       // 检查云端是否有数据
@@ -844,25 +844,28 @@ App({
       if (cloudFamilies.length === 0) {
         console.log('[妈妈表扬我] 云端无数据，自动同步本地数据')
         await this.uploadLocalDataToCloud(localFamilies, localChildrenData)
-        return 'sync'
+        return { status: 'sync', localCount: localFamilies.length, cloudCount: 0 }
       }
 
       // 如果两边都有数据，需要用户选择
       console.log('[妈妈表扬我] ✓ 检测到数据冲突，需要用户选择，返回 conflict')
-      return 'conflict'
+      return { status: 'conflict', localCount: localFamilies.length, cloudCount: cloudFamilies.length }
 
     } catch (err) {
       console.error('[妈妈表扬我] 检查数据同步失败:', err)
-      return 'error'
+      return { status: 'error', localCount: 0, cloudCount: 0 }
     }
   },
 
   /**
    * 上传本地数据到云端
+   * @param {Array} localFamilies - 本地家庭列表
+   * @param {Object} localChildrenData - 本地儿童数据 { [familyId]: childrenArray }
+   * @param {boolean} clearLocal - 是否清除本地数据（默认true）
    */
-  async uploadLocalDataToCloud(localFamilies, localChildrenData) {
+  async uploadLocalDataToCloud(localFamilies, localChildrenData, clearLocal = true) {
     try {
-      console.log('[妈妈表扬我] 开始上传本地数据到云端')
+      console.log('[妈妈表扬我] 开始上传本地数据到云端, clearLocal:', clearLocal)
 
       // 1. 上传家庭
       for (const family of localFamilies) {
@@ -907,13 +910,15 @@ App({
 
       console.log('[妈妈表扬我] ✓ 本地数据上传完成')
 
-      // 清除本地数据
-      wx.removeStorageSync('localFamilies')
-      localFamilies.forEach(family => {
-        wx.removeStorageSync(`localChildren_${family.familyId}`)
-        wx.removeStorageSync(`localTasks_${family.familyId}`)
-        wx.removeStorageSync(`localPrizes_${family.familyId}`)
-      })
+      // 清除本地数据（仅当明确要求时）
+      if (clearLocal) {
+        wx.removeStorageSync('localFamilies')
+        localFamilies.forEach(family => {
+          wx.removeStorageSync(`localChildren_${family.familyId}`)
+          wx.removeStorageSync(`localTasks_${family.familyId}`)
+          wx.removeStorageSync(`localPrizes_${family.familyId}`)
+        })
+      }
 
     } catch (err) {
       console.error('[妈妈表扬我] 上传本地数据失败:', err)
@@ -928,16 +933,102 @@ App({
     try {
       console.log('[妈妈表扬我] 开始下载云端数据到本地')
 
-      // 清除所有本地数据
+      // 1. 获取云端所有家庭
+      const familiesRes = await wx.cloud.callFunction({
+        name: 'manageFamilies',
+        data: { action: 'getAllMyFamilies' }
+      })
+
+      if (!familiesRes.result || !familiesRes.result.success) {
+        throw new Error('获取云端家庭失败')
+      }
+
+      const cloudFamilies = familiesRes.result.families || []
+      console.log('[妈妈表扬我] 云端家庭数量:', cloudFamilies.length)
+
+      // 2. 清除所有旧本地数据（但保留用户设置）
+      const savedSettings = wx.getStorageSync('appSettings')
+      const savedUserInfo = wx.getStorageSync('userInfo')
+      const savedHasCompletedWizard = wx.getStorageSync('hasCompletedWizard')
+      const savedParentPassword = wx.getStorageSync('parentPassword')
+      const savedTheme = wx.getStorageSync('theme')
+      const savedLocale = wx.getStorageSync('locale')
       wx.clearStorageSync()
 
-      // 重新保存必要的配置
-      this.saveSettingsToStorage()
+      // 恢复必要的用户设置
+      if (savedSettings) wx.setStorageSync('appSettings', savedSettings)
+      if (savedUserInfo) wx.setStorageSync('userInfo', savedUserInfo)
+      if (savedHasCompletedWizard) wx.setStorageSync('hasCompletedWizard', savedHasCompletedWizard)
+      if (savedParentPassword) wx.setStorageSync('parentPassword', savedParentPassword)
+      if (savedTheme) wx.setStorageSync('theme', savedTheme)
+      if (savedLocale) wx.setStorageSync('locale', savedLocale)
 
-      console.log('[妈妈表扬我] ✓ 本地数据已清除，将使用云端数据')
+      // 3. 保存云端家庭到本地
+      const localFamilies = cloudFamilies.map(f => ({
+        familyId: f.familyId,
+        name: f.name,
+        role: f.role,
+        isCreator: f.isCreator,
+        inviteCode: f.inviteCode,
+        createdAt: f.createdAt
+      }))
+      wx.setStorageSync('localFamilies', localFamilies)
+
+      // 4. 获取并保存每个家庭的儿童数据
+      for (const family of cloudFamilies) {
+        const childrenRes = await wx.cloud.callFunction({
+          name: 'manageChildren',
+          data: {
+            action: 'getFamilyChildren',
+            familyId: family.familyId
+          }
+        })
+
+        if (childrenRes.result && childrenRes.result.success) {
+          const children = childrenRes.result.children || []
+          wx.setStorageSync(`localChildren_${family.familyId}`, children)
+          console.log('[妈妈表扬我] 家庭', family.name, '的儿童数量:', children.length)
+        }
+
+        // 获取该家庭的任务
+        const tasksRes = await wx.cloud.callFunction({
+          name: 'manageTasks',
+          data: {
+            action: 'getTasks',
+            familyId: family.familyId,
+            childId: null  // 获取所有任务
+          }
+        })
+
+        if (tasksRes.result && tasksRes.result.success) {
+          const tasks = tasksRes.result.tasks || []
+          wx.setStorageSync(`localTasks_${family.familyId}`, tasks)
+        }
+
+        // 获取该家庭的奖品
+        const prizesRes = await wx.cloud.callFunction({
+          name: 'managePrizes',
+          data: {
+            action: 'getPrizes',
+            familyId: family.familyId
+          }
+        })
+
+        if (prizesRes.result && prizesRes.result.success) {
+          const prizes = prizesRes.result.prizes || []
+          wx.setStorageSync(`localPrizes_${family.familyId}`, prizes)
+        }
+      }
+
+      // 5. 保存当前家庭ID（选择第一个家庭）
+      if (cloudFamilies.length > 0) {
+        this.saveCurrentFamilyId(cloudFamilies[0].familyId)
+      }
+
+      console.log('[妈妈表扬我] ✓ 云端数据已下载到本地')
 
     } catch (err) {
-      console.error('[妈妈表扬我] 清除本地数据失败:', err)
+      console.error('[妈妈表扬我] 下载云端数据失败:', err)
       throw err
     }
   },

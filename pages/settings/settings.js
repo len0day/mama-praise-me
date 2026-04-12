@@ -643,8 +643,22 @@ Page({
    * 退出登录并清空数据
    */
   performLogoutClearData() {
+    // 保存用户设置（主题、语言等）
+    const savedSettings = wx.getStorageSync('appSettings')
+    const savedTheme = wx.getStorageSync('theme')
+    const savedLocale = wx.getStorageSync('locale')
+    const savedParentPassword = wx.getStorageSync('parentPassword')
+    const savedHasCompletedWizard = wx.getStorageSync('hasCompletedWizard')
+
     // 清空所有本地数据
     wx.clearStorageSync()
+
+    // 恢复用户设置
+    if (savedSettings) wx.setStorageSync('appSettings', savedSettings)
+    if (savedTheme) wx.setStorageSync('theme', savedTheme)
+    if (savedLocale) wx.setStorageSync('locale', savedLocale)
+    if (savedParentPassword) wx.setStorageSync('parentPassword', savedParentPassword)
+    if (savedHasCompletedWizard) wx.setStorageSync('hasCompletedWizard', savedHasCompletedWizard)
 
     // 重置全局状态
     app.globalData.useCloudStorage = false
@@ -653,9 +667,13 @@ Page({
     app.globalData.currentChildId = null
     app.globalData.families = []
     app.globalData.children = []
+    app.globalData.settings = savedSettings || app.globalData.settings
     if (typeof app.invalidateFamiliesListCache === 'function') {
       app.invalidateFamiliesListCache()
     }
+
+    // 应用主题
+    app.applyTheme()
 
     showToast(t('firstTimeFlow.logoutSuccessClear'))
 
