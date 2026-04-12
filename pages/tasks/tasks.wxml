@@ -46,6 +46,71 @@
     </view>
   </view>
 
+  <!-- 任务分类和搜索栏 -->
+  <view class="tasks-header" wx:if="{{currentFamily && currentChild}}">
+    <!-- 分类筛选 -->
+    <view class="task-categories">
+      <view
+        class="category-item {{currentCategory === 'all' ? 'active' : ''}}"
+        data-category="all"
+        bindtap="onCategoryChange">
+        全部
+      </view>
+      <view
+        class="category-item {{currentCategory === 'daily' ? 'active' : ''}}"
+        data-category="daily"
+        bindtap="onCategoryChange">
+        每日
+      </view>
+      <view
+        class="category-item {{currentCategory === 'weekly' ? 'active' : ''}}"
+        data-category="weekly"
+        bindtap="onCategoryChange">
+        每周
+      </view>
+      <view
+        class="category-item {{currentCategory === 'monthly' ? 'active' : ''}}"
+        data-category="monthly"
+        bindtap="onCategoryChange">
+        每月
+      </view>
+      <view
+        class="category-item {{currentCategory === 'custom' ? 'active' : ''}}"
+        data-category="custom"
+        bindtap="onCategoryChange">
+        自定义
+      </view>
+      <view
+        class="category-item {{currentCategory === 'penalty' ? 'active' : ''}}"
+        data-category="penalty"
+        bindtap="onCategoryChange">
+        惩罚
+      </view>
+      <view
+        class="category-item {{currentCategory === 'expired' ? 'active' : ''}}"
+        data-category="expired"
+        bindtap="onCategoryChange">
+        已失效
+      </view>
+    </view>
+
+    <!-- 搜索栏 -->
+    <view class="search-bar">
+      <view class="search-input-wrapper">
+        <text class="search-icon">🔍</text>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="搜索任务名称"
+          value="{{searchKeyword}}"
+          bindinput="onSearchInput"
+          placeholder-style="color: #999999; font-size: 28rpx;"
+        />
+        <text class="clear-icon" wx:if="{{searchKeyword}}" bindtap="clearSearch">✕</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 家庭选择弹窗 -->
   <view class="picker-modal" wx:if="{{showFamilyPicker}}" catchtap="hideFamilyPicker">
     <view class="picker-content" style="top: {{pickerTop}}px;" catchtap="stopPropagation">
@@ -97,32 +162,44 @@
   <view class="tasks-list">
     <view
       class="task-item"
-      wx:for="{{tasks}}"
+      wx:for="{{filteredTasks}}"
       wx:key="taskId">
-      <view class="task-header">
-        <view class="task-type-badge">{{item.taskTypeBadge}}</view>
-        <view class="task-title">{{item.title}}</view>
-        <view class="task-reward" wx:if="{{item.taskType === 'penalty_child'}}" style="color: #E53935;">🪙 -{{item.coinReward}}</view>
-        <view class="task-reward" wx:elif="{{item.taskType === 'penalty_parent'}}" style="color: #4CAF50;">🪙 +{{item.coinReward}}</view>
-        <view class="task-reward" wx:else>🪙 +{{item.coinReward}}</view>
-      </view>
-      <view class="task-desc" wx:if="{{item.description}}">{{item.description}}</view>
-      <view class="task-meta">
-        <text class="meta-item">{{getTaskTypeText(item.taskType)}}</text>
-        <text class="meta-item" wx:if="{{item.taskType === 'weekly'}}">
-          {{item.weekStart}} ~ {{item.weekEnd}}
-        </text>
-        <text class="meta-item" wx:if="{{item.taskType === 'monthly'}}">
-          {{item.monthStart}} ~ {{item.monthEnd}}
-        </text>
-      </view>
-      <view class="task-actions">
-        <button class="action-btn edit" data-taskid="{{item.taskId}}" bindtap="editTask">
-          {{i18n.common.edit || '编辑'}}
-        </button>
-        <button class="action-btn delete" data-taskid="{{item.taskId}}" bindtap="deleteTask">
-          {{i18n.common.delete || '删除'}}
-        </button>
+      <view class="task-content">
+        <view class="task-left">
+          <view class="task-header">
+            <text class="meta-item {{item.taskTypeClass}}">{{item.taskTypeText}}</text>
+            <text class="meta-item expired-badge" wx:if="{{item.isExpired}}">已失效</text>
+            <view class="task-title">{{item.title}}</view>
+          </view>
+          <view class="task-desc" wx:if="{{item.description}}">{{item.description}}</view>
+          <view class="task-meta">
+            <text class="datetime-item" wx:if="{{item.taskType === 'weekly'}}">
+              {{item.weekStart}} ~ {{item.weekEnd}}
+            </text>
+            <text class="datetime-item" wx:if="{{item.taskType === 'monthly'}}">
+              {{item.monthStart}} ~ {{item.monthEnd}}
+            </text>
+            <text class="datetime-item" wx:if="{{item.dateText}}">
+              {{item.dateText}}
+            </text>
+            <text class="datetime-item" wx:if="{{item.timeText}}">
+              {{item.timeText}}
+            </text>
+          </view>
+        </view>
+        <view class="task-right">
+          <view class="task-reward" wx:if="{{item.taskType === 'penalty_child'}}" style="color: #E53935;">🪙 -{{item.coinReward}}</view>
+          <view class="task-reward" wx:elif="{{item.taskType === 'penalty_parent'}}" style="color: #4CAF50;">🪙 +{{item.coinReward}}</view>
+          <view class="task-reward" wx:else>🪙 +{{item.coinReward}}</view>
+          <view class="task-actions">
+            <button class="action-btn edit" data-taskid="{{item.taskId}}" bindtap="editTask">
+              ✏️
+            </button>
+            <button class="action-btn delete" data-taskid="{{item.taskId}}" bindtap="deleteTask">
+              🗑️
+            </button>
+          </view>
+        </view>
       </view>
     </view>
 
@@ -222,11 +299,16 @@
       <!-- 每日任务：结束时间 -->
       <view class="form-group" wx:if="{{formData.taskType === 'daily'}}">
         <view class="form-label">结束时间（可选）</view>
-        <picker mode="time" value="{{formData.endTime}}" data-field="endTime" end="23:59" bindchange="onDateChange">
-          <view class="form-picker">{{formData.endTime || '未设置'}}</view>
-        </picker>
+        <view class="time-selector-row">
+          <picker mode="time" value="{{formData.endTimeHourMin || '23:59'}}" data-field="endTimeHourMin" bindchange="onDateChange">
+            <view class="form-picker-time">{{formData.endTimeHourMin || '23:59'}}</view>
+          </picker>
+          <picker mode="selector" range="{{secondOptions}}" value="{{formData.selectedSecondIndex || 0}}" data-field="endTimeSecond" bindchange="onSecondChange">
+            <view class="form-picker-second">{{formData.endTimeSecond || '00'}}秒</view>
+          </picker>
+        </view>
         <view class="form-tip" style="margin-top: 8rpx; font-size: 22rpx; color: #999;">
-          设置后过了此时间任务将显示已过期
+          设置后过了此时间任务将显示已过期，第二天自动隐藏
         </view>
       </view>
 
@@ -272,10 +354,30 @@
           <view class="form-picker">{{formData.startDate || '未设置'}}</view>
         </picker>
 
+        <view class="form-label" style="margin-top: 20rpx;">开始时间（可选）</view>
+        <view class="time-selector-row">
+          <picker mode="time" value="{{formData.startTimeHourMin || '00:00'}}" data-field="startTimeHourMin" bindchange="onDateChange">
+            <view class="form-picker-time">{{formData.startTimeHourMin || '00:00'}}</view>
+          </picker>
+          <picker mode="selector" range="{{secondOptions}}" value="{{formData.startSelectedSecondIndex || 0}}" data-field="startTimeSecond" bindchange="onStartTimeSecondChange">
+            <view class="form-picker-second">{{formData.startTimeSecond || '00'}}秒</view>
+          </picker>
+        </view>
+
         <view class="form-label" style="margin-top: 20rpx;">结束日期（可选）</view>
         <picker mode="date" value="{{formData.endDate}}" data-field="endDate" bindchange="onDateChange">
           <view class="form-picker">{{formData.endDate || '未设置'}}</view>
         </picker>
+
+        <view class="form-label" style="margin-top: 20rpx;">结束时间（可选）</view>
+        <view class="time-selector-row">
+          <picker mode="time" value="{{formData.endTimeHourMin || '23:59'}}" data-field="endTimeHourMin" bindchange="onDateChange">
+            <view class="form-picker-time">{{formData.endTimeHourMin || '23:59'}}</view>
+          </picker>
+          <picker mode="selector" range="{{secondOptions}}" value="{{formData.endSelectedSecondIndex || 59}}" data-field="endTimeSecond" bindchange="onSecondChange">
+            <view class="form-picker-second">{{formData.endTimeSecond || '59'}}秒</view>
+          </picker>
+        </view>
 
         <view class="form-tip" style="margin-top: 16rpx; font-size: 24rpx; color: #999;">
           不设置时间则为无限期任务，不设置次数则可反复完成

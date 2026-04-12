@@ -523,25 +523,52 @@ Page({
         // 调试：打印每日任务的 endTime
         console.log('[首页] 每日任务:', task.title, 'endTime:', task.endTime, 'completed:', completed)
 
-        // 检查是否设置了结束时间（无论是否完成都要计算倒计时）
-        if (task.endTime) {
+        // 如果任务已完成且没有多次完成设置，直接标记为完成，不计算倒计时
+        if (completed && (!task.maxCompletions || task.maxCompletions <= 1)) {
+          taskStatus = {
+            status: 'completed',
+            statusText: '今日已完成'
+          }
+        } else if (task.endTime) {
+          // 有结束时间或可以多次完成：计算倒计时和状态
           console.log('[首页] 计算倒计时 - endTime:', task.endTime)
           const now = new Date()
-          const [hours, minutes] = task.endTime.split(':')
+          const timeParts = task.endTime.split(':')
+          const hours = parseInt(timeParts[0])
+          const minutes = parseInt(timeParts[1] || 0)
+          const seconds = parseInt(timeParts[2] || 0)
+
           const endTimeToday = new Date(today)
-          endTimeToday.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+          endTimeToday.setHours(hours, minutes, seconds, 0)
 
           console.log('[首页] 当前时间:', now.toLocaleString(), '结束时间:', endTimeToday.toLocaleString())
 
           if (now > endTimeToday) {
-            // 已过期
-            console.log('[首页] 任务已过期')
-            taskStatus = {
-              status: 'expired',
-              statusText: '已过期',
-              endTime: task.endTime
+            // 已过期 - 检查是否是过期的第二天
+            const yesterday = new Date(today)
+            yesterday.setDate(yesterday.getDate() - 1)
+            const endTimeYesterday = new Date(yesterday)
+            endTimeYesterday.setHours(hours, minutes, seconds, 0)
+
+            // 如果当前时间是过期后的第二天，标记为应该隐藏
+            if (now > endTimeYesterday) {
+              console.log('[首页] 任务已过期且是第二天，标记为隐藏')
+              taskStatus = {
+                status: 'expired',
+                statusText: '已过期',
+                endTime: task.endTime,
+                shouldHide: true  // 标记为应该隐藏
+              }
+            } else {
+              // 还是过期当天，仍然显示
+              console.log('[首页] 任务已过期（当天）')
+              taskStatus = {
+                status: 'expired',
+                statusText: '已过期',
+                endTime: task.endTime
+              }
             }
-            completed = false // 过期任务不算完成，但也不能点击
+            // 注意：这里不设置 completed = false，让已完成的任务保持完成状态
           } else {
             // 计算倒计时
             const timeDiff = endTimeToday.getTime() - now.getTime()
@@ -823,26 +850,53 @@ Page({
             // 调试：打印每日任务的 endTime
             console.log('[首页 云端] 每日任务:', task.title, 'endTime:', task.endTime, 'completed:', completed)
 
-            // 检查是否设置了结束时间（无论是否完成都要计算倒计时）
-            if (task.endTime) {
+            // 如果任务已完成且没有多次完成设置，直接标记为完成，不计算倒计时
+            if (completed && (!task.maxCompletions || task.maxCompletions <= 1)) {
+              taskStatus = {
+                status: 'completed',
+                statusText: '今日已完成'
+              }
+            } else if (task.endTime) {
+              // 有结束时间或可以多次完成：计算倒计时和状态
               console.log('[首页 云端] 进入倒计时计算')
               console.log('[首页 云端] 计算倒计时 - endTime:', task.endTime)
               const now = new Date()
-              const [hours, minutes] = task.endTime.split(':')
+              const timeParts = task.endTime.split(':')
+              const hours = parseInt(timeParts[0])
+              const minutes = parseInt(timeParts[1] || 0)
+              const seconds = parseInt(timeParts[2] || 0)
+
               const endTimeToday = new Date(today)
-              endTimeToday.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+              endTimeToday.setHours(hours, minutes, seconds, 0)
 
               console.log('[首页 云端] 当前时间:', now.toLocaleString(), '结束时间:', endTimeToday.toLocaleString())
 
               if (now > endTimeToday) {
-                // 已过期
-                console.log('[首页 云端] 任务已过期')
-                taskStatus = {
-                  status: 'expired',
-                  statusText: '已过期',
-                  endTime: task.endTime
+                // 已过期 - 检查是否是过期的第二天
+                const yesterday = new Date(today)
+                yesterday.setDate(yesterday.getDate() - 1)
+                const endTimeYesterday = new Date(yesterday)
+                endTimeYesterday.setHours(hours, minutes, seconds, 0)
+
+                // 如果当前时间是过期后的第二天，标记为应该隐藏
+                if (now > endTimeYesterday) {
+                  console.log('[首页 云端] 任务已过期且是第二天，标记为隐藏')
+                  taskStatus = {
+                    status: 'expired',
+                    statusText: '已过期',
+                    endTime: task.endTime,
+                    shouldHide: true  // 标记为应该隐藏
+                  }
+                } else {
+                  // 还是过期当天，仍然显示
+                  console.log('[首页 云端] 任务已过期（当天）')
+                  taskStatus = {
+                    status: 'expired',
+                    statusText: '已过期',
+                    endTime: task.endTime
+                  }
                 }
-                completed = false // 过期任务不算完成，但也不能点击
+                // 注意：这里不设置 completed = false，让已完成的任务保持完成状态
               } else {
                 // 计算倒计时
                 const timeDiff = endTimeToday.getTime() - now.getTime()
@@ -1643,22 +1697,50 @@ Page({
         const firstChild = children[0]
         app.saveCurrentChildId(firstChild.childId)
 
+        // 更新全局儿童数据（这样 getCurrentChild 才能找到新儿童）
+        app.globalData.children = children
+
+        // 补充儿童信息（家庭名称和金币余额）
+        const enrichedChild = await this.enrichChildInfo(firstChild)
+
+        console.log('[首页 selectFamily] 切换到家庭:', familyid, '儿童:', enrichedChild.name, enrichedChild.childId)
+
         // 更新当前数据
         const currentFamily = this.data.allFamilies.find(f => f.familyId === familyid)
         this.setData({
           currentFamilyId: familyid,
           currentFamily: currentFamily || null,
-          currentChild: firstChild,
+          currentChild: enrichedChild,
           currentFamilyChildren: children,
           showFamilyPicker: false
         })
 
+        console.log('[首页 selectFamily] 调用 loadData() 前, currentFamilyId:', app.getCurrentFamilyId(), 'currentChildId:', app.getCurrentChild()?.childId)
+
         // 刷新任务列表
         await this.loadData()
 
+        console.log('[首页 selectFamily] loadData() 完成, 当前 coinStats:', JSON.stringify(this.data.coinStats))
+
+        // loadData 可能会重置 currentChild，需要重新设置 enriched child（包含 familyCoins）
+        this.setData({
+          currentChild: enrichedChild
+        })
+
+        console.log('[首页 selectFamily] 重新设置 currentChild 后, currentChild.familyCoins:', enrichedChild.familyCoins)
+
+        // 重新计算金币统计（确保切换家庭后统计被刷新）
+        console.log('[首页 selectFamily] 调用 calculateCoinStats() 前, currentChildId:', app.getCurrentChild()?.childId, 'familyId:', app.getCurrentFamilyId())
+        await this.calculateCoinStats()
+        console.log('[首页 selectFamily] calculateCoinStats() 完成, coinStats:', JSON.stringify(this.data.coinStats))
+
+        // 重新计算任务进度
+        this.calculateTaskProgress()
+        console.log('[首页 selectFamily] calculateTaskProgress() 完成, taskProgress:', JSON.stringify(this.data.taskProgress))
+
         hideLoading()
         this.hideFamilyPicker()
-        showToast(`已切换到${firstChild.familyName || '该家庭'}`)
+        showToast(`已切换到${enrichedChild.familyName || '该家庭'}`)
       } else {
         hideLoading()
         showToast('加载儿童失败')
@@ -1689,9 +1771,12 @@ Page({
         const firstChild = localChildren[0]
         app.saveCurrentChildId(firstChild.childId)
 
+        // 补充儿童信息（家庭名称和金币余额）
+        const enrichedChild = await this.enrichChildInfo(firstChild)
+
         this.setData({
           currentFamilyId: familyid,
-          currentChild: firstChild,
+          currentChild: enrichedChild,
           currentFamilyChildren: localChildren
         })
 
@@ -2068,13 +2153,16 @@ Page({
     let needsUpdate = false
 
     tasks.forEach((task, index) => {
+      // 每日任务倒计时更新
       if (task.taskType === 'daily' && task.endTime && !task.completed && task.taskStatus && task.taskStatus.countdown) {
-
-
         // 重新计算倒计时
-        const [hours, minutes] = task.endTime.split(':')
+        const timeParts = task.endTime.split(':')
+        const hours = parseInt(timeParts[0])
+        const minutes = parseInt(timeParts[1] || 0)
+        const seconds = parseInt(timeParts[2] || 0)
+
         const endTimeToday = new Date(today)
-        endTimeToday.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+        endTimeToday.setHours(hours, minutes, seconds, 0)
 
         if (now <= endTimeToday) {
           // 还没过期，更新倒计时
@@ -2092,12 +2180,45 @@ Page({
             countdownText = `${secondsLeft}秒`
           }
 
-    
-
           // 更新 taskStatus
-          const newStatusText = task.taskType === 'daily' && task.endTime
-            ? `${countdownText}后截止`
-            : task.taskStatus.statusText
+          const newStatusText = task.maxCompletions && task.maxCompletions > 1
+            ? `${countdownText}·剩余${task.taskStatus.remaining}次`
+            : `${countdownText}后截止`
+
+          updateData[`tasks[${index}].taskStatus.countdown`] = countdownText
+          updateData[`tasks[${index}].taskStatus.statusText`] = newStatusText
+          needsUpdate = true
+        }
+      }
+      // 自定义任务倒计时更新
+      else if (task.taskType === 'custom' && task.endDate && task.endTime && task.endTime !== '23:59:59' && !task.completed && task.taskStatus && task.taskStatus.countdown) {
+        // 重新计算倒计时
+        const endTimeDate = new Date(`${task.endDate} ${task.endTime}`)
+
+        if (now <= endTimeDate) {
+          // 还没过期，更新倒计时
+          const timeDiff = endTimeDate.getTime() - now.getTime()
+          const daysLeft = Math.floor(timeDiff / (24 * 60 * 60 * 1000))
+          const hoursLeft = Math.floor((timeDiff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
+          const minutesLeft = Math.floor((timeDiff % (60 * 60 * 1000)) / (60 * 1000))
+          const secondsLeft = Math.floor((timeDiff % (60 * 1000)) / 1000)
+
+          let countdownText
+          if (daysLeft > 0) {
+            countdownText = `${daysLeft}天${hoursLeft}小时${minutesLeft}分${secondsLeft}秒`
+          } else if (hoursLeft > 0) {
+            countdownText = `${hoursLeft}小时${minutesLeft}分${secondsLeft}秒`
+          } else if (minutesLeft > 0) {
+            countdownText = `${minutesLeft}分${secondsLeft}秒`
+          } else {
+            countdownText = `${secondsLeft}秒`
+          }
+
+          // 构建新的状态文本
+          let newStatusText = countdownText + '后结束'
+          if (task.maxCompletions && task.taskStatus.remaining !== undefined) {
+            newStatusText = `剩余${task.taskStatus.remaining}次·${countdownText}后结束`
+          }
 
           updateData[`tasks[${index}].taskStatus.countdown`] = countdownText
           updateData[`tasks[${index}].taskStatus.statusText`] = newStatusText
@@ -2109,7 +2230,6 @@ Page({
     // 批量更新
     if (needsUpdate) {
       this.setData(updateData)
-    } else {
     }
   },
 
@@ -2503,7 +2623,9 @@ Page({
         }
       })
 
-      this.setData({ coinStats: stats })
+      this.setData({ coinStats: stats }, () => {
+        console.log('[首页] 金币统计已更新 setData callback, coinStats:', this.data.coinStats)
+      })
       console.log('[首页] 金币统计:', stats)
       console.log('[首页] 兑换次数:', stats.redeemCount, '消耗金币:', stats.spentCoins)
       console.log('[首页] 完成次数:', stats.earnCount, '获得金币:', stats.earnedCoins)

@@ -11,6 +11,7 @@ Page({
     isParentMode: false,
     showPasswordModal: false,
     tasks: [],
+    filteredTasks: [],  // 筛选后的任务列表
     isLoading: false,
     showAddModal: false,
     editingTask: null,
@@ -20,8 +21,11 @@ Page({
     showFamilyPicker: false,  // 显示家庭选择器
     currentFamilyChildren: [], // 当前家庭的儿童列表
     showChildPicker: false,   // 显示儿童选择器
+    currentCategory: 'all',  // 当前分类：all, daily, weekly, monthly, custom, penalty, expired
+    searchKeyword: '',  // 搜索关键词
     taskTypeOptions: ['每日任务', '每周任务', '每月任务', '自定义任务', '惩罚家长', '惩罚小孩'],
     taskTypeIndex: 3,  // 默认选择"自定义任务"
+    secondOptions: Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0')),  // 00-59秒
     formData: {
       title: '',
       description: '',
@@ -30,7 +34,10 @@ Page({
       maxCompletions: null,  // 最大完成次数，null=无限
       startDate: '',  // 开始日期 YYYY-MM-DD
       endDate: '',    // 结束日期 YYYY-MM-DD
-      endTime: '',    // 结束时间 HH:mm（仅每日任务）
+      endTime: '',    // 结束时间 HH:mm:ss（仅每日任务）
+      endTimeHourMin: '',  // 结束时间的时:分部分
+      endTimeSecond: '00',  // 结束时间的秒部分
+      selectedSecondIndex: 0,  // 秒数选择器的索引
       weekStart: '',
       weekEnd: '',
       monthStart: '',
@@ -67,8 +74,10 @@ Page({
       this.getTabBar().setData({ selected: 1 })
       this.getTabBar().applyTheme()
     }
-    this.loadFamilyAndChild()
-    this.loadTasks()
+    // 等待 loadFamilyAndChild 完成后再加载任务，避免先显示"没有家庭"
+    this.loadFamilyAndChild().then(() => {
+      this.loadTasks()
+    })
   },
 
   /**
@@ -224,15 +233,46 @@ Page({
         'daily': '📅',
         'weekly': '📆',
         'monthly': '🗓️',
+        'custom': '📋',
         'permanent': '♾️',
         'penalty_parent': '🎁',
         'penalty_child': '⚠️'
       }
-      const tasks = cachedTasks.map(task => ({
-        ...task,
-        taskTypeBadge: badgeMap[task.taskType] || '📅'
-      }))
-      this.setData({ tasks })
+
+      const typeTextMap = {
+        'daily': '每日',
+        'weekly': '每周',
+        'monthly': '每月',
+        'custom': '自定义',
+        'permanent': '无期限',
+        'penalty_parent': '惩罚家长',
+        'penalty_child': '惩罚小孩'
+      }
+
+      const typeClassMap = {
+        'daily': 'type-daily',
+        'weekly': 'type-weekly',
+        'monthly': 'type-monthly',
+        'custom': 'type-custom',
+        'permanent': 'type-permanent',
+        'penalty_parent': 'type-penalty-parent',
+        'penalty_child': 'type-penalty-child'
+      }
+
+      const tasks = cachedTasks.map(task => {
+        const { dateText, timeText } = this.formatDateTimeRange(task)
+        const isExpired = this.isTaskExpired(task, task.completionCount || 0)
+        return {
+          ...task,
+          taskTypeBadge: badgeMap[task.taskType] || '📅',
+          taskTypeText: typeTextMap[task.taskType] || task.taskType,
+          taskTypeClass: typeClassMap[task.taskType] || 'type-custom',
+          dateText,
+          timeText,
+          isExpired
+        }
+      })
+      this.setData({ tasks, filteredTasks: tasks })  // 同时设置tasks和filteredTasks
       return
     }
 
@@ -255,16 +295,46 @@ Page({
             'daily': '📅',
             'weekly': '📆',
             'monthly': '🗓️',
+            'custom': '📋',
             'permanent': '♾️',
             'penalty_parent': '🎁',
             'penalty_child': '⚠️'
           }
+
+          const typeTextMap = {
+            'daily': '每日',
+            'weekly': '每周',
+            'monthly': '每月',
+            'custom': '自定义',
+            'permanent': '无期限',
+            'penalty_parent': '惩罚家长',
+            'penalty_child': '惩罚小孩'
+          }
+
+          const typeClassMap = {
+            'daily': 'type-daily',
+            'weekly': 'type-weekly',
+            'monthly': 'type-monthly',
+            'custom': 'type-custom',
+            'permanent': 'type-permanent',
+            'penalty_parent': 'type-penalty-parent',
+            'penalty_child': 'type-penalty-child'
+          }
+
+          const { dateText, timeText } = this.formatDateTimeRange(task)
+          const isExpired = this.isTaskExpired(task, task.completionCount || 0)
           return {
             ...task,
-            taskTypeBadge: badgeMap[task.taskType] || '📅'
+            taskTypeBadge: badgeMap[task.taskType] || '📅',
+            taskTypeText: typeTextMap[task.taskType] || task.taskType,
+            taskTypeClass: typeClassMap[task.taskType] || 'type-custom',
+            dateText,
+            timeText,
+            isExpired
           }
         })
         this.setData({ tasks })
+        this.filterTasks()  // 应用筛选
 
         // 保存到缓存
         app.setTasksCache(currentFamilyId, currentChild.childId, tasks)
@@ -295,17 +365,48 @@ Page({
         'daily': '📅',
         'weekly': '📆',
         'monthly': '🗓️',
+        'custom': '📋',
         'permanent': '♾️',
         'penalty_parent': '🎁',
         'penalty_child': '⚠️'
       }
 
-      const tasks = childTasks.map(task => ({
-        ...task,
-        taskTypeBadge: badgeMap[task.taskType] || '📅'
-      }))
+      const typeTextMap = {
+        'daily': '每日',
+        'weekly': '每周',
+        'monthly': '每月',
+        'custom': '自定义',
+        'permanent': '无期限',
+        'penalty_parent': '惩罚家长',
+        'penalty_child': '惩罚小孩'
+      }
+
+      const typeClassMap = {
+        'daily': 'type-daily',
+        'weekly': 'type-weekly',
+        'monthly': 'type-monthly',
+        'custom': 'type-custom',
+        'permanent': 'type-permanent',
+        'penalty_parent': 'type-penalty-parent',
+        'penalty_child': 'type-penalty-child'
+      }
+
+      const tasks = childTasks.map(task => {
+        const { dateText, timeText } = this.formatDateTimeRange(task)
+        const isExpired = this.isTaskExpired(task, task.completionCount || 0)
+        return {
+          ...task,
+          taskTypeBadge: badgeMap[task.taskType] || '📅',
+          taskTypeText: typeTextMap[task.taskType] || task.taskType,
+          taskTypeClass: typeClassMap[task.taskType] || 'type-custom',
+          dateText,
+          timeText,
+          isExpired
+        }
+      })
 
       this.setData({ tasks })
+      this.filterTasks()  // 应用筛选
     } catch (err) {
       console.error('[任务管理] 加载本地任务失败:', err)
       showToast('加载失败')
@@ -336,6 +437,13 @@ Page({
         startDate: '',
         endDate: '',
         endTime: '',
+        startTime: '',
+        endTimeHourMin: '23:59',
+        endTimeSecond: '59',
+        selectedSecondIndex: 59,
+        startTimeHourMin: '00:00',
+        startTimeSecond: '00',
+        startSelectedSecondIndex: 0,
         weekStart: this.formatDate(today),
         weekEnd: this.formatDate(weekEnd),
         monthStart: today.toISOString().substring(0, 7),
@@ -373,6 +481,13 @@ Page({
           startDate: task.startDate || '',
           endDate: task.endDate || '',
           endTime: task.endTime || '',
+          startTime: task.startTime || '',
+          endTimeHourMin: task.endTime ? task.endTime.substring(0, 5) : '',  // HH:mm
+          endTimeSecond: task.endTime ? task.endTime.substring(6) : '59',  // ss
+          selectedSecondIndex: task.endTime ? parseInt(task.endTime.substring(6)) : 59,
+          startTimeHourMin: task.startTime ? task.startTime.substring(0, 5) : '',  // HH:mm
+          startTimeSecond: task.startTime ? task.startTime.substring(6) : '00',  // ss
+          startSelectedSecondIndex: task.startTime ? parseInt(task.startTime.substring(6)) : 0,
           weekStart: task.weekStart || '',
           weekEnd: task.weekEnd || '',
           monthStart: task.monthStart || '',
@@ -508,8 +623,62 @@ Page({
   onDateChange(e) {
     const { field } = e.currentTarget.dataset
     const value = e.detail.value
+
+    // 如果是endTimeHourMin，需要组合秒数
+    if (field === 'endTimeHourMin') {
+      const second = this.data.formData.endTimeSecond || '00'
+      const fullEndTime = value + ':' + second
+      this.setData({
+        'formData.endTimeHourMin': value,
+        'formData.endTime': fullEndTime
+      })
+    } else if (field === 'startTimeHourMin') {
+      const second = this.data.formData.startTimeSecond || '00'
+      const fullStartTime = value + ':' + second
+      this.setData({
+        'formData.startTimeHourMin': value,
+        'formData.startTime': fullStartTime
+      })
+    } else {
+      this.setData({
+        [`formData.${field}`]: value
+      })
+    }
+  },
+
+  /**
+   * 秒数选择
+   */
+  onSecondChange(e) {
+    const index = parseInt(e.detail.value)
+    const second = this.data.secondOptions[index]
+
+    // 组合完整的时间
+    const hourMin = this.data.formData.endTimeHourMin || '23:59'
+    const fullEndTime = hourMin + ':' + second
+
     this.setData({
-      [`formData.${field}`]: value
+      'formData.selectedSecondIndex': index,
+      'formData.endTimeSecond': second,
+      'formData.endTime': fullEndTime
+    })
+  },
+
+  /**
+   * 开始时间秒数选择
+   */
+  onStartTimeSecondChange(e) {
+    const index = parseInt(e.detail.value)
+    const second = this.data.secondOptions[index]
+
+    // 组合完整的时间
+    const hourMin = this.data.formData.startTimeHourMin || '00:00'
+    const fullStartTime = hourMin + ':' + second
+
+    this.setData({
+      'formData.startSelectedSecondIndex': index,
+      'formData.startTimeSecond': second,
+      'formData.startTime': fullStartTime
     })
   },
 
@@ -650,6 +819,7 @@ Page({
           maxCompletions: formData.maxCompletions ? parseInt(formData.maxCompletions) : null,
           startDate: formData.startDate || null,
           endDate: formData.endDate || null,
+          startTime: formData.startTime || null,
           endTime: formData.endTime || null,
           weekStart: formData.weekStart,
           weekEnd: formData.weekEnd,
@@ -780,11 +950,107 @@ Page({
       'daily': '每日任务',
       'weekly': '每周任务',
       'monthly': '每月任务',
+      'custom': '自定义任务',
       'permanent': '无期限任务',
       'penalty_parent': '惩罚家长',
       'penalty_child': '惩罚小孩'
     }
     return types[type] || type
+  },
+
+  /**
+   * 格式化日期时间范围显示
+   */
+  formatDateTimeRange(task) {
+    let dateText = ''
+    let timeText = ''
+
+    // 每日任务：只显示结束时间，不显示日期范围
+    if (task.taskType === 'daily') {
+      if (task.endTime) {
+        timeText = `截止 ${task.endTime}`
+      }
+      return { dateText, timeText }
+    }
+
+    // 每周任务：显示日期范围
+    if (task.taskType === 'weekly') {
+      // 日期范围在 WXML 中单独处理
+      return { dateText, timeText }
+    }
+
+    // 每月任务：显示日期范围
+    if (task.taskType === 'monthly') {
+      // 日期范围在 WXML 中单独处理
+      return { dateText, timeText }
+    }
+
+    // 自定义任务：显示日期和时间范围
+    // 处理日期范围
+    if (task.startDate && task.endDate) {
+      if (task.startDate === task.endDate) {
+        dateText = task.startDate
+      } else {
+        dateText = `${task.startDate} ~ ${task.endDate}`
+      }
+    } else if (task.startDate) {
+      dateText = `从${task.startDate}开始`
+    } else if (task.endDate) {
+      dateText = `到${task.endDate}结束`
+    }
+
+    // 处理时间范围
+    if (task.startTime && task.endTime) {
+      if (task.startTime === task.endTime) {
+        timeText = task.startTime.substring(0, 5) // 只显示到分钟
+      } else {
+        timeText = `${task.startTime.substring(0, 5)} ~ ${task.endTime.substring(0, 5)}`
+      }
+    } else if (task.startTime) {
+      timeText = `从${task.startTime.substring(0, 5)}开始`
+    } else if (task.endTime) {
+      timeText = `到${task.endTime.substring(0, 5)}结束`
+    }
+
+    return { dateText, timeText }
+  },
+
+  /**
+   * 判断任务是否已失效
+   * 只有自定义任务和惩罚任务会因为过期或完成次数而失效
+   * 每日/每周/每月任务会自动重置，不算失效
+   */
+  isTaskExpired(task, completionCount = 0) {
+    const { getCustomTaskStatus } = require('../../utils/util.js')
+    const now = new Date()
+
+    // 每日、每周、每月任务不会失效（它们会自动重置）
+    if (task.taskType === 'daily' || task.taskType === 'weekly' || task.taskType === 'monthly') {
+      return false
+    }
+
+    // 惩罚任务不会失效
+    if (task.taskType === 'penalty_parent' || task.taskType === 'penalty_child') {
+      return false
+    }
+
+    // 自定义任务检查是否失效
+    if (task.taskType === 'custom') {
+      // 检查完成次数
+      if (task.maxCompletions && completionCount >= task.maxCompletions) {
+        return true
+      }
+
+      // 检查是否过期
+      if (task.endDate) {
+        const endTimeDate = task.endTime ? new Date(`${task.endDate} ${task.endTime}`) : new Date(task.endDate)
+        if (endTimeDate < now) {
+          return true
+        }
+      }
+    }
+
+    return false
   },
 
   /**
@@ -1071,5 +1337,71 @@ Page({
       query: '',
       imageUrl: ''
     }
+  },
+
+  /**
+   * 分类切换
+   */
+  onCategoryChange(e) {
+    const category = e.currentTarget.dataset.category
+    this.setData({ currentCategory: category })
+    this.filterTasks()
+  },
+
+  /**
+   * 搜索输入
+   */
+  onSearchInput(e) {
+    console.log('[搜索输入] 输入值:', e.detail.value)
+    const keyword = e.detail.value
+    this.setData({ searchKeyword: keyword })
+    this.filterTasks()
+  },
+
+  /**
+   * 清除搜索
+   */
+  clearSearch() {
+    console.log('[清除搜索] 清空搜索关键词')
+    this.setData({ searchKeyword: '' })
+    this.filterTasks()
+  },
+
+  /**
+   * 筛选任务
+   */
+  filterTasks() {
+    const { tasks, currentCategory, searchKeyword } = this.data
+    console.log('[筛选] 原始任务数:', tasks ? tasks.length : 0)
+    console.log('[筛选] 当前分类:', currentCategory)
+    console.log('[筛选] 搜索关键词:', searchKeyword)
+
+    let filtered = tasks || []
+
+    // 按分类筛选
+    if (currentCategory === 'penalty') {
+      filtered = filtered.filter(task => task.taskType === 'penalty_parent' || task.taskType === 'penalty_child')
+    } else if (currentCategory === 'expired') {
+      // 已失效分类：只显示已失效的自定义任务
+      filtered = filtered.filter(task => task.isExpired)
+    } else if (currentCategory !== 'all') {
+      filtered = filtered.filter(task => task.taskType === currentCategory)
+    }
+
+    console.log('[筛选] 分类后任务数:', filtered.length)
+
+    // 按关键词搜索
+    if (searchKeyword && searchKeyword.trim()) {
+      const keyword = searchKeyword.trim().toLowerCase()
+      filtered = filtered.filter(task => {
+        const titleMatch = task.title && task.title.toLowerCase().includes(keyword)
+        const descMatch = task.description && task.description.toLowerCase().includes(keyword)
+        console.log('[筛选] 任务:', task.title, '标题匹配:', titleMatch, '描述匹配:', descMatch)
+        return titleMatch || descMatch
+      })
+    }
+
+    console.log('[筛选] 最终任务数:', filtered.length)
+    this.setData({ filteredTasks: filtered })
   }
 })

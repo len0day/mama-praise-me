@@ -102,9 +102,12 @@ function getMonthIdentifier(date) {
  *   shouldHide: 是否应该隐藏（已完成或已结束1天后）
  */
 function getCustomTaskStatus(task, completionCount = 0) {
-  const today = getLocalDateString(new Date())
+  const now = new Date()
+  const today = getLocalDateString(now)
   const startDate = task.startDate
   const endDate = task.endDate
+  const startTime = task.startTime
+  const endTime = task.endTime
   const maxCompletions = task.maxCompletions
 
   // 检查是否应该隐藏（已完成或已结束超过1天）
@@ -115,28 +118,40 @@ function getCustomTaskStatus(task, completionCount = 0) {
     // 已完成，计算完成日期
     const completionDate = getLocalDateString(new Date())
     daysSinceEnd = Math.floor((new Date(today) - new Date(completionDate)) / (24 * 60 * 60 * 1000))
-  } else if (endDate && endDate < today) {
-    // 已过期
-    daysSinceEnd = Math.floor((new Date(today) - new Date(endDate)) / (24 * 60 * 60 * 1000))
+  } else if (endDate) {
+    // 检查是否已过期（考虑时间）
+    const endTimeDate = endTime ? new Date(`${endDate} ${endTime}`) : new Date(endDate)
+    if (endTimeDate < now) {
+      // 已过期，计算过期天数
+      const endDateTime = endTimeDate.getTime()
+      const currentDateTime = now.getTime()
+      daysSinceEnd = Math.floor((currentDateTime - endDateTime) / (24 * 60 * 60 * 1000))
+    }
   }
 
   if (daysSinceEnd !== null && daysSinceEnd > 1) {
     shouldHide = true
   }
 
-  // 计算状态
-  if (startDate && startDate > today) {
-    // 未开始
-    const daysUntilStart = Math.floor((new Date(startDate) - new Date(today)) / (24 * 60 * 60 * 1000))
-    let statusText = ''
-    if (daysUntilStart === 0) {
-      statusText = '将于今天开始'
-    } else if (daysUntilStart === 1) {
-      statusText = '将于明天开始'
-    } else {
-      statusText = `将于${daysUntilStart}天后开始`
+  // 计算状态 - 检查开始时间
+  if (startDate) {
+    const startDateTime = startTime ? new Date(`${startDate} ${startTime}`) : new Date(startDate)
+    if (startDateTime > now) {
+      // 未开始
+      const daysUntilStart = Math.floor((startDateTime - now) / (24 * 60 * 60 * 1000))
+      let statusText = ''
+      if (daysUntilStart === 0) {
+        statusText = '将于今天开始'
+        if (startTime) {
+          statusText = `今天${startTime.substring(0, 5)}开始`
+        }
+      } else if (daysUntilStart === 1) {
+        statusText = '将于明天开始'
+      } else {
+        statusText = `将于${daysUntilStart}天后开始`
+      }
+      return { status: 'pending', statusText, shouldHide }
     }
-    return { status: 'pending', statusText, shouldHide }
   }
 
   if (maxCompletions && completionCount >= maxCompletions) {
@@ -144,13 +159,18 @@ function getCustomTaskStatus(task, completionCount = 0) {
     return { status: 'completed', statusText: '已完成', shouldHide }
   }
 
-  if (endDate && endDate < today) {
-    // 已过期（次数没用完但时间到了）
-    return { status: 'expired', statusText: '已结束', shouldHide }
+  if (endDate) {
+    // 检查是否已过期（考虑时间）
+    const endTimeDate = endTime ? new Date(`${endDate} ${endTime}`) : new Date(endDate)
+    if (endTimeDate < now) {
+      // 已过期（次数没用完但时间到了）
+      return { status: 'expired', statusText: '已结束', shouldHide }
+    }
   }
 
   // 进行中
   let statusText = ''
+  let countdown = null  // 添加倒计时字段
 
   if (maxCompletions) {
     const remaining = maxCompletions - completionCount
@@ -158,13 +178,36 @@ function getCustomTaskStatus(task, completionCount = 0) {
   }
 
   if (endDate) {
-    const daysUntilEnd = Math.floor((new Date(endDate) - new Date(today)) / (24 * 60 * 60 * 1000))
-    if (daysUntilEnd === 0) {
-      statusText = statusText ? `${statusText}，今天结束` : '今天结束'
-    } else if (daysUntilEnd === 1) {
-      statusText = statusText ? `${statusText}，明天结束` : '明天结束'
+    const endTimeDate = endTime ? new Date(`${endDate} ${endTime}`) : new Date(endDate)
+    const diffMs = endTimeDate - now
+    const daysUntilEnd = Math.floor(diffMs / (24 * 60 * 60 * 1000))
+    const hoursUntilEnd = Math.floor((diffMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
+    const minutesUntilEnd = Math.floor((diffMs % (60 * 60 * 1000)) / (60 * 1000))
+    const secondsUntilEnd = Math.floor((diffMs % (60 * 1000)) / 1000)
+
+    // 如果设置了具体的结束时间（endTime），显示详细倒计时
+    if (endTime && endTime !== '23:59:59') {
+      let countdownText
+      if (daysUntilEnd > 0) {
+        countdownText = `${daysUntilEnd}天${hoursUntilEnd}小时${minutesUntilEnd}分${secondsUntilEnd}秒`
+      } else if (hoursUntilEnd > 0) {
+        countdownText = `${hoursUntilEnd}小时${minutesUntilEnd}分${secondsUntilEnd}秒`
+      } else if (minutesUntilEnd > 0) {
+        countdownText = `${minutesUntilEnd}分${secondsUntilEnd}秒`
+      } else {
+        countdownText = `${secondsUntilEnd}秒`
+      }
+      countdown = countdownText  // 保存倒计时文本
+      statusText = statusText ? `${statusText}·${countdownText}后结束` : `${countdownText}后结束`
     } else {
-      statusText = statusText ? `${statusText}，剩余${daysUntilEnd}天` : `剩余${daysUntilEnd}天`
+      // 没有设置具体时间，只显示天数
+      if (daysUntilEnd === 0) {
+        statusText = statusText ? `${statusText}，今天结束` : '今天结束'
+      } else if (daysUntilEnd === 1) {
+        statusText = statusText ? `${statusText}，明天结束` : '明天结束'
+      } else {
+        statusText = statusText ? `${statusText}，剩余${daysUntilEnd}天` : `剩余${daysUntilEnd}天`
+      }
     }
   }
 
@@ -172,7 +215,7 @@ function getCustomTaskStatus(task, completionCount = 0) {
     statusText = '可完成'
   }
 
-  return { status: 'active', statusText, shouldHide }
+  return { status: 'active', statusText, shouldHide, countdown }
 }
 
 /**

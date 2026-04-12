@@ -47,8 +47,14 @@
       </view>
     </view>
 
+    <!-- 加载中 -->
+    <view class="loading-state" wx:if="{{isLoading}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
     <!-- 空状态 -->
-    <view class="empty-state" wx:if="{{prizes.length === 0 && !isLoading}}">
+    <view class="empty-state" wx:elif="{{prizes.length === 0 && !isLoading}}">
       <text class="empty-icon">🎁</text>
       <text class="empty-text">暂无奖品</text>
     </view>

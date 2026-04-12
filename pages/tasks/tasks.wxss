@@ -1,4 +1,21 @@
 /* pages/tasks/tasks.wxss */
+
+/* 重置所有按钮的默认样式 */
+button {
+  margin: 0;
+  padding: 0;
+  line-height: inherit;
+  background: none;
+  border: none;
+  font-size: inherit;
+  min-width: 0;
+  min-height: 0;
+}
+
+button::after {
+  border: none;
+}
+
 .container {
   min-height: 100vh;
   background: #FFF8E1;
@@ -41,25 +58,81 @@
   color: #AAAAAA;
 }
 
+/* 通用操作按钮 - 小尺寸 */
 .action-btn {
-  padding: 28rpx 56rpx;
+  padding: 8rpx 16rpx !important;
   background: linear-gradient(135deg, #FF9800, #FFB74D);
   color: #FFFFFF;
   border: none;
-  border-radius: 50rpx;
-  font-size: 32rpx;
-  font-weight: bold;
-  box-shadow: 0 8rpx 24rpx rgba(255, 152, 0, 0.3);
+  border-radius: 16rpx !important;
+  font-size: 20rpx !important;
+  font-weight: 500;
+  box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.2);
+  line-height: 1.2 !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: auto !important;
 }
 
-.action-btn:active {
-  transform: translateY(2rpx);
-  box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.3);
+.action-btn::after {
+  border: none;
 }
 
 /* 童趣模式下的操作按钮 */
 .style-girl .action-btn {
-  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1) !important;
+  box-shadow:
+    inset -4rpx -4rpx 12rpx rgba(194, 24, 91, 0.3),
+    0 10rpx 25rpx rgba(255, 105, 180, 0.4);
+}
+
+/* 任务操作按钮区域 */
+.task-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 6rpx;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.task-actions .action-btn {
+  padding: 8rpx !important;
+  border-radius: 8rpx !important;
+  font-size: 24rpx !important;
+  min-width: 44rpx !important;
+  width: 44rpx !important;
+  height: 44rpx !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.task-actions .action-btn::after {
+  border: none;
+}
+
+.task-actions .action-btn.edit {
+  background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+  color: #1976D2;
+  box-shadow: 0 2rpx 6rpx rgba(33, 150, 243, 0.2);
+}
+
+.task-actions .action-btn.delete {
+  background: linear-gradient(135deg, #FFEBEE, #FFCDD2);
+  color: #F44336;
+  box-shadow: 0 2rpx 6rpx rgba(244, 67, 54, 0.2);
+}
+
+.task-actions .action-btn:active {
+  transform: scale(0.95);
+}
+
+/* 童趣模式下的操作按钮 */
+.style-girl .action-btn {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1) !important;
   box-shadow:
     inset -4rpx -4rpx 12rpx rgba(194, 24, 91, 0.3),
     0 10rpx 25rpx rgba(255, 105, 180, 0.4);
@@ -68,11 +141,11 @@
 /* 当前信息栏 */
 .current-info {
   display: flex;
-  gap: 30rpx;
-  padding: 20rpx 30rpx;
+  gap: 24rpx;
+  padding: 14rpx 20rpx;
   background: #FFFFFF;
-  margin: 20rpx;
-  border-radius: 16rpx;
+  margin: 16rpx 20rpx;
+  border-radius: 12rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
 }
 
@@ -84,7 +157,7 @@
   display: flex;
   align-items: center;
   gap: 8rpx;
-  font-size: 28rpx;
+  font-size: 26rpx;
 }
 
 .info-item.with-arrow {
@@ -94,6 +167,7 @@
 .info-label {
   color: #666666;
   font-weight: 500;
+  font-size: 24rpx;
 }
 
 .theme-dark .info-label {
@@ -103,6 +177,7 @@
 .info-value {
   color: #FF9800;
   font-weight: bold;
+  font-size: 26rpx;
 }
 
 /* 家长模式状态栏 */
@@ -110,21 +185,61 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 30rpx;
+  padding: 14rpx 20rpx;
   background: #FFFFFF;
-  margin: 20rpx;
-  border-radius: 16rpx;
+  margin: 16rpx 20rpx;
+  border-radius: 12rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
-}
-
-.theme-dark .parent-mode-bar {
-  background: #2C2C2E;
 }
 
 .mode-info {
   display: flex;
   align-items: center;
   gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.theme-dark .parent-mode-bar {
+  background: #2C2C2E;
+}
+
+/* 童趣模式下的家长模式卡片 */
+.style-girl .parent-mode-bar {
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 20rpx;
+  box-shadow:
+    inset -4rpx -4rpx 12rpx rgba(255, 182, 193, 0.25),
+    inset 6rpx 6rpx 16rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(255, 182, 193, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2rpx solid rgba(255, 255, 255, 0.85);
+}
+
+/* 男孩主题色调 */
+.style-girl.color-tone-boy .parent-mode-bar {
+  background: rgba(227, 242, 253, 0.6) !important;
+  box-shadow:
+    inset -4rpx -4rpx 12rpx rgba(25, 118, 210, 0.2),
+    inset 6rpx 6rpx 16rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(66, 165, 245, 0.15) !important;
+}
+
+/* 中性主题色调 */
+.style-girl.color-tone-neutral .parent-mode-bar {
+  background: rgba(245, 245, 245, 0.6) !important;
+  box-shadow:
+    inset -4rpx -4rpx 12rpx rgba(117, 117, 117, 0.2),
+    inset 6rpx 6rpx 16rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(189, 189, 189, 0.15) !important;
+}
+
+/* 可爱主题色调 */
+.style-girl.color-tone-cute .parent-mode-bar {
+  background: rgba(255, 248, 225, 0.6) !important;
+  box-shadow:
+    inset -4rpx -4rpx 12rpx rgba(255, 167, 38, 0.2),
+    inset 6rpx 6rpx 16rpx rgba(255, 255, 255, 0.9),
+    0 8rpx 20rpx rgba(255, 167, 38, 0.15) !important;
 }
 
 .mode-icon {
@@ -141,14 +256,40 @@
   color: #FFFFFF;
 }
 
+/* 童趣模式下模式文字颜色 */
+.style-girl.color-tone-boy .mode-text {
+  color: #0D47A1;
+}
+
+.style-girl.color-tone-neutral .mode-text {
+  color: #37474F;
+}
+
+.style-girl.color-tone-cute .mode-text,
+.style-girl.color-tone-girl .mode-text {
+  color: #880E4F;
+}
+
 .mode-switch-btn {
-  padding: 12rpx 24rpx;
-  background: linear-gradient(135deg, #FF9800, #FFB74D);
-  color: #FFFFFF;
-  border: none;
-  border-radius: 20rpx;
-  font-size: 24rpx;
+  padding: 12rpx 24rpx !important;
+  background: linear-gradient(135deg, #FF9800, #FFB74D) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 20rpx !important;
+  font-size: 24rpx !important;
   font-weight: 500;
+  line-height: 1.2 !important;
+  height: auto !important;
+  width: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}
+
+.mode-switch-btn::after {
+  border: none !important;
 }
 
 .mode-switch-btn:active {
@@ -157,20 +298,43 @@
 
 /* 任务列表 */
 .tasks-list {
-  padding: 20rpx;
+  padding: 12rpx 12rpx 0 12rpx;
 }
 
 .task-item {
   background: #FFFFFF;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  border-radius: 12rpx;
+  padding: 10rpx 14rpx;
+  margin-bottom: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 任务内容区域布局 */
+.task-content {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8rpx;
+}
+
+.task-left {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2rpx;
+}
+
+.task-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4rpx;
+  flex-shrink: 0;
+  padding-top: 2rpx;
 }
 
 .theme-dark .task-item {
   background: #2C2C2E;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3rpx 10rpx rgba(0, 0, 0, 0.3);
 }
 
 /* 童趣模式下的任务卡片 */
@@ -190,19 +354,22 @@
 .task-header {
   display: flex;
   align-items: center;
-  margin-bottom: 15rpx;
+  margin-bottom: 4rpx;
+  gap: 8rpx;
+  flex-wrap: wrap;
 }
 
 .task-type-badge {
-  font-size: 32rpx;
-  margin-right: 10rpx;
+  font-size: 22rpx;
+  flex-shrink: 0;
 }
 
 .task-title {
   flex: 1;
-  font-size: 32rpx;
+  font-size: 24rpx;
   font-weight: bold;
   color: #333333;
+  line-height: 1.3;
 }
 
 /* 童趣模式下的标题 */
@@ -217,16 +384,17 @@
 }
 
 .task-reward {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #FF9800;
   font-weight: bold;
+  flex-shrink: 0;
 }
 
 .task-desc {
-  font-size: 28rpx;
+  font-size: 22rpx;
   color: #666666;
-  margin-bottom: 15rpx;
-  line-height: 1.5;
+  margin-bottom: 2rpx;
+  line-height: 1.3;
 }
 
 .theme-dark .task-desc {
@@ -236,46 +404,101 @@
 .task-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 20rpx;
-  margin-bottom: 15rpx;
+  gap: 8rpx;
+  margin-bottom: 4rpx;
+  align-items: center;
 }
 
 .meta-item {
-  font-size: 24rpx;
-  color: #999999;
-  background: #F5F5F5;
-  padding: 8rpx 16rpx;
+  font-size: 20rpx;
+  color: #666666;
+  background: linear-gradient(135deg, #FFF8F0, #FFF0E6);
+  padding: 5rpx 12rpx;
   border-radius: 8rpx;
+  border: 1rpx solid rgba(255, 152, 0, 0.15);
+  font-weight: 500;
+  letter-spacing: 0.3rpx;
+}
+
+/* 每日任务 - 蓝色 */
+.meta-item.type-daily {
+  background: linear-gradient(135deg, #E3F2FD, #BBDEFB) !important;
+  color: #1976D2 !important;
+  border-color: rgba(33, 150, 243, 0.3) !important;
+}
+
+/* 每周任务 - 绿色 */
+.meta-item.type-weekly {
+  background: linear-gradient(135deg, #E8F5E9, #C8E6C9) !important;
+  color: #388E3C !important;
+  border-color: rgba(76, 175, 80, 0.3) !important;
+}
+
+/* 每月任务 - 紫色 */
+.meta-item.type-monthly {
+  background: linear-gradient(135deg, #F3E5F5, #E1BEE7) !important;
+  color: #7B1FA2 !important;
+  border-color: rgba(156, 39, 176, 0.3) !important;
+}
+
+/* 自定义任务 - 橙色 */
+.meta-item.type-custom {
+  background: linear-gradient(135deg, #FFF8F0, #FFF0E6) !important;
+  color: #F57C00 !important;
+  border-color: rgba(255, 152, 0, 0.3) !important;
+}
+
+/* 惩罚家长 - 青色 */
+.meta-item.type-penalty-parent {
+  background: linear-gradient(135deg, #E0F7FA, #B2EBF2) !important;
+  color: #0097A7 !important;
+  border-color: rgba(0, 151, 167, 0.3) !important;
+}
+
+/* 惩罚小孩 - 红色 */
+.meta-item.type-penalty-child {
+  background: linear-gradient(135deg, #FFEBEE, #FFCDD2) !important;
+  color: #D32F2F !important;
+  border-color: rgba(244, 67, 54, 0.3) !important;
+}
+
+/* 已失效标签 - 灰色 */
+.meta-item.expired-badge {
+  background: linear-gradient(135deg, #ECEFF1, #CFD8DC) !important;
+  color: #78909C !important;
+  border-color: rgba(120, 144, 156, 0.3) !important;
+}
+
+/* 日期时间标签 - 现在与类型标签在同一行 */
+.datetime-item {
+  font-size: 18rpx;
+  color: #888888;
+  background: transparent;
+  padding: 0;
+  margin: -4rpx 0 -2rpx 0;
+  border-radius: 0;
+  border: none;
+  font-weight: 400;
+  letter-spacing: 0.2rpx;
+  line-height: 1.2;
 }
 
 .theme-dark .meta-item {
-  background: #1C1C1E;
+  background: linear-gradient(135deg, #2C2C2E, #1C1C1E);
   color: #AAAAAA;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.theme-dark .datetime-item {
+  background: transparent;
+  color: #999999;
+  border: none;
 }
 
 .task-actions {
   display: flex;
   gap: 20rpx;
   margin-top: 20rpx;
-}
-
-.action-btn {
-  flex: 1;
-  padding: 16rpx;
-  border-radius: 10rpx;
-  font-size: 28rpx;
-  border: none;
-  margin: 0;
-}
-
-.action-btn.edit {
-  background: #E3F2FD;
-  color: #2196F3;
-}
-
-.action-btn.delete {
-  background: #FFEBEE;
-  color: #F44336;
 }
 
 /* 空状态 */
@@ -297,47 +520,49 @@
   color: #999999;
 }
 
-/* 添加按钮 */
+/* 添加按钮 - 缩小版本 */
 .add-btn {
   position: fixed;
-  bottom: 180rpx; /* 向上移动，避免被导航栏遮挡 */
+  bottom: 180rpx;
   right: 40rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(135deg, rgba(255, 152, 0, 0.85), rgba(255, 183, 77, 0.85)); /* 半透明渐变 */
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.85), rgba(255, 183, 77, 0.85));
   color: #FFFFFF;
-  padding: 18rpx 36rpx; /* 进一步增大 */
-  border-radius: 45rpx; /* 增大圆角 */
+  padding: 14rpx 24rpx;
+  border-radius: 35rpx;
   box-shadow:
-    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4), /* 内发光 */
-    inset 4rpx 4rpx 10rpx rgba(0, 0, 0, 0.1), /* 内阴影 */
-    0 8rpx 20rpx rgba(255, 152, 0, 0.3), /* 外阴影 */
-    0 10rpx 24rpx rgba(255, 152, 0, 0.2); /* 扩散阴影 */
-  backdrop-filter: blur(8px); /* 毛玻璃效果 */
-  border: 2rpx solid rgba(255, 255, 255, 0.3); /* 半透明边框 */
+    inset -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4),
+    inset 4rpx 4rpx 10rpx rgba(0, 0, 0, 0.1),
+    0 8rpx 20rpx rgba(255, 152, 0, 0.3),
+    0 10rpx 24rpx rgba(255, 152, 0, 0.2);
+  backdrop-filter: blur(8px);
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
   z-index: 100;
 }
 
 /* 童趣模式下的添加按钮 */
 .style-girl .add-btn {
-  background: linear-gradient(135deg, rgba(255, 105, 180, 0.9), rgba(255, 182, 193, 0.9)); /* 粉色渐变 */
+  background: linear-gradient(135deg, rgba(255, 105, 180, 0.9), rgba(255, 182, 193, 0.9));
   box-shadow:
-    inset -6rpx -6rpx 15rpx rgba(255, 255, 255, 0.5), /* 内发光 */
-    inset 6rpx 6rpx 15rpx rgba(194, 24, 91, 0.2), /* 内阴影 */
-    0 10rpx 25rpx rgba(255, 105, 180, 0.4), /* 外阴影 */
-    0 15rpx 35rpx rgba(255, 182, 193, 0.3); /* 扩散阴影 */
-  border: 3rpx solid rgba(255, 255, 255, 0.6); /* 更明显的边框 */
+    inset -6rpx -6rpx 15rpx rgba(255, 255, 255, 0.5),
+    inset 6rpx 6rpx 15rpx rgba(194, 24, 91, 0.2),
+    0 10rpx 25rpx rgba(255, 105, 180, 0.4),
+    0 15rpx 35rpx rgba(255, 182, 193, 0.3);
+  border: 3rpx solid rgba(255, 255, 255, 0.6);
+  padding: 14rpx 24rpx !important;
+  border-radius: 35rpx !important;
 }
 
 .add-icon {
-  font-size: 40rpx; /* 进一步增大 */
+  font-size: 32rpx;
   line-height: 1;
 }
 
 .add-text {
-  font-size: 20rpx; /* 进一步增大 */
-  margin-top: 8rpx; /* 增加间距 */
+  font-size: 18rpx;
+  margin-top: 6rpx;
 }
 
 /* 模态框 */
@@ -512,13 +737,14 @@
 }
 
 .radio-item {
-  padding: 16rpx 28rpx;
+  padding: 10rpx 20rpx !important;
   border: 2rpx solid #E5E5E5;
-  border-radius: 12rpx;
-  font-size: 28rpx;
+  border-radius: 12rpx !important;
+  font-size: 24rpx !important;
   color: #666666;
   background: #FAFAFA;
   transition: all 0.2s;
+  line-height: 1.2 !important;
 }
 
 .radio-item.active {
@@ -549,12 +775,20 @@
 
 .modal-btn {
   flex: 1;
-  padding: 28rpx;
-  border-radius: 16rpx;
-  font-size: 32rpx;
+  padding: 16rpx !important;
+  border-radius: 12rpx !important;
+  font-size: 24rpx !important;
   font-weight: 500;
   border: none;
   transition: all 0.2s;
+  line-height: 1.2 !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+.modal-btn::after {
+  border: none;
 }
 
 .modal-btn.cancel {
@@ -594,7 +828,7 @@
 }
 
 .dropdown-arrow {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #FF9800;
   transition: transform 0.3s;
 }
@@ -788,6 +1022,21 @@
   color: #AD1457;
 }
 
+.style-girl .meta-item {
+  background: linear-gradient(135deg, #FFF5F7, #FCE4EC);
+  color: #C2185B;
+  border-color: rgba(240, 98, 146, 0.2);
+  font-weight: 700;
+  text-shadow: 0.5rpx 0.5rpx 0 #FFF;
+}
+
+.style-girl .datetime-item {
+  background: transparent;
+  color: #AD1457;
+  border: none;
+  font-weight: 500;
+}
+
 .style-girl .add-task-btn {
   background: linear-gradient(135deg, #FF69B4, #FFB6C1);
   border-radius: 50rpx;
@@ -810,20 +1059,22 @@
 
 .style-girl .info-item {
   background: rgba(255, 255, 255, 0.6);
-  border-radius: 20rpx;
-  padding: 25rpx;
-  margin-bottom: 15rpx;
+  border-radius: 18rpx;
+  padding: 18rpx 22rpx;
+  margin-bottom: 0;
   border: 2rpx solid rgba(255, 255, 255, 0.7);
 }
 
 .style-girl .info-label {
   color: #C2185B;
   font-weight: 700;
+  font-size: 22rpx;
 }
 
 .style-girl .info-value {
   color: #880E4F;
   font-weight: 600;
+  font-size: 24rpx;
 }
 
 .style-girl .modal-content {
@@ -843,7 +1094,7 @@
 .style-girl .radio-item {
   background: rgba(255, 255, 255, 0.6);
   border-radius: 20rpx;
-  padding: 25rpx;
+  padding: 10rpx 20rpx !important;
   border: 2rpx solid rgba(255, 255, 255, 0.7);
 }
 
@@ -853,10 +1104,208 @@
   color: #FFFFFF;
 }
 
+/* 时间选择器行 */
+.time-selector-row {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+}
+
+.form-picker-time,
+.form-picker-second {
+  flex: 1;
+  padding: 20rpx 24rpx;
+  border: 2rpx solid #E5E5E5;
+  border-radius: 12rpx;
+  background: #FAFAFA;
+  text-align: center;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.theme-dark .form-picker-time,
+.theme-dark .form-picker-second {
+  border-color: #3A3A3C;
+  background: #1C1C1E;
+  color: #FFF;
+}
+
 .style-girl .modal-btn.cancel {
   background: rgba(255, 255, 255, 0.6);
-  border-radius: 50rpx;
-  border: 3rpx solid rgba(255, 105, 180, 0.3);
+  border-radius: 25rpx !important;
+  border: 2rpx solid rgba(255, 105, 180, 0.3);
   color: #C2185B;
   font-weight: 700;
+  padding: 20rpx !important;
 }
+
+/* 男孩色调主题 */
+.color-tone-boy .meta-item {
+  background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+  color: #1976D2;
+  border-color: rgba(25, 118, 210, 0.2);
+}
+
+.color-tone-boy .datetime-item {
+  background: transparent;
+  color: #1565C0;
+  border: none;
+}
+
+/* 中性色调主题 */
+.color-tone-neutral .meta-item {
+  background: linear-gradient(135deg, #ECEFF1, #CFD8DC);
+  color: #546E7A;
+  border-color: rgba(84, 110, 122, 0.2);
+}
+
+.color-tone-neutral .datetime-item {
+  background: transparent;
+  color: #607D8B;
+  border: none;
+}
+
+/* 可爱色调主题 */
+.color-tone-cute .meta-item {
+  background: linear-gradient(135deg, #FCE4EC, #F8BBD0);
+  color: #EC407A;
+  border-color: rgba(236, 64, 122, 0.2);
+}
+
+.color-tone-cute .datetime-item {
+  background: transparent;
+  color: #D81B60;
+  border: none;
+}
+
+
+/* 任务页面头部 - 分类和搜索 */
+.tasks-header {
+  padding: 12rpx 20rpx;
+  padding-bottom: 8rpx;
+}
+
+/* 分类筛选 */
+.task-categories {
+  display: flex;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+  overflow-x: auto;
+  padding-bottom: 4rpx;
+}
+
+.task-categories::-webkit-scrollbar {
+  display: none;
+}
+
+.category-item {
+  flex-shrink: 0;
+  padding: 8rpx 18rpx;
+  background: #F5F5F5;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+  color: #666666;
+  font-weight: 500;
+  transition: all 0.3s;
+  border: 1rpx solid transparent;
+}
+
+.category-item.active {
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+  border-color: #FF9800;
+  box-shadow: 0 2rpx 8rpx rgba(255, 152, 0, 0.25);
+}
+
+/* 搜索栏 */
+.search-bar {
+  margin-bottom: 6rpx;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #F5F5F5;
+  border-radius: 20rpx;
+  padding: 10rpx 18rpx;
+  position: relative;
+}
+
+.search-icon {
+  font-size: 26rpx;
+  margin-right: 8rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 24rpx;
+  color: #333333;
+  height: 32rpx;
+  line-height: 32rpx;
+}
+
+.clear-icon {
+  font-size: 24rpx;
+  color: #999999;
+  padding: 6rpx;
+  margin-left: 6rpx;
+}
+
+/* 深色主题 */
+.theme-dark .category-item {
+  background: #2C2C2E;
+  color: #AAAAAA;
+}
+
+.theme-dark .category-item.active {
+  background: linear-gradient(135deg, #FF9800, #FFB74D);
+  color: #FFFFFF;
+}
+
+.theme-dark .search-input-wrapper {
+  background: #2C2C2E;
+}
+
+.theme-dark .search-input {
+  color: #FFFFFF;
+}
+
+.theme-dark .clear-icon {
+  color: #666666;
+}
+
+/* 女孩主题 */
+.style-girl .category-item {
+  background: rgba(255, 255, 255, 0.6);
+  color: #C2185B;
+  border: 1rpx solid rgba(240, 98, 146, 0.2);
+  border-radius: 18rpx;
+  font-weight: 700;
+}
+
+.style-girl .category-item.active {
+  background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+  color: #FFFFFF;
+  box-shadow: 0 4rpx 10rpx rgba(255, 105, 180, 0.35);
+}
+
+.style-girl .search-input-wrapper {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1rpx solid rgba(240, 98, 146, 0.15);
+}
+
+/* 男孩主题 */
+.color-tone-boy .category-item {
+  background: #E3F2FD;
+  color: #1976D2;
+}
+
+.color-tone-boy .category-item.active {
+  background: linear-gradient(135deg, #2196F3, #64B5F6);
+  box-shadow: 0 2rpx 8rpx rgba(33, 150, 243, 0.25);
+}
+
+.color-tone-boy .search-input-wrapper {
+  background: #E3F2FD;
+}
+

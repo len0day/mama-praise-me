@@ -567,6 +567,19 @@
   padding-bottom: 120rpx;
 }
 
+/* 童趣模式容器 - 使用最高优先级，强制覆盖所有其他样式 */
+view.container.style-girl,
+.style-girl.container,
+.container.style-girl,
+view[class*="style-girl"].container,
+.container[class*="style-girl"],
+page view.container.style-girl,
+page .style-girl.container,
+page .container.style-girl {
+  background: #FFF0F5 !important;
+  min-height: 100vh !important;
+}
+
 /* 深色主题背景 - 使用最高优先级，强制覆盖所有其他样式 */
 view.container.theme-dark,
 .theme-dark.container,
@@ -629,6 +642,24 @@ page .container.theme-dark {
   border-top-color: #FF69B4;
 }
 
+/* 男孩主题 */
+.color-tone-boy .loading-spinner {
+  border-color: #E3F2FD;
+  border-top-color: #2196F3;
+}
+
+/* 中性主题 */
+.color-tone-neutral .loading-spinner {
+  border-color: #ECEFF1;
+  border-top-color: #78909C;
+}
+
+/* 可爱主题 */
+.color-tone-cute .loading-spinner {
+  border-color: #FCE4EC;
+  border-top-color: #EC407A;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -642,11 +673,29 @@ page .container.theme-dark {
 }
 
 .theme-dark .loading-text {
-  color: #666666;
+  color: #AAAAAA;
 }
 
 .style-girl .loading-text {
   color: #FF69B4;
+  font-weight: 700;
+}
+
+/* 男孩主题 */
+.color-tone-boy .loading-text {
+  color: #2196F3;
+  font-weight: 600;
+}
+
+/* 中性主题 */
+.color-tone-neutral .loading-text {
+  color: #78909C;
+  font-weight: 600;
+}
+
+/* 可爱主题 */
+.color-tone-cute .loading-text {
+  color: #EC407A;
   font-weight: 700;
 }
 
@@ -663,7 +712,8 @@ page .container.theme-dark {
   overflow: hidden;
 }
 
-.theme-dark .child-info {
+.theme-dark .child-info,
+.theme-simple-dark .child-info {
   background: #2C2C2E;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
 }
@@ -2028,7 +2078,8 @@ page .container.theme-dark {
   border: 1rpx solid rgba(0, 0, 0, 0.05);
 }
 
-.theme-dark .task-item {
+.theme-dark .task-item,
+.theme-simple-dark .task-item {
   background: #2C2C2E;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.4), 0 2rpx 6rpx rgba(0, 0, 0, 0.2);
   border-color: rgba(255, 255, 255, 0.05);
@@ -3536,3 +3587,22 @@ page .container.theme-dark {
   background: #2C2C2E;
 }
 
+
+/* 简约深色主题适配 - 确保所有白色背景变成黑色 */
+.theme-simple-dark .child-info,
+.theme-simple-dark .task-item,
+.theme-simple-dark .calendar-item,
+.theme-simple-dark .modal-content,
+.theme-simple-dark .picker-content {
+  background: #2C2C2E !important;
+  color: #FFFFFF;
+}
+
+.theme-simple-dark .filter-item {
+  background: #3A3A3C;
+  color: #FFFFFF;
+}
+
+.theme-simple-dark .section-title {
+  color: #FFFFFF;
+}

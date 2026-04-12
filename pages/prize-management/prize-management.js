@@ -68,6 +68,7 @@ Page({
       })
       console.log('[奖品管理] Require parent mode verification, isFirstTime:', !app.hasParentPassword())
     } else {
+      // 进入家长模式后立即显示加载动画并加载数据
       this.loadPrizes()
     }
   },
@@ -76,6 +77,7 @@ Page({
    * 加载奖品列表
    */
   async loadPrizes() {
+    this.setData({ isLoading: true })
     showLoading()
 
     try {
@@ -101,6 +103,7 @@ Page({
       console.error('[奖品管理] 加载失败:', err)
       showToast(t('toast.operationFailed'))
     } finally {
+      this.setData({ isLoading: false })
       hideLoading()
     }
   },
