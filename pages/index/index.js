@@ -3884,10 +3884,7 @@ Page({
     })
 
     try {
-      // 创建家庭
-      console.log('[首次使用流程] 调用云函数创建家庭')
-
-      // 获取用户昵称（如果已登录）
+      // 获取用户昵称
       let creatorNickname = '家长'
       if (app.globalData.useCloudStorage) {
         const userInfo = wx.getStorageSync('userInfo')
@@ -3895,6 +3892,70 @@ Page({
           creatorNickname = userInfo.nickName
         }
       }
+
+      // 未登录：创建本地家庭和儿童
+      if (!app.globalData.useCloudStorage) {
+        const familyId = `local_family_${Date.now()}`
+
+        // 创建本地家庭
+        const localFamily = {
+          familyId: familyId,
+          name: '我的家庭',
+          inviteCode: null,
+          role: 'creator',
+          isCreator: true,
+          createdAt: new Date().toISOString(),
+          creatorNickname: creatorNickname
+        }
+
+        // 保存到本地家庭列表
+        let localFamilies = wx.getStorageSync('localFamilies') || []
+        localFamilies.push(localFamily)
+        wx.setStorageSync('localFamilies', localFamilies)
+
+        // 创建本地儿童
+        const childId = `local_child_${Date.now()}`
+        const newChild = {
+          childId: childId,
+          name: '宝宝',
+          gender: 'male',
+          age: 6,
+          avatar: '',
+          familyIds: [familyId],
+          familyId: familyId,
+          totalCoins: 0,
+          completedTasks: 0,
+          redeemedPrizes: 0,
+          createdAt: new Date().toISOString()
+        }
+
+        // 保存到本地儿童列表
+        const storageKey = `localChildren_${familyId}`
+        wx.setStorageSync(storageKey, [newChild])
+        wx.setStorageSync('localTasks_' + familyId, [])
+        wx.setStorageSync('localPrizes_' + familyId, [])
+
+        // 设置当前家庭和儿童
+        app.saveCurrentFamilyId(familyId)
+        app.globalData.children = [newChild]
+        app.setCurrentChild(newChild)
+
+        // 重新加载数据
+        wx.hideLoading()
+        wx.showToast({
+          title: '创建成功',
+          icon: 'success'
+        })
+
+        setTimeout(() => {
+          console.log('[首次使用流程] 重新加载页面数据')
+          this.onShow()
+        }, 1500)
+        return
+      }
+
+      // 已登录：调用云函数创建家庭
+      console.log('[首次使用流程] 调用云函数创建家庭')
 
       const familyRes = await wx.cloud.callFunction({
         name: 'manageFamilies',
@@ -4432,7 +4493,8 @@ Page({
           gender: childGender,
           age: childAge,
           avatar: avatarUrl,
-          familyId: currentFamilyId,
+          familyIds: [currentFamilyId],  // 使用数组以匹配 setCurrentChild 的预期格式
+          familyId: currentFamilyId,      // 保留单个 familyId 以保持兼容性
           totalCoins: childCoins,
           completedTasks: 0,
           redeemedPrizes: 0,

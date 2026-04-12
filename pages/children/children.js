@@ -454,7 +454,8 @@ Page({
         avatar: childInfo.avatar || '',
         gender: childInfo.gender || 'male',
         age: childInfo.age || 0,
-        familyId: currentFamilyId,  // 设置当前家庭ID
+        familyIds: [currentFamilyId],  // 使用数组以匹配 setCurrentChild 的预期格式
+        familyId: currentFamilyId,  // 设置当前家庭ID（保持兼容性）
         completedTasks: 0,  // 重置任务完成数（每个家庭独立）
         redeemedPrizes: 0,  // 重置兑换奖品数（每个家庭独立）
         totalCoins: 0,  // 重置金币数（每个家庭独立）
@@ -841,24 +842,34 @@ Page({
           app.globalData.children = wx.getStorageSync(`localChildren_${currentFamilyId}`) || []
         }
       } else {
-        // 创建新儿童（只添加到主列表，不自动加入任何家庭）
+        // 创建新儿童（添加到主列表，并自动加入当前家庭）
         const newChild = {
           childId: `child_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           name: formData.name,
           avatar: formData.avatar || '',
           gender: formData.gender || 'male',
           age: formData.age || 0,
-          familyIds: [],  // 不自动加入任何家庭，使用空数组
+          familyIds: currentFamilyId ? [currentFamilyId] : [],  // 自动加入当前家庭
+          familyId: currentFamilyId,  // 保留单个 familyId 以保持兼容性
           completedTasks: 0,
           redeemedPrizes: 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
 
-        // 只添加到主列表，不添加到家庭列表
+        // 添加到主列表
         allChildren.push(newChild)
 
-        console.log('[孩子管理] 新儿童已添加到主列表，未加入任何家庭:', newChild.name)
+        // 同时添加到当前家庭的儿童列表
+        if (currentFamilyId) {
+          const familyStorageKey = `localChildren_${currentFamilyId}`
+          let familyChildren = wx.getStorageSync(familyStorageKey) || []
+          familyChildren.push(newChild)
+          wx.setStorageSync(familyStorageKey, familyChildren)
+          console.log('[孩子管理] 新儿童已添加到主列表并加入当前家庭:', newChild.name)
+        } else {
+          console.log('[孩子管理] 新儿童已添加到主列表，未加入任何家庭:', newChild.name)
+        }
       }
 
       // 保存主列表
@@ -867,6 +878,11 @@ Page({
       // 更新全局数据（只包含当前家庭的儿童）
       const storageKey = `localChildren_${currentFamilyId}`
       app.globalData.children = wx.getStorageSync(storageKey) || []
+
+      // 如果是新创建儿童且没有当前儿童，设置新儿童为当前儿童
+      if (!editingChild && !app.globalData.currentChildId && currentFamilyId) {
+        app.setCurrentChild(newChild)
+      }
 
       hideLoading()
       showToast(editingChild ? '孩子信息已更新' : '孩子添加成功')
